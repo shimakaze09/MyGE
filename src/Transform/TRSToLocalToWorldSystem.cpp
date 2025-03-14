@@ -11,7 +11,7 @@
 using namespace My::MyGE;
 
 void TRSToLocalToWorldSystem::OnUpdate(MyECS::Schedule& schedule) {
-  MyECS::EntityFilter filter{
+  MyECS::ArchetypeFilter filter{
       TypeList<LocalToWorld>{},
       TypeList<MyECS::Latest<Translation>, MyECS::Latest<Rotation>,
                MyECS::Latest<Scale>>{},

@@ -16,50 +16,76 @@ struct LuaBuffer {
   uint64_t size;  // uint64_t
 
   LuaBuffer() : ptr{nullptr}, size{static_cast<uint64_t>(-1)} {}
+
   LuaBuffer(void* ptr, uint64_t size) : ptr{ptr}, size{size} {}
 
+  LuaBuffer(MyECS::Entity* entityArray, size_t num)
+      : ptr{entityArray}, size{num * sizeof(MyECS::Entity)} {}
+
   void* GetPointer(size_t offset) const { return Get<void*>(offset); }
+
   void SetPointer(size_t offset, void* p) { Set(offset, p); }
 
   LuaBuffer GetBuffer(size_t offset) const { return Get<LuaBuffer>(offset); }
+
   void SetBuffer(size_t offset, LuaBuffer buffer) { Set(offset, buffer); }
 
+  LuaBuffer GetBuffer(size_t offset, uint64_t size) const {
+    return {Offset(offset), size};
+  }
+
+  void SetBuffer(size_t offset, void* ptr, size_t size) {
+    memcpy(Offset(offset), ptr, size);
+  }
+
   bool GetBool(size_t offset) const { return Get<bool>(offset); }
+
   void SetBool(size_t offset, bool value) { Set(offset, value); }
 
   int8_t GetInt8(size_t offset) const { return Get<int8_t>(offset); }
+
   void SetInt8(size_t offset, int8_t value) { Set(offset, value); }
 
   int16_t GetInt16(size_t offset) const { return Get<int16_t>(offset); }
+
   void SetInt16(size_t offset, int16_t value) { Set(offset, value); }
 
   int32_t GetInt32(size_t offset) const { return Get<int32_t>(offset); }
+
   void SetInt32(size_t offset, int32_t value) { Set(offset, value); }
 
   int64_t GetInt64(size_t offset) const { return Get<int64_t>(offset); }
+
   void SetInt64(size_t offset, int64_t value) { Set(offset, value); }
 
   uint8_t GetUInt8(size_t offset) const { return Get<uint8_t>(offset); }
+
   void SetUInt8(size_t offset, uint8_t value) { Set(offset, value); }
 
   uint16_t GetUInt16(size_t offset) const { return Get<uint16_t>(offset); }
+
   void SetUInt16(size_t offset, uint16_t value) { Set(offset, value); }
 
   uint32_t GetUInt32(size_t offset) const { return Get<uint32_t>(offset); }
+
   void SetUInt32(size_t offset, uint32_t value) { Set(offset, value); }
 
   uint64_t GetUInt64(size_t offset) const { return Get<uint64_t>(offset); }
+
   void SetUInt64(size_t offset, uint64_t value) { Set(offset, value); }
 
   float GetFloat(size_t offset) const { return Get<float>(offset); }
+
   void SetFloat(size_t offset, float value) { Set(offset, value); }
 
   double GetDouble(size_t offset) const { return Get<double>(offset); }
+
   void SetDouble(size_t offset, double value) { Set(offset, value); }
 
   std::string_view GetCString(size_t offset) const {
     return Offset<char>(offset);
   }
+
   void SetCString(size_t offset, const char* value) {
     strcpy(Offset<char>(offset), value);
   }

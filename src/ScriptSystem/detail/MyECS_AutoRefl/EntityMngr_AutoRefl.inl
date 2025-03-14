@@ -81,6 +81,32 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityMngr>
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0)},
             }},
+      Field{"LocateSingletons", &My::MyECS::EntityMngr::LocateSingletons,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0)},
+            }},
+      Field{"IsSingleton", &My::MyECS::EntityMngr::IsSingleton,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0)},
+            }},
+      Field{"GetSingletonEntity", &My::MyECS::EntityMngr::GetSingletonEntity,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0)},
+            }},
+      Field{
+          "GetSingleton",
+          static_cast<My::MyECS::CmptPtr (My::MyECS::EntityMngr::*)(
+              My::MyECS::CmptType) const>(&My::MyECS::EntityMngr::GetSingleton),
+          AttrList{
+              Attr{MY_MYSREFL_NAME_ARG(0)},
+          }},
+      Field{"GetIfSingleton",
+            static_cast<My::MyECS::CmptPtr (My::MyECS::EntityMngr::*)(
+                My::MyECS::CmptType) const>(
+                &My::MyECS::EntityMngr::GetIfSingleton),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0)},
+            }},
       Field{"Accept", &My::MyECS::EntityMngr::Accept,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),

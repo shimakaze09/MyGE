@@ -24,5 +24,6 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptPtr>
             }},
       Field{"Type", &My::MyECS::CmptPtr::Type},
       Field{"Ptr", &My::MyECS::CmptPtr::Ptr},
+      Field{"Valid", &My::MyECS::CmptPtr::Valid},
   };
 };

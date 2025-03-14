@@ -12,22 +12,26 @@ class LuaSystem : public MyECS::System {
  public:
   using System::System;
 
-  static void Register(MyECS::World* world, std::string name,
-                       sol::function onUpdate);
+  static void RegisterSystem(MyECS::World* world, std::string name,
+                             sol::function onUpdate);
 
-  // World, Entity, size_t index, CmptsView
-  static const MyECS::SystemFunc* RegisterSystemFunc_Entity(
+  // World, SingletonsView, Entity, size_t index, CmptsView
+  static const MyECS::SystemFunc* RegisterEntityJob(
       MyECS::Schedule*, sol::function systemFunc, std::string name,
-      MyECS::EntityLocator, MyECS::EntityFilter);
+      MyECS::ArchetypeFilter, MyECS::CmptLocator, MyECS::SingletonLocator);
 
-  // World, ChunkView
-  static const MyECS::SystemFunc* RegisterSystemFunc_Chunk(
-      MyECS::Schedule*, sol::function systemFunc, std::string name,
-      MyECS::EntityFilter);
+  // World, SingletonsView, ChunkView
+  static const MyECS::SystemFunc* RegisterChunkJob(MyECS::Schedule*,
+                                                   sol::function systemFunc,
+                                                   std::string name,
+                                                   MyECS::ArchetypeFilter,
+                                                   MyECS::SingletonLocator);
 
-  // World
-  static const MyECS::SystemFunc* RegisterSystemFunc_Job(
-      MyECS::Schedule*, sol::function systemFunc, std::string name);
+  // World, SingletonsView
+  static const MyECS::SystemFunc* RegisterJob(MyECS::Schedule*,
+                                              sol::function systemFunc,
+                                              std::string name,
+                                              MyECS::SingletonLocator);
 
  private:
   LuaSystem(MyECS::World* world, std::string name, sol::function onUpdate);

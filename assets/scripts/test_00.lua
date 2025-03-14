@@ -89,14 +89,14 @@ e2 = em:Create(luaCmptType0, 1)
 em:Detach(e0, luaCmptType1, 1)
 
 f = function(schedule)
-    local g = function(w, chunk)
+    local g = function(w, singletons, chunk)
         local luaCmptType0 = CmptType.new("Cmpt0", AccessMode.LATEST)
         local luaCmptType1 = CmptType.new("Cmpt1", AccessMode.LATEST)
         local entityType = CmptType.new("My::MyECS::Entity", AccessMode.LATEST)
         local num = chunk:EntityNum()
         local arrayCmpt0 = chunk:GetCmptArray(luaCmptType0)
         local arrayEntity = chunk:GetCmptArray(entityType)
-        local entity_buf = LuaBuffer.new(arrayEntity, 16 * num)
+        local entity_buf = LuaBuffer.new(arrayEntity, num)
         local em = w:GetEntityMngr()
         for i = 0, num - 1 do
             local cmpt0 = LuaBuffer.new(LuaMemory.Offset(arrayCmpt0, 64 * i), 64)
@@ -114,11 +114,11 @@ f = function(schedule)
         end
     end
     local luaCmptType0 = CmptType.new("Cmpt0", AccessMode.LATEST)
-    local filter = EntityFilter.new()
+    local filter = ArchetypeFilter.new()
     filter:InsertAll(luaCmptType0, 1)
-    LuaSystem.RegisterSystemFunc_Chunk(schedule, g, "test", filter)
+    LuaSystem.RegisterChunkJob(schedule, g, "test", filter, SingletonLocator.new())
 end
-LuaSystem.Register(w, "LuaSystem-001", f)
+LuaSystem.RegisterSystem(w, "LuaSystem-001", f)
 
 print("------update------")
 w:Update()

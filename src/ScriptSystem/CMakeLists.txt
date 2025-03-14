@@ -7,8 +7,8 @@ ADD_TARGET(
         LIB
         My::MyLuaPP_core
         My::MyECS_core
-        DEFINE
+        DEFINE_PRIVATE
         _CRT_SECURE_NO_WARNINGS
-        C_OPTION
+        C_OPTION_PRIVATE
         /bigobj
 )

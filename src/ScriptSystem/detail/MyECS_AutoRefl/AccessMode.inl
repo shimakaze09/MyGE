@@ -5,13 +5,120 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyECS::AccessMode>
-    : My::MySRefl::TypeInfoBase<My::MyECS::AccessMode> {
+struct My::MySRefl::TypeInfo<My::MyECS::ArchetypeFilter>
+    : My::MySRefl::TypeInfoBase<My::MyECS::ArchetypeFilter> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{"LAST_FRAME", My::MyECS::AccessMode::LAST_FRAME},
-      Field{"WRITE", My::MyECS::AccessMode::WRITE},
-      Field{"LATEST", My::MyECS::AccessMode::LATEST},
+      Field{Name::constructor, WrapConstructor<My::MyECS::ArchetypeFilter()>()},
+      Field{Name::constructor,
+            WrapConstructor<My::MyECS::ArchetypeFilter(
+                std::set<My::MyECS::CmptType>, std::set<My::MyECS::CmptType>,
+                std::set<My::MyECS::CmptType>)>(),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "allCmptTypes"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{Attr{Name::name, "anyCmptTypes"}}},
+                Attr{MY_MYSREFL_NAME_ARG(2),
+                     AttrList{Attr{Name::name, "noneCmptTypes"}}},
+            }},
+      Field{"HashCode", &My::MyECS::ArchetypeFilter::HashCode},
+      Field{"AllCmptTypes", &My::MyECS::ArchetypeFilter::AllCmptTypes},
+      Field{"AnyCmptTypes", &My::MyECS::ArchetypeFilter::AnyCmptTypes},
+      Field{"NoneCmptTypes", &My::MyECS::ArchetypeFilter::NoneCmptTypes},
+      Field{"InsertAll",
+            static_cast<void (My::MyECS::ArchetypeFilter::*)(
+                const My::MyECS::CmptType*, size_t)>(
+                &My::MyECS::ArchetypeFilter::InsertAll),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "types"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "num"},
+                     }},
+            }},
+      Field{"InsertAny",
+            static_cast<void (My::MyECS::ArchetypeFilter::*)(
+                const My::MyECS::CmptType*, size_t)>(
+                &My::MyECS::ArchetypeFilter::InsertAny),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "types"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "num"},
+                     }},
+            }},
+      Field{"InsertNone",
+            static_cast<void (My::MyECS::ArchetypeFilter::*)(
+                const My::MyECS::CmptType*, size_t)>(
+                &My::MyECS::ArchetypeFilter::InsertNone),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "types"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "num"},
+                     }},
+            }},
+      Field{"EraseAll",
+            static_cast<void (My::MyECS::ArchetypeFilter::*)(
+                const My::MyECS::CmptType*, size_t)>(
+                &My::MyECS::ArchetypeFilter::EraseAll),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "types"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "num"},
+                     }},
+            }},
+      Field{"EraseAny",
+            static_cast<void (My::MyECS::ArchetypeFilter::*)(
+                const My::MyECS::CmptType*, size_t)>(
+                &My::MyECS::ArchetypeFilter::EraseAny),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "types"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "num"},
+                     }},
+            }},
+      Field{"EraseNone",
+            static_cast<void (My::MyECS::ArchetypeFilter::*)(
+                const My::MyECS::CmptType*, size_t)>(
+                &My::MyECS::ArchetypeFilter::EraseNone),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "types"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "num"},
+                     }},
+            }},
+      Field{"operator==", &My::MyECS::ArchetypeFilter::operator==,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "filter"},
+                     }},
+            }},
   };
 };

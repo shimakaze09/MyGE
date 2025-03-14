@@ -5,33 +5,15 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGE::LuaSystem>
-    : My::MySRefl::TypeInfoBase<My::MyGE::LuaSystem, Base<MyECS::System>> {
+struct My::MySRefl::TypeInfo<My::DustEngine::LuaSystem>
+    : My::MySRefl::TypeInfoBase<My::DustEngine::LuaSystem,
+                                Base<MyECS::System>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{"Register", &My::MyGE::LuaSystem::Register,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "world"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "name"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{
-                         Attr{Name::name, "onUpdate"},
-                     }},
-            }},
-      Field{"RegisterChunkFunc", &My::MyGE::LuaSystem::RegisterChunkFunc},
-      Field{"WrapChunkFunc", &My::MyGE::LuaSystem::WrapChunkFunc,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "function"},
-                     }},
-            }},
+      Field{"RegisterSystem", &My::DustEngine::LuaSystem::RegisterSystem},
+      Field{"RegisterEntityJob", &My::DustEngine::LuaSystem::RegisterEntityJob},
+      Field{"RegisterChunkJob", &My::DustEngine::LuaSystem::RegisterChunkJob},
+      Field{"RegisterJob", &My::DustEngine::LuaSystem::RegisterJob},
   };
 };

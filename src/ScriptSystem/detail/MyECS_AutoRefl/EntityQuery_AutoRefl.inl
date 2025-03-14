@@ -13,8 +13,8 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityQuery>
       Field{"filter", &My::MyECS::EntityQuery::filter},
       Field{"locator", &My::MyECS::EntityQuery::locator},
       Field{Name::constructor,
-            WrapConstructor<My::MyECS::EntityQuery(My::MyECS::EntityFilter,
-                                                   My::MyECS::EntityLocator)>(),
+            WrapConstructor<My::MyECS::EntityQuery(My::MyECS::ArchetypeFilter,
+                                                   My::MyECS::CmptLocator)>(),
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{

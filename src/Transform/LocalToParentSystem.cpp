@@ -33,7 +33,7 @@ void LocalToParentSystem::ChildLocalToWorld(const transformf& parent_l2w,
 }
 
 void LocalToParentSystem::OnUpdate(MyECS::Schedule& schedule) {
-  MyECS::EntityFilter rootFilter{
+  MyECS::ArchetypeFilter rootFilter{
       TypeList<>{},       // all
       TypeList<>{},       // any
       TypeList<Parent>{}  // none

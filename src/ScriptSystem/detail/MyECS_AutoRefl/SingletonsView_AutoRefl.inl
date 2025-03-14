@@ -5,29 +5,30 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyECS::CmptsView>
-    : My::MySRefl::TypeInfoBase<My::MyECS::CmptsView> {
+struct My::MySRefl::TypeInfo<My::MyECS::SingletonsView>
+    : My::MySRefl::TypeInfoBase<My::MyECS::SingletonsView> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
       Field{Name::constructor,
-            WrapConstructor<My::MyECS::CmptsView(const My::MyECS::CmptPtr *,
-                                                 size_t)>(),
+            WrapConstructor<My::MyECS::SingletonsView(
+                const My::MyECS::CmptPtr *, size_t)>(),
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
-                         Attr{Name::name, "cmpts"},
+                         Attr{Name::name, "singletons"},
                      }},
                 Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "num"},
                      }},
             }},
-      Field{"GetCmpt", &My::MyECS::CmptsView::GetCmpt,
+      Field{"GetSingleton", &My::MyECS::SingletonsView::GetSingleton,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0)},
             }},
-      Field{"Components", &My::MyECS::CmptsView::Components},
-      Field{"NumberOfComponents", &My::MyECS::CmptsView::NumberOfComponents},
+      Field{"Singletons", &My::MyECS::SingletonsView::Singletons},
+      Field{"NumberOfSingletons",
+            &My::MyECS::SingletonsView::NumberOfSingletons},
   };
 };
