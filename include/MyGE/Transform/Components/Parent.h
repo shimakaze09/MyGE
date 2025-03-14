@@ -8,10 +8,10 @@
 
 #include <vector>
 
-namespace My::DustEngine {
+namespace My::MyGE {
 struct Parent {
-  UECS::Entity value{UECS::Entity::Invalid()};
+  MyECS::Entity value{MyECS::Entity::Invalid()};
 };
-}  // namespace Ubpa::DustEngine
+}  // namespace My::MyGE
 
 #include "details/Parent_AutoRefl.inl"

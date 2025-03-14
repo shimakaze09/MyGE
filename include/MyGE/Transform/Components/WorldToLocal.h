@@ -6,10 +6,10 @@
 
 #include <MyGM/transform.h>
 
-namespace My::DustEngine {
+namespace My::MyGE {
 struct WorldToLocal {
   transformf value{transformf::eye()};
 };
-}  // namespace My::DustEngine
+}  // namespace My::MyGE
 
 #include "details/WorldToLocal_AutoRefl.inl"
