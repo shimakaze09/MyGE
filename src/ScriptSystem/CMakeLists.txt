@@ -1,7 +1,7 @@
 ADD_TARGET(
         MODE STATIC
         SOURCE
-        "${PROJECT_SOURCE_DIR}/include/MyGE/LuaECS"
+        "${PROJECT_SOURCE_DIR}/include/MyGE/ScriptSystem"
         INC
         "${PROJECT_SOURCE_DIR}/include"
         LIB

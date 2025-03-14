@@ -28,8 +28,8 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
                 [](const My::MyECS::World& w) { return &w.entityMngr; })},
       Field{"Update", &My::MyECS::World::Update},
       Field{"DumpUpdateJobGraph", &My::MyECS::World::DumpUpdateJobGraph},
-      Field{"GenUpdateFrameGraph", &My::MyECS::World::GenUpdateFrameGraph} /*,
-       Field{"Accept", &My::MyECS::World::Accept,
+      Field{"GenUpdateFrameGraph", &My::MyECS::World::GenUpdateFrameGraph} ,
+      /* Field{"Accept", &My::MyECS::World::Accept,
            AttrList {
                Attr{MY_MYSRefl_NAME_ARG(0),
                    AttrList{

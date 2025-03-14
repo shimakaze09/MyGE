@@ -2,11 +2,11 @@
 // Created by Admin on 14/03/2025.
 //
 
-#include <MyGE/LuaECS/LuaECS.h>
+#include "InitMyECS.h"
 
-#include "ECSRefl/ECSRefl.h"
+#include "detail/MyECS_Refl/MyECS_Refl.h"
 
-void My::MyGE::LuaECS::Init(lua_State* L) {
+void My::MyGE::detail::InitMyECS(lua_State* L) {
   MyLuaPP::Register<MyECS::AccessMode>(L);
   MyLuaPP::Register<MyECS::ChunkView>(L);
   MyLuaPP::Register<MyECS::CmptPtr>(L);

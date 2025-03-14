@@ -2,5 +2,5 @@ ADD_TARGET(
         TEST
         MODE EXE
         LIB
-        My::MyGE_LuaECS
+        My::MyGE_ScriptSystem
 )
