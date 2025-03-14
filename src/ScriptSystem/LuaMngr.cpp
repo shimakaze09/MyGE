@@ -11,6 +11,7 @@
 #include "LuaArray.h"
 #include "LuaBuffer.h"
 #include "LuaMemory.h"
+#include "LuaSystem.h"
 
 using namespace My::MyGE;
 
@@ -85,6 +86,7 @@ lua_State* LuaMngr::Impl::Construct() {
   MyLuaPP::Register<LuaArray_CmptType>(L);
   MyLuaPP::Register<LuaBuffer>(L);
   MyLuaPP::Register<LuaMemory>(L);
+  MyLuaPP::Register<LuaSystem>(L);
   return L;
 }
 

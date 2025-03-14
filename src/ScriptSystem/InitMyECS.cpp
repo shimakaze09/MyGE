@@ -18,6 +18,8 @@ void My::MyGE::detail::InitMyECS(lua_State* L) {
   MyLuaPP::Register<MyECS::EntityQuery>(L);
   MyLuaPP::Register<MyECS::Entity>(L);
   MyLuaPP::Register<MyECS::RTDCmptTraits>(L);
+  MyLuaPP::Register<MyECS::Schedule>(L);
+  MyLuaPP::Register<MyECS::System>(L);
   MyLuaPP::Register<MyECS::SystemMngr>(L);
   MyLuaPP::Register<MyECS::World>(L);
 }

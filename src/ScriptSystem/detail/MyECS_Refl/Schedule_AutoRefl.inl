@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <MyLuaPP/MyLuaPP.h>
 #include <MySRefl/MySRefl.h>
 
 template <>
@@ -10,6 +11,15 @@ struct My::MySRefl::TypeInfo<My::MyECS::Schedule>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
+      Field{"RegisterChunkFunc",
+            static_cast<void (*)(My::MyECS::Schedule*, sol::function,
+                                 std::string, My::MyECS::EntityFilter)>(
+                [](My::MyECS::Schedule* s, sol::function func, std::string n,
+                   My::MyECS::EntityFilter filter) {
+                  s->Register(
+                      func.as<std::function<void(My::MyECS::ChunkView)>>(),
+                      std::move(n), std::move(filter));
+                })},
       Field{"LockFilter", &My::MyECS::Schedule::LockFilter,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
