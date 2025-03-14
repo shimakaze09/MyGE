@@ -39,14 +39,13 @@ void LocalToParentSystem::OnUpdate(MyECS::Schedule& schedule) {
       TypeList<Parent>{}  // none
   };
 
-  schedule
-      .InsertNone(TRSToLocalToWorldSystem::SystemFuncName,
-                  MyECS::CmptType::Of<Parent>)
-      .Register(
-          [this](const LocalToWorld* l2w, const Children* children) {
-            for (const auto& child : children->value)
-              ChildLocalToWorld(l2w->value, child);
-          },
-          SystemFuncName, rootFilter)
-      .Order(TRSToLocalToParentSystem::SystemFuncName, SystemFuncName);
+  schedule.InsertNone(TRSToLocalToWorldSystem::SystemFuncName,
+                      MyECS::CmptType::Of<Parent>);
+  schedule.Register(
+      [this](const LocalToWorld* l2w, const Children* children) {
+        for (const auto& child : children->value)
+          ChildLocalToWorld(l2w->value, child);
+      },
+      SystemFuncName, rootFilter);
+  schedule.Order(TRSToLocalToParentSystem::SystemFuncName, SystemFuncName);
 }
