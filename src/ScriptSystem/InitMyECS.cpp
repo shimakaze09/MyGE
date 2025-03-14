@@ -4,7 +4,7 @@
 
 #include "InitMyECS.h"
 
-#include "detail/MyECS_Refl/MyECS_Refl.h"
+#include "detail/MyECS_AutoRefl/MyECS_AutoRefl.h"
 
 void My::MyGE::detail::InitMyECS(lua_State* L) {
   MyLuaPP::Register<MyECS::AccessMode>(L);

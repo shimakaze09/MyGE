@@ -81,13 +81,6 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityMngr>
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0)},
             }},
-      Field{"AddCommand", &My::MyECS::EntityMngr::AddCommand,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "command"},
-                     }},
-            }},
       Field{"Accept", &My::MyECS::EntityMngr::Accept,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),

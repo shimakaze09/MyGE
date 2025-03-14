@@ -25,6 +25,24 @@ struct My::MySRefl::TypeInfo<My::MyGE::LuaBuffer>
                          Attr{Name::name, "size"},
                      }},
             }},
+      Field{"GetEntity", &My::MyGE::LuaBuffer::GetEntity,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+            }},
+      Field{"SetEntity", &My::MyGE::LuaBuffer::SetEntity,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "e"},
+                     }},
+            }},
       Field{"GetPointer", &My::MyGE::LuaBuffer::GetPointer,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),

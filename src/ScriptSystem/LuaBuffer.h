@@ -4,10 +4,13 @@
 
 #pragma once
 
+#include <MyECS/Entity.h>
+
 #include <string_view>
 
 namespace My::MyGE {
-// Get/Set + Bool / (U)Int[8|16|32|64] / Float / Double / String / Pointer
+// Get/Set + Bool / (U)Int[8|16|32|64] / Float / Double / String / Pointer /
+// Entity
 struct LuaBuffer {
   void* ptr;
   uint64_t size;  // uint64_t

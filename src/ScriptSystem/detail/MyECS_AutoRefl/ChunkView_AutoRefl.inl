@@ -37,6 +37,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::ChunkView>
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0)},
             }},
+      Field{"GetEntityArray", &My::MyECS::ChunkView::GetEntityArray},
       Field{"EntityNum", &My::MyECS::ChunkView::EntityNum},
   };
 };

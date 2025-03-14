@@ -15,10 +15,19 @@ class LuaSystem : public MyECS::System {
   static void Register(MyECS::World* world, std::string name,
                        sol::function onUpdate);
 
-  static void RegisterChunkFunc(MyECS::Schedule*, sol::function onUpdate,
-                                std::string name, MyECS::EntityFilter);
+  // World, Entity, size_t index, CmptsView
+  static const MyECS::SystemFunc* RegisterSystemFunc_Entity(
+      MyECS::Schedule*, sol::function systemFunc, std::string name,
+      MyECS::EntityLocator, MyECS::EntityFilter);
 
-  static std::function<void(MyECS::ChunkView)> WrapChunkFunc(sol::function);
+  // World, ChunkView
+  static const MyECS::SystemFunc* RegisterSystemFunc_Chunk(
+      MyECS::Schedule*, sol::function systemFunc, std::string name,
+      MyECS::EntityFilter);
+
+  // World
+  static const MyECS::SystemFunc* RegisterSystemFunc_Job(
+      MyECS::Schedule*, sol::function systemFunc, std::string name);
 
  private:
   LuaSystem(MyECS::World* world, std::string name, sol::function onUpdate);
@@ -30,4 +39,4 @@ class LuaSystem : public MyECS::System {
 }  // namespace My::MyGE
 
 #include "detail/LuaSystem_AutoRefl.inl"
-#include "detail/MyECS_Refl/System_AutoRefl.inl"
+#include "detail/MyECS_AutoRefl/System_AutoRefl.inl"

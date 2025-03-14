@@ -5,75 +5,75 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGE::LuaMemory>
-    : My::MySRefl::TypeInfoBase<My::MyGE::LuaMemory> {
+struct My::MySRefl::TypeInfo<My::MyGE::LuaSystem>
+    : My::MySRefl::TypeInfoBase<My::MyGE::LuaSystem, Base<MyECS::System>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{"Malloc", &My::MyGE::LuaMemory::Malloc,
+      Field{"Register", &My::MyGE::LuaSystem::Register,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
-                         Attr{Name::name, "size"},
-                     }},
-            }},
-      Field{"Free", &My::MyGE::LuaMemory::Free,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "block"},
-                     }},
-            }},
-      Field{"Offset", &My::MyGE::LuaMemory::Offset,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "ptr"},
+                         Attr{Name::name, "world"},
                      }},
                 Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
-                         Attr{Name::name, "n"},
-                     }},
-            }},
-      Field{"Copy", &My::MyGE::LuaMemory::Copy,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "dst"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "src"},
+                         Attr{Name::name, "name"},
                      }},
                 Attr{MY_MYSREFL_NAME_ARG(2),
                      AttrList{
-                         Attr{Name::name, "size"},
+                         Attr{Name::name, "onUpdate"},
                      }},
             }},
-      Field{"Set", &My::MyGE::LuaMemory::Set,
+      Field{"RegisterSystemFunc_Entity",
+            &My::MyGE::LuaSystem::RegisterSystemFunc_Entity,
             AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "dst"},
-                     }},
+                Attr{MY_MYSREFL_NAME_ARG(0)},
                 Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
-                         Attr{Name::name, "value"},
+                         Attr{Name::name, "systemFunc"},
                      }},
                 Attr{MY_MYSREFL_NAME_ARG(2),
                      AttrList{
-                         Attr{Name::name, "size"},
+                         Attr{Name::name, "name"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(3),
+                     AttrList{
+                         Attr{Name::name, "EntityLocator"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(4),
+                     AttrList{
+                         Attr{Name::name, "EntityFilter"},
                      }},
             }},
-      Field{"StrCpy", &My::MyGE::LuaMemory::StrCpy,
+      Field{"RegisterSystemFunc_Chunk",
+            &My::MyGE::LuaSystem::RegisterSystemFunc_Chunk,
             AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "dst"},
-                     }},
+                Attr{MY_MYSREFL_NAME_ARG(0)},
                 Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
-                         Attr{Name::name, "src"},
+                         Attr{Name::name, "systemFunc"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(2),
+                     AttrList{
+                         Attr{Name::name, "name"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(3),
+                     AttrList{
+                         Attr{Name::name, "EntityFilter"},
+                     }},
+            }},
+      Field{"RegisterSystemFunc_Job",
+            &My::MyGE::LuaSystem::RegisterSystemFunc_Job,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0)},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "systemFunc"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(2),
+                     AttrList{
+                         Attr{Name::name, "name"},
                      }},
             }},
   };
