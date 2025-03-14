@@ -9,6 +9,7 @@
 
 #include "InitMyECS.h"
 #include "LuaArray.h"
+#include "LuaCmpt.h"
 
 using namespace My::MyGE;
 
@@ -45,6 +46,7 @@ lua_State* LuaMngr::Request() {
 
   auto L = pImpl->freeLuas.back();
   pImpl->freeLuas.pop_back();
+  pImpl->busyLuas.insert(L);
 
   return L;
 }
@@ -83,6 +85,7 @@ lua_State* LuaMngr::Impl::Construct() {
   luaL_openlibs(L);               /* opens the standard libraries */
   detail::InitMyECS(L);
   MyLuaPP::Register<LuaArray_CmptType>(L);
+  MyLuaPP::Register<LuaCmpt>(L);
   return L;
 }
 

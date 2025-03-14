@@ -7,4 +7,6 @@ ADD_TARGET(
         LIB
         My::MyLuaPP_core
         My::MyECS_core
+        C_OPTION
+        /bigobj
 )
