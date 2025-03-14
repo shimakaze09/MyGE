@@ -14,22 +14,22 @@ struct My::MySRefl::TypeInfo<My::MyECS::Entity>
       Field{"Version", &My::MyECS::Entity::Version},
       Field{"operator==", &My::MyECS::Entity::operator==,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "x"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "y"},
                      }},
             }},
       Field{"operator<", &My::MyECS::Entity::operator<,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "x"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "y"},
                      }},

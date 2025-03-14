@@ -14,12 +14,12 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptType>
           Name::constructor,
           WrapConstructor<My::MyECS::CmptType(size_t, My::MyECS::AccessMode)>(),
           AttrList{
-              Attr{MY_MYSRefl_NAME_ARG(0),
+              Attr{MY_MYSREFL_NAME_ARG(0),
                    AttrList{
                        Attr{Name::name, "id"},
                    }},
               Attr{
-                  MY_MYSRefl_NAME_ARG(1),
+                  MY_MYSREFL_NAME_ARG(1),
                   AttrList{
                       Attr{Name::name, "mode"},
                       Attr{"Name::default_value", My::MyECS::AccessMode::WRITE},
@@ -29,11 +29,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptType>
             WrapConstructor<My::MyECS::CmptType(std::string_view,
                                                 My::MyECS::AccessMode)>(),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "type_name"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "mode"},
                          Attr{"Name::default_value",
@@ -45,21 +45,21 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptType>
       Field{"Invalid", &My::MyECS::CmptType::Invalid},
       Field{"operator<", &My::MyECS::CmptType::operator<,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "rhs"},
                      }},
             }},
       Field{"operator==", &My::MyECS::CmptType::operator==,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "rhs"},
                      }},
             }},
       Field{"operator!=", &My::MyECS::CmptType::operator!=,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "rhs"},
                      }},

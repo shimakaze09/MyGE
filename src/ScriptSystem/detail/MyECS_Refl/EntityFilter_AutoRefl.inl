@@ -16,13 +16,13 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityFilter>
                 std::set<My::MyECS::CmptType>, std::set<My::MyECS::CmptType>,
                 std::set<My::MyECS::CmptType>)>(),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "allCmptTypes"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{Attr{Name::name, "anyCmptTypes"}}},
-                Attr{MY_MYSRefl_NAME_ARG(2),
+                Attr{MY_MYSREFL_NAME_ARG(2),
                      AttrList{Attr{Name::name, "noneCmptTypes"}}},
             }},
       Field{"HashCode", &My::MyECS::EntityFilter::HashCode},
@@ -34,11 +34,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityFilter>
                 const My::MyECS::CmptType*, size_t)>(
                 &My::MyECS::EntityFilter::InsertAll),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "types"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "num"},
                      }},
@@ -48,11 +48,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityFilter>
                 const My::MyECS::CmptType*, size_t)>(
                 &My::MyECS::EntityFilter::InsertAny),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "types"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "num"},
                      }},
@@ -62,11 +62,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityFilter>
                 const My::MyECS::CmptType*, size_t)>(
                 &My::MyECS::EntityFilter::InsertNone),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "types"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "num"},
                      }},
@@ -76,11 +76,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityFilter>
                 const My::MyECS::CmptType*, size_t)>(
                 &My::MyECS::EntityFilter::EraseAll),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "types"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "num"},
                      }},
@@ -90,11 +90,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityFilter>
                 const My::MyECS::CmptType*, size_t)>(
                 &My::MyECS::EntityFilter::EraseAny),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "types"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "num"},
                      }},
@@ -104,18 +104,18 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityFilter>
                 const My::MyECS::CmptType*, size_t)>(
                 &My::MyECS::EntityFilter::EraseNone),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "types"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "num"},
                      }},
             }},
       Field{"operator==", &My::MyECS::EntityFilter::operator==,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "filter"},
                      }},

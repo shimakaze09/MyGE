@@ -14,11 +14,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityLocator>
             WrapConstructor<My::MyECS::EntityLocator(My::MyECS::CmptType*,
                                                      size_t)>(),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{Attr{Name::name, "lastFrameCmpts"}}},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{Attr{Name::name, "writeFrameCmpts"}}},
-                Attr{MY_MYSRefl_NAME_ARG(2),
+                Attr{MY_MYSREFL_NAME_ARG(2),
                      AttrList{Attr{Name::name, "latestCmpts"}}},
             }},
       Field{"HashCode", &My::MyECS::EntityLocator::HashCode},
@@ -29,14 +29,14 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityLocator>
       Field{"CmptTypes", &My::MyECS::EntityLocator::CmptTypes},
       Field{"GetCmptTagMode", &My::MyECS::EntityLocator::GetCmptTagMode,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "type"},
                      }},
             }},
       Field{"operator==", &My::MyECS::EntityLocator::operator==,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "locator"},
                      }},

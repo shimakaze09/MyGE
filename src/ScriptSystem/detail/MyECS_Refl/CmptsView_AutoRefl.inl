@@ -12,11 +12,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptsView>
   static constexpr FieldList fields = {
       /*Field{Name::constructor,
       WrapConstructor<My::MyECS::CmptsView(My::MyECS::EntityLocator*,
-      void**)>(), AttrList { Attr{MY_MYSRefl_NAME_ARG(0), AttrList{
+      void**)>(), AttrList { Attr{MY_MYSREFL_NAME_ARG(0), AttrList{
                       Attr{Name::name, "locator"},
                   }
               },
-              Attr{MY_MYSRefl_NAME_ARG(1),
+              Attr{MY_MYSREFL_NAME_ARG(1),
                   AttrList{
                       Attr{Name::name, "cmpts"},
                   }
@@ -25,7 +25,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptsView>
       },*/
       Field{"GetCmpt", &My::MyECS::CmptsView::GetCmpt,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0)},
+                Attr{MY_MYSREFL_NAME_ARG(0)},
             }},
       /*Field{"Components", &My::MyECS::CmptsView::Components},*/
   };

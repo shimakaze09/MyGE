@@ -12,14 +12,14 @@ struct My::MySRefl::TypeInfo<My::MyECS::Schedule>
   static constexpr FieldList fields = {
       Field{"LockFilter", &My::MyECS::Schedule::LockFilter,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "sys"},
                      }},
             }},
       Field{"EntityNumInQuery", &My::MyECS::Schedule::EntityNumInQuery,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "sys"},
                      }},
@@ -28,62 +28,62 @@ struct My::MySRefl::TypeInfo<My::MyECS::Schedule>
       Field{"GetSystemMngr", &My::MyECS::Schedule::GetSystemMngr},
       Field{"Order", &My::MyECS::Schedule::Order,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "x"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "y"},
                      }},
             }},
       Field{"InsertAll", &My::MyECS::Schedule::InsertAll,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "sys"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1)},
+                Attr{MY_MYSREFL_NAME_ARG(1)},
             }},
       Field{"InsertAny", &My::MyECS::Schedule::InsertAny,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "sys"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1)},
+                Attr{MY_MYSREFL_NAME_ARG(1)},
             }},
       Field{"InsertNone", &My::MyECS::Schedule::InsertNone,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "sys"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1)},
+                Attr{MY_MYSREFL_NAME_ARG(1)},
             }},
       Field{"EraseAll", &My::MyECS::Schedule::EraseAll,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "sys"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1)},
+                Attr{MY_MYSREFL_NAME_ARG(1)},
             }},
       Field{"EraseAny", &My::MyECS::Schedule::EraseAny,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "sys"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1)},
+                Attr{MY_MYSREFL_NAME_ARG(1)},
             }},
       Field{"EraseNone", &My::MyECS::Schedule::EraseNone,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "sys"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1)},
+                Attr{MY_MYSREFL_NAME_ARG(1)},
             }},
   };
 };

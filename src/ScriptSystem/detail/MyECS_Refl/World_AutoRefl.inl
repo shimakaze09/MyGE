@@ -31,7 +31,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
       Field{"GenUpdateFrameGraph", &My::MyECS::World::GenUpdateFrameGraph} ,
       /* Field{"Accept", &My::MyECS::World::Accept,
            AttrList {
-               Attr{MY_MYSRefl_NAME_ARG(0),
+               Attr{MY_MYSREFL_NAME_ARG(0),
                    AttrList{
                        Attr{Name::name, "listener"},
                    }

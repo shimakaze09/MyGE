@@ -13,11 +13,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptPtr>
       Field{Name::constructor,
             WrapConstructor<My::MyECS::CmptPtr(My::MyECS::CmptType, void *)>(),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "type"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "p"},
                      }},

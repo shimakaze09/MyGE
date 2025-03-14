@@ -16,11 +16,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityQuery>
             WrapConstructor<My::MyECS::EntityQuery(My::MyECS::EntityFilter,
                                                    My::MyECS::EntityLocator)>(),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "filter"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "locator"},
                      }},
@@ -28,7 +28,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityQuery>
       Field{"HashCode", &My::MyECS::EntityQuery::HashCode},
       Field{"operator==", &My::MyECS::EntityQuery::operator==,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "query"},
                      }},

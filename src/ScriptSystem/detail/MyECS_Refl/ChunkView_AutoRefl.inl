@@ -14,28 +14,28 @@ struct My::MySRefl::TypeInfo<My::MyECS::ChunkView>
             WrapConstructor<My::MyECS::ChunkView(My::MyECS::Archetype*, size_t,
                                                  My::MyECS::Chunk*)>(),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0),
+                Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "archetype"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(1),
+                Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "chunkIdx"},
                      }},
-                Attr{MY_MYSRefl_NAME_ARG(2),
+                Attr{MY_MYSREFL_NAME_ARG(2),
                      AttrList{
                          Attr{Name::name, "chunk"},
                      }},
             }},
       Field{"Contains", &My::MyECS::ChunkView::Contains,
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0)},
+                Attr{MY_MYSREFL_NAME_ARG(0)},
             }},
       Field{"GetCmptArray",
             static_cast<void* (My::MyECS::ChunkView::*)(My::MyECS::CmptType)
                             const>(&My::MyECS::ChunkView::GetCmptArray),
             AttrList{
-                Attr{MY_MYSRefl_NAME_ARG(0)},
+                Attr{MY_MYSREFL_NAME_ARG(0)},
             }},
       Field{"EntityNum", &My::MyECS::ChunkView::EntityNum},
   };

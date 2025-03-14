@@ -3,6 +3,7 @@
 //
 
 #include <MyGE/ScriptSystem/LuaMngr.h>
+#include <MyECS/World.h>
 
 #include <iostream>
 using namespace std;
@@ -122,6 +123,8 @@ print(str)
   }
 
   My::MyGE::LuaMngr::Instance().Recycle(L);
+
+  My::MyGE::RTDCmptTraits::Instance().Clear();
   My::MyGE::LuaMngr::Instance().Clear();
 
   return 0;
