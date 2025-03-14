@@ -9,7 +9,8 @@
 
 #include "InitMyECS.h"
 #include "LuaArray.h"
-#include "LuaCmpt.h"
+#include "LuaBuffer.h"
+#include "LuaMemory.h"
 
 using namespace My::MyGE;
 
@@ -22,9 +23,7 @@ struct LuaMngr::Impl {
   static void Destruct(lua_State* L);
 };
 
-void LuaMngr::Init() {
-  pImpl = new LuaMngr::Impl;
-}
+void LuaMngr::Init() { pImpl = new LuaMngr::Impl; }
 
 void LuaMngr::Reserve(size_t n) {
   size_t num = pImpl->busyLuas.size() + pImpl->freeLuas.size();
@@ -62,8 +61,7 @@ void LuaMngr::Recycle(lua_State* L) {
 
 void LuaMngr::Clear() {
   assert(pImpl->busyLuas.empty());
-  for (auto L : pImpl->freeLuas)
-    Impl::Destruct(L);
+  for (auto L : pImpl->freeLuas) Impl::Destruct(L);
   delete pImpl;
 }
 
@@ -85,10 +83,9 @@ lua_State* LuaMngr::Impl::Construct() {
   luaL_openlibs(L);               /* opens the standard libraries */
   detail::InitMyECS(L);
   MyLuaPP::Register<LuaArray_CmptType>(L);
-  MyLuaPP::Register<LuaCmpt>(L);
+  MyLuaPP::Register<LuaBuffer>(L);
+  MyLuaPP::Register<LuaMemory>(L);
   return L;
 }
 
-void LuaMngr::Impl::Destruct(lua_State* L) {
-  lua_close(L);
-}
+void LuaMngr::Impl::Destruct(lua_State* L) { lua_close(L); }
