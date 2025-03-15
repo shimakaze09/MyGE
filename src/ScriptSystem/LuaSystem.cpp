@@ -4,7 +4,8 @@
 
 #include "LuaSystem.h"
 
-#include <MyGE/ScriptSystem/LuaMngr.h>
+#include <MyGE/ScriptSystem/LuaContext.h>
+#include <MyGE/ScriptSystem/LuaCtxMngr.h>
 
 using namespace My::MyGE;
 
@@ -26,7 +27,8 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
           MyECS::ChunkView chunk) {
         if (chunk.EntityNum() == 0) return;
 
-        auto L = LuaMngr::Instance().Request();
+        auto luaCtx = LuaCtxMngr::Instance().GetContext(w);
+        auto L = luaCtx->Request();
         {
           sol::state_view lua(L);
           sol::function f = lua.load(bytes.as_string_view());
@@ -44,7 +46,7 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
             cmpts.push_back(chunk.GetCmptArray(t));
             types.push_back(t);
             cmptPtrs.emplace_back(t, cmpts.back());
-            sizes.push_back(MyECS::RTDCmptTraits::Instance().Sizeof(t));
+            sizes.push_back(w->entityMngr.cmptTraits.Sizeof(t));
           }
 
           size_t i = 0;
@@ -57,7 +59,7 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
             }
           } while (++i < chunk.EntityNum());
         }
-        LuaMngr::Instance().Recycle(L);
+        luaCtx->Recycle(L);
       },
       std::move(name), std::move(filter), std::move(singletonLocator));
   return sysfunc;
@@ -70,13 +72,14 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterChunkJob(
   auto sysfunc = s->RegisterChunkJob(
       [bytes](MyECS::World* w, MyECS::SingletonsView singletonsView,
               MyECS::ChunkView chunk) {
-        auto L = LuaMngr::Instance().Request();
+        auto luaCtx = LuaCtxMngr::Instance().GetContext(w);
+        auto L = luaCtx->Request();
         {
           sol::state_view lua(L);
           sol::function f = lua.load(bytes.as_string_view());
           f.call(w, singletonsView, chunk);
         }
-        LuaMngr::Instance().Recycle(L);
+        luaCtx->Recycle(L);
       },
       std::move(name), std::move(filter), std::move(singletonLocator));
   return sysfunc;
@@ -88,13 +91,14 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterJob(
   auto bytes = systemFunc.dump();
   auto sysfunc = s->RegisterJob(
       [bytes](MyECS::World* w, MyECS::SingletonsView singletonsView) {
-        auto L = LuaMngr::Instance().Request();
+        auto luaCtx = LuaCtxMngr::Instance().GetContext(w);
+        auto L = luaCtx->Request();
         {
           sol::state_view lua(L);
           sol::function f = lua.load(bytes.as_string_view());
           f.call(w, singletonsView);
         }
-        LuaMngr::Instance().Recycle(L);
+        luaCtx->Recycle(L);
       },
       std::move(name), std::move(singletonLocator));
   return sysfunc;
@@ -102,10 +106,13 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterJob(
 
 LuaSystem::LuaSystem(MyECS::World* world, std::string name,
                      sol::function onUpdate)
-    : MyECS::System{world, name}, onUpdate{onUpdate.dump()} {}
+    : MyECS::System{world, name},
+      luaCtx{LuaCtxMngr::Instance().GetContext(world)} {
+  sol::state_view lua{luaCtx->Main()};
+  auto bytecode = onUpdate.dump();
+  mainOnUpdate = lua.load(bytecode.as_string_view());
+}
 
 void LuaSystem::OnUpdate(MyECS::Schedule& schedule) {
-  sol::state_view lua(LuaMngr::Instance().Main());
-  sol::function f = lua.load(onUpdate.as_string_view());
-  f.call(&schedule);
+  mainOnUpdate.call(&schedule);
 }

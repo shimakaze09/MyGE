@@ -2,10 +2,12 @@
 // Created by Admin on 14/03/2025.
 //
 
-#include <MyECS/CmptType.h>
-#include <MyGE/ScriptSystem/LuaMngr.h>
+#include <MyGE/ScriptSystem/LuaContext.h>
+#include <MyLuaPP/MyLuaPP.h>
 
 #include <mutex>
+#include <set>
+#include <vector>
 
 #include "InitMyECS.h"
 #include "InitMyGraphviz.h"
@@ -16,24 +18,25 @@
 
 using namespace My::MyGE;
 
-struct LuaMngr::Impl {
+struct LuaContext::Impl {
+  Impl() : main{Construct()} {}
+  ~Impl() { Destruct(main); }
   std::mutex m;
+  lua_State* main;
   std::set<lua_State*> busyLuas;
   std::vector<lua_State*> freeLuas;
-  lua_State* mainLua;
 
   static lua_State* Construct();
   static void Destruct(lua_State* L);
 };
 
-void LuaMngr::Init() {
-  pImpl = new LuaMngr::Impl;
-  pImpl->mainLua = Impl::Construct();
-}
+LuaContext::LuaContext() : pImpl{new Impl} {}
 
-lua_State* LuaMngr::Main() const { return pImpl->mainLua; }
+LuaContext::~LuaContext() { delete pImpl; }
 
-void LuaMngr::Reserve(size_t n) {
+lua_State* LuaContext::Main() const { return pImpl->main; }
+
+void LuaContext::Reserve(size_t n) {
   size_t num = pImpl->busyLuas.size() + pImpl->freeLuas.size();
   if (num < n) {
     for (size_t i = 0; i < n - num; i++) {
@@ -43,7 +46,8 @@ void LuaMngr::Reserve(size_t n) {
   }
 }
 
-lua_State* LuaMngr::Request() {
+// lock
+lua_State* LuaContext::Request() {
   std::lock_guard<std::mutex> guard(pImpl->m);
 
   if (pImpl->freeLuas.empty()) {
@@ -58,7 +62,8 @@ lua_State* LuaMngr::Request() {
   return L;
 }
 
-void LuaMngr::Recycle(lua_State* L) {
+// lock
+void LuaContext::Recycle(lua_State* L) {
   std::lock_guard<std::mutex> guard(pImpl->m);
 
   assert(pImpl->busyLuas.find(L) != pImpl->busyLuas.end());
@@ -67,27 +72,23 @@ void LuaMngr::Recycle(lua_State* L) {
   pImpl->freeLuas.push_back(L);
 }
 
-void LuaMngr::Clear() {
+void LuaContext::Clear() {
   assert(pImpl->busyLuas.empty());
   for (auto L : pImpl->freeLuas) Impl::Destruct(L);
-  Impl::Destruct(pImpl->mainLua);
   delete pImpl;
 }
 
-// ================================
-
 class LuaArray_CmptType : public LuaArray<My::MyECS::CmptType> {};
-
 template <>
-struct My::MySRefl::TypeInfo<LuaArray_CmptType>
-    : My::MySRefl::TypeInfoBase<LuaArray_CmptType,
-                                Base<LuaArray<My::MyECS::CmptType>>> {
+struct My::USRefl::TypeInfo<LuaArray_CmptType>
+    : My::USRefl::TypeInfoBase<LuaArray_CmptType,
+                               Base<LuaArray<My::MyECS::CmptType>>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {};
 };
 
-lua_State* LuaMngr::Impl::Construct() {
+lua_State* LuaContext::Impl::Construct() {
   lua_State* L = luaL_newstate(); /* opens Lua */
   luaL_openlibs(L);               /* opens the standard libraries */
   detail::InitMyECS(L);
@@ -99,4 +100,4 @@ lua_State* LuaMngr::Impl::Construct() {
   return L;
 }
 
-void LuaMngr::Impl::Destruct(lua_State* L) { lua_close(L); }
+void LuaContext::Impl::Destruct(lua_State* L) { lua_close(L); }

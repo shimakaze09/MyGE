@@ -8,6 +8,8 @@
 #include <MyLuaPP/MyLuaPP.h>
 
 namespace My::MyGE {
+class LuaContext;
+
 class LuaSystem : public MyECS::System {
  public:
   using System::System;
@@ -38,7 +40,8 @@ class LuaSystem : public MyECS::System {
 
   virtual void OnUpdate(MyECS::Schedule& schedule) override;
 
-  sol::bytecode onUpdate;
+  LuaContext* luaCtx;
+  sol::function mainOnUpdate;
 };
 }  // namespace My::MyGE
 
