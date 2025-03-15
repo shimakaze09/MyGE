@@ -7,4 +7,6 @@ ADD_TARGET(
         LIB
         My::MyRapidJSON_core
         My::MyGE__deps_crossguid
+        My::MyGE__deps_tinyobjloader
+        My::MyGE_Core
 )
