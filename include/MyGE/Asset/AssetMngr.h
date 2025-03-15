@@ -14,7 +14,7 @@
 
 namespace My::MyGE {
 // ref: https://docs.unity3d.com/ScriptReference/AssetDatabase.html
-// asset : a file in the assets folder
+// support : .lua, .obj, .hlsl, .shader, image(.jpg, .png, .bmp, .tga, .hdr), .tex2d
 class AssetMngr {
  public:
   static AssetMngr& Instance() {
@@ -42,7 +42,6 @@ class AssetMngr {
   // import asset at path (relative)
   // * generate meta
   // * gen raw format in cache folder
-  // support : .lua
   void ImportAsset(const std::filesystem::path& path);
 
   // load first asset at path
