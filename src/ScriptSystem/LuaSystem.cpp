@@ -66,7 +66,6 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
 const My::MyECS::SystemFunc* LuaSystem::RegisterChunkJob(
     MyECS::Schedule* s, sol::function systemFunc, std::string name,
     MyECS::ArchetypeFilter filter, MyECS::SingletonLocator singletonLocator) {
-  assert(!filter.AllCmptTypes().empty() || !filter.AnyCmptTypes().empty());
   auto bytes = systemFunc.dump();
   auto sysfunc = s->RegisterChunkJob(
       [bytes](MyECS::World* w, MyECS::SingletonsView singletonsView,

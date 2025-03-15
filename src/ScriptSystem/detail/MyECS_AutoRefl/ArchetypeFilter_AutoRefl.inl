@@ -10,114 +10,15 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityFilter>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::EntityFilter()>()},
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::EntityFilter(
-                std::set<My::MyECS::CmptType>, std::set<My::MyECS::CmptType>,
-                std::set<My::MyECS::CmptType>)>(),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "allCmptTypes"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{Attr{Name::name, "anyCmptTypes"}}},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{Attr{Name::name, "noneCmptTypes"}}},
-            }},
+      Field{"all", &My::MyECS::ArchetypeFilter::all},
+      Field{"any", &My::MyECS::ArchetypeFilter::any},
+      Field{"none", &My::MyECS::ArchetypeFilter::none},
       Field{"HashCode", &My::MyECS::EntityFilter::HashCode},
-      Field{"AllCmptTypes", &My::MyECS::EntityFilter::AllCmptTypes},
-      Field{"AnyCmptTypes", &My::MyECS::EntityFilter::AnyCmptTypes},
-      Field{"NoneCmptTypes", &My::MyECS::EntityFilter::NoneCmptTypes},
-      Field{"InsertAll",
-            static_cast<void (My::MyECS::EntityFilter::*)(
-                const My::MyECS::CmptType*, size_t)>(
-                &My::MyECS::EntityFilter::InsertAll),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
-      Field{"InsertAny",
-            static_cast<void (My::MyECS::EntityFilter::*)(
-                const My::MyECS::CmptType*, size_t)>(
-                &My::MyECS::EntityFilter::InsertAny),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
-      Field{"InsertNone",
-            static_cast<void (My::MyECS::EntityFilter::*)(
-                const My::MyECS::CmptType*, size_t)>(
-                &My::MyECS::EntityFilter::InsertNone),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
-      Field{"EraseAll",
-            static_cast<void (My::MyECS::EntityFilter::*)(
-                const My::MyECS::CmptType*, size_t)>(
-                &My::MyECS::EntityFilter::EraseAll),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
-      Field{"EraseAny",
-            static_cast<void (My::MyECS::EntityFilter::*)(
-                const My::MyECS::CmptType*, size_t)>(
-                &My::MyECS::EntityFilter::EraseAny),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
-      Field{"EraseNone",
-            static_cast<void (My::MyECS::EntityFilter::*)(
-                const My::MyECS::CmptType*, size_t)>(
-                &My::MyECS::EntityFilter::EraseNone),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
       Field{"operator==", &My::MyECS::EntityFilter::operator==,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
-                         Attr{Name::name, "filter"},
+                         Attr{Name::name, "rhs"},
                      }},
             }},
   };

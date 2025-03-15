@@ -11,8 +11,8 @@ struct My::MySRefl::TypeInfo<My::MyECS::ChunkView>
 
   static constexpr FieldList fields = {
       Field{Name::constructor,
-            WrapConstructor<My::MyECS::ChunkView(My::MyECS::Archetype*, size_t,
-                                                 My::MyECS::Chunk*)>(),
+            WrapConstructor<My::MyECS::ChunkView(My::MyECS::Archetype*,
+                                                 size_t)>(),
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -21,10 +21,6 @@ struct My::MySRefl::TypeInfo<My::MyECS::ChunkView>
                 Attr{MY_MYSREFL_NAME_ARG(1),
                      AttrList{
                          Attr{Name::name, "chunkIdx"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{
-                         Attr{Name::name, "chunk"},
                      }},
             }},
       Field{"Contains", &My::MyECS::ChunkView::Contains,
