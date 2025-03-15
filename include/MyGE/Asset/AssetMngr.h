@@ -14,7 +14,7 @@
 
 namespace My::MyGE {
 // ref: https://docs.unity3d.com/ScriptReference/AssetDatabase.html
-// support : .lua, .obj, .hlsl, .shader, image(.jpg, .png, .bmp, .tga, .hdr), .tex2d
+// support : .lua, .obj, .hlsl, .shader, image(.jpg, .png, .bmp, .tga, .hdr), .tex2d, .mat
 class AssetMngr {
  public:
   static AssetMngr& Instance() {
@@ -28,7 +28,8 @@ class AssetMngr {
   // If the asset does not exist, AssetPathToGUID will return invalid xg::Guid
   xg::Guid AssetPathToGUID(const std::filesystem::path& path) const;
 
-  void CreateAsset(const void* ptr, const std::filesystem::path& path);
+  // unique
+  void CreateAsset(void* ptr, const std::filesystem::path& path);
 
   bool Contains(const void* ptr) const;
 
