@@ -12,28 +12,10 @@ struct My::MySRefl::TypeInfo<My::MyECS::Entity>
   static constexpr FieldList fields = {
       Field{"Idx", &My::MyECS::Entity::Idx},
       Field{"Version", &My::MyECS::Entity::Version},
-      Field{"operator==", &My::MyECS::Entity::operator==,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "x"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "y"},
-                     }},
-            }},
-      Field{"operator<", &My::MyECS::Entity::operator<,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "x"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "y"},
-                     }},
-            }},
-      Field{"Invalid", &My::MyECS::Entity::Invalid},
-  };
+      Field{"operator==", &My::MyECS::Entity::operator== },
+            Field{
+                "operator<",
+                &My::MyECS::Entity::operator<},
+                Field{"Invalid", &My::MyECS::Entity::Invalid},
+      };
 };

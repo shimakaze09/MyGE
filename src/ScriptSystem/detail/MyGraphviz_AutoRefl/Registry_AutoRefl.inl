@@ -5,138 +5,32 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGraphviz::Registry>
-    : My::MySRefl::TypeInfoBase<My::MyGraphviz::Registry> {
+struct My::MySRefl::TypeInfo<My::UGraphviz::Registry>
+    : My::MySRefl::TypeInfoBase<My::UGraphviz::Registry> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyGraphviz::Registry()>()},
-      Field{"GetNodes", &My::MyGraphviz::Registry::GetNodes},
-      Field{"GetEdges", &My::MyGraphviz::Registry::GetEdges},
-      Field{"GetNodeAttrs", &My::MyGraphviz::Registry::GetNodeAttrs},
-      Field{"GetEdgeAttrs", &My::MyGraphviz::Registry::GetEdgeAttrs},
-      Field{"IsRegisteredNode", &My::MyGraphviz::Registry::IsRegisteredNode,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "ID"},
-                     }},
-            }},
+      Field{Name::constructor, WrapConstructor<My::UGraphviz::Registry()>()},
+      Field{"GetNodes", &My::UGraphviz::Registry::GetNodes},
+      Field{"GetEdges", &My::UGraphviz::Registry::GetEdges},
+      Field{"GetNodeAttrs", &My::UGraphviz::Registry::GetNodeAttrs},
+      Field{"GetEdgeAttrs", &My::UGraphviz::Registry::GetEdgeAttrs},
+      Field{"IsRegisteredNode", &My::UGraphviz::Registry::IsRegisteredNode},
       Field{
           "IsRegisteredEdge",
-          static_cast<bool (My::MyGraphviz::Registry::*)(size_t, size_t) const>(
-              &My::MyGraphviz::Registry::IsRegisteredEdge),
-          AttrList{
-              Attr{MY_MYSREFL_NAME_ARG(0),
-                   AttrList{
-                       Attr{Name::name, "lhs"},
-                   }},
-              Attr{MY_MYSREFL_NAME_ARG(1),
-                   AttrList{
-                       Attr{Name::name, "rhs"},
-                   }},
-          }},
+          static_cast<bool (My::UGraphviz::Registry::*)(size_t, size_t) const>(
+              &My::UGraphviz::Registry::IsRegisteredEdge)},
       Field{"IsRegisteredEdge",
-            static_cast<bool (My::MyGraphviz::Registry::*)(
+            static_cast<bool (My::UGraphviz::Registry::*)(
                 std::string_view, std::string_view) const>(
-                &My::MyGraphviz::Registry::IsRegisteredEdge),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "lhsID"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "rhsID"},
-                     }},
-            }},
-      Field{"GetNodeIndex", &My::MyGraphviz::Registry::GetNodeIndex,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "ID"},
-                     }},
-            }},
-      Field{"GetEdgeIndex", &My::MyGraphviz::Registry::GetEdgeIndex,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "lhsID"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "rhsID"},
-                     }},
-            }},
-      Field{"RegisterNode", &My::MyGraphviz::Registry::RegisterNode,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "ID"},
-                     }},
-            }},
-      Field{"RegisterEdge", &My::MyGraphviz::Registry::RegisterEdge,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "lhs"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "rhs"},
-                     }},
-            }},
-      Field{"RegisterNodeAttr", &My::MyGraphviz::Registry::RegisterNodeAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "nodeIndex"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
-      Field{"RegisterEdgeAttr", &My::MyGraphviz::Registry::RegisterEdgeAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "edgeIndex"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
-      Field{"DeregisterNodeAttr", &My::MyGraphviz::Registry::DeregisterNodeAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "nodeIndex"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-            }},
-      Field{"DeregisterEdgeAttr", &My::MyGraphviz::Registry::DeregisterEdgeAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "edgeIndex"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-            }},
+                &My::UGraphviz::Registry::IsRegisteredEdge)},
+      Field{"GetNodeIndex", &My::UGraphviz::Registry::GetNodeIndex},
+      Field{"GetEdgeIndex", &My::UGraphviz::Registry::GetEdgeIndex},
+      Field{"RegisterNode", &My::UGraphviz::Registry::RegisterNode},
+      Field{"RegisterEdge", &My::UGraphviz::Registry::RegisterEdge},
+      Field{"RegisterNodeAttr", &My::UGraphviz::Registry::RegisterNodeAttr},
+      Field{"RegisterEdgeAttr", &My::UGraphviz::Registry::RegisterEdgeAttr},
+      Field{"DeregisterNodeAttr", &My::UGraphviz::Registry::DeregisterNodeAttr},
+      Field{"DeregisterEdgeAttr", &My::UGraphviz::Registry::DeregisterEdgeAttr},
   };
 };

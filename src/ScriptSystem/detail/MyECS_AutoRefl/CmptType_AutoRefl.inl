@@ -10,59 +10,17 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptType>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{
-          Name::constructor,
-          WrapConstructor<My::MyECS::CmptType(size_t, My::MyECS::AccessMode)>(),
-          AttrList{
-              Attr{MY_MYSREFL_NAME_ARG(0),
-                   AttrList{
-                       Attr{Name::name, "id"},
-                   }},
-              Attr{
-                  MY_MYSREFL_NAME_ARG(1),
-                  AttrList{
-                      Attr{Name::name, "mode"},
-                      Attr{"Name::default_value", My::MyECS::AccessMode::WRITE},
-                  }},
-          }},
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::CmptType(std::string_view,
-                                                My::MyECS::AccessMode)>(),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type_name"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "mode"},
-                         Attr{"Name::default_value",
-                              My::MyECS::AccessMode::WRITE},
-                     }},
-            }},
+      Field{Name::constructor, WrapConstructor<My::MyECS::CmptType(
+                                   size_t, My::MyECS::AccessMode)>()},
+      Field{Name::constructor, WrapConstructor<My::MyECS::CmptType(
+                                   std::string_view, My::MyECS::AccessMode)>()},
       Field{"HashCode", &My::MyECS::CmptType::HashCode},
       Field{"GetAccessMode", &My::MyECS::CmptType::GetAccessMode},
       Field{"Invalid", &My::MyECS::CmptType::Invalid},
-      Field{"operator<", &My::MyECS::CmptType::operator<,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "rhs"},
-                     }},
-            }},
-      Field{"operator==", &My::MyECS::CmptType::operator==,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "rhs"},
-                     }},
-            }},
-      Field{"operator!=", &My::MyECS::CmptType::operator!=,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "rhs"},
-                     }},
-            }},
-  };
+      Field{"operator<", &My::MyECS::CmptType::operator<},
+            Field{"operator==", &My::MyECS::CmptType::operator== },
+                  Field{
+                      "operator!=",
+                      &My::MyECS::CmptType::operator!= },
+            };
 };

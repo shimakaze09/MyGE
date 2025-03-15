@@ -5,21 +5,17 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyECS::EntityFilter>
-    : My::MySRefl::TypeInfoBase<My::MyECS::EntityFilter> {
+struct My::MySRefl::TypeInfo<My::MyECS::ArchetypeFilter>
+    : My::MySRefl::TypeInfoBase<My::MyECS::ArchetypeFilter> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
       Field{"all", &My::MyECS::ArchetypeFilter::all},
       Field{"any", &My::MyECS::ArchetypeFilter::any},
       Field{"none", &My::MyECS::ArchetypeFilter::none},
-      Field{"HashCode", &My::MyECS::EntityFilter::HashCode},
-      Field{"operator==", &My::MyECS::EntityFilter::operator==,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "rhs"},
-                     }},
-            }},
-  };
+      Field{"HashCode", &My::MyECS::ArchetypeFilter::HashCode},
+      Field{
+          "operator==",
+          &My::MyECS::ArchetypeFilter::operator== },
+      };
 };

@@ -13,184 +13,31 @@ struct My::MySRefl::TypeInfo<My::MyECS::RTDCmptTraits>
       // Field{"default_alignment",
       // &My::MyECS::RTDCmptTraits::default_alignment},
       Field{"Clear", &My::MyECS::RTDCmptTraits::Clear},
-      Field{"RegisterSize", &My::MyECS::RTDCmptTraits::RegisterSize,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "size"},
-                     }},
-            }},
-      Field{"RegisterAlignment", &My::MyECS::RTDCmptTraits::RegisterAlignment,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "alignment"},
-                     }},
-            }},
+      Field{"RegisterSize", &My::MyECS::RTDCmptTraits::RegisterSize},
+      Field{"RegisterAlignment", &My::MyECS::RTDCmptTraits::RegisterAlignment},
       Field{"RegisterDefaultConstructor",
-            &My::MyECS::RTDCmptTraits::RegisterDefaultConstructor,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "f"},
-                     }},
-            }},
+            &My::MyECS::RTDCmptTraits::RegisterDefaultConstructor},
       Field{"RegisterCopyConstructor",
-            &My::MyECS::RTDCmptTraits::RegisterCopyConstructor,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "f"},
-                     }},
-            }},
+            &My::MyECS::RTDCmptTraits::RegisterCopyConstructor},
       Field{"RegisterMoveConstructor",
-            &My::MyECS::RTDCmptTraits::RegisterMoveConstructor,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "f"},
-                     }},
-            }},
+            &My::MyECS::RTDCmptTraits::RegisterMoveConstructor},
       Field{"RegisterMoveAssignment",
-            &My::MyECS::RTDCmptTraits::RegisterMoveAssignment,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "f"},
-                     }},
-            }},
-      Field{"RegisterDestructor", &My::MyECS::RTDCmptTraits::RegisterDestructor,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "f"},
-                     }},
-            }},
-      Field{"RegisterName", &My::MyECS::RTDCmptTraits::RegisterName,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "name"},
-                     }},
-            }},
-      Field{"Sizeof", &My::MyECS::RTDCmptTraits::Sizeof,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-            }},
-      Field{"Alignof", &My::MyECS::RTDCmptTraits::Alignof,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-            }},
-      Field{"CopyConstruct", &My::MyECS::RTDCmptTraits::CopyConstruct,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "dst"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{
-                         Attr{Name::name, "src"},
-                     }},
-            }},
-      Field{"MoveConstruct", &My::MyECS::RTDCmptTraits::MoveConstruct,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "dst"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{
-                         Attr{Name::name, "src"},
-                     }},
-            }},
-      Field{"MoveAssign", &My::MyECS::RTDCmptTraits::MoveAssign,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "dst"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{
-                         Attr{Name::name, "src"},
-                     }},
-            }},
-      Field{"Destruct", &My::MyECS::RTDCmptTraits::Destruct,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "cmpt"},
-                     }},
-            }},
-      Field{"Nameof", &My::MyECS::RTDCmptTraits::Nameof,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-            }},
-      Field{"Deregister",
-            static_cast<My::MyECS::RTDCmptTraits& (
-                My::MyECS::RTDCmptTraits::*)(My::MyECS::CmptType)>(
-                &My::MyECS::RTDCmptTraits::Deregister),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-            }},
+            &My::MyECS::RTDCmptTraits::RegisterMoveAssignment},
+      Field{"RegisterDestructor",
+            &My::MyECS::RTDCmptTraits::RegisterDestructor},
+      Field{"RegisterName", &My::MyECS::RTDCmptTraits::RegisterName},
+      Field{"Sizeof", &My::MyECS::RTDCmptTraits::Sizeof},
+      Field{"Alignof", &My::MyECS::RTDCmptTraits::Alignof},
+      Field{"CopyConstruct", &My::MyECS::RTDCmptTraits::CopyConstruct},
+      Field{"MoveConstruct", &My::MyECS::RTDCmptTraits::MoveConstruct},
+      Field{"MoveAssign", &My::MyECS::RTDCmptTraits::MoveAssign},
+      Field{"Destruct", &My::MyECS::RTDCmptTraits::Destruct},
+      Field{"Nameof", &My::MyECS::RTDCmptTraits::Nameof},
+      Field{
+          "Deregister",
+          static_cast<My::MyECS::RTDCmptTraits& (
+              My::MyECS::RTDCmptTraits::*)(My::MyECS::CmptType)>(
+              &My::MyECS::RTDCmptTraits::Deregister),
+      },
   };
 };

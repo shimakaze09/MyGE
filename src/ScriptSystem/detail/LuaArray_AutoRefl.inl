@@ -10,13 +10,7 @@ struct My::MySRefl::TypeInfo<My::MyGE::LuaArray<T>>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{"PushBack", &My::MyGE::LuaArray<T>::PushBack,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "val"},
-                     }},
-            }},
+      Field{"PushBack", &My::MyGE::LuaArray<T>::PushBack},
       Field{"Data", &My::MyGE::LuaArray<T>::Data},
       Field{"Size", &My::MyGE::LuaArray<T>::Size},
   };

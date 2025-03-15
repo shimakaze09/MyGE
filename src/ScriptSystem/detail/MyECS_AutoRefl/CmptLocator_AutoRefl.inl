@@ -10,28 +10,13 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptLocator>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::CmptLocator(const My::MyECS::CmptType *,
-                                                   size_t)>(),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
+      Field{Name::constructor, WrapConstructor<My::MyECS::CmptLocator(
+                                   const My::MyECS::CmptType *, size_t)>()},
       Field{Name::constructor, WrapConstructor<My::MyECS::CmptLocator()>()},
       Field{"HashCode", &My::MyECS::CmptLocator::HashCode},
       Field{"CmptTypes", &My::MyECS::CmptLocator::CmptTypes},
-      Field{"operator==", &My::MyECS::CmptLocator::operator==,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "rhs"},
-                     }},
-            }},
-  };
+      Field{
+          "operator==",
+          &My::MyECS::CmptLocator::operator== },
+      };
 };

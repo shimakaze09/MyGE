@@ -10,29 +10,12 @@ struct My::MySRefl::TypeInfo<My::MyECS::ChunkView>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::ChunkView(My::MyECS::Archetype*,
-                                                 size_t)>(),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "archetype"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "chunkIdx"},
-                     }},
-            }},
-      Field{"Contains", &My::MyECS::ChunkView::Contains,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
+      Field{Name::constructor, WrapConstructor<My::MyECS::ChunkView(
+                                   My::MyECS::Archetype*, size_t)>()},
+      Field{"Contains", &My::MyECS::ChunkView::Contains},
       Field{"GetCmptArray",
             static_cast<void* (My::MyECS::ChunkView::*)(My::MyECS::CmptType)
-                            const>(&My::MyECS::ChunkView::GetCmptArray),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
+                            const>(&My::MyECS::ChunkView::GetCmptArray)},
       Field{"GetEntityArray", &My::MyECS::ChunkView::GetEntityArray},
       Field{"EntityNum", &My::MyECS::ChunkView::EntityNum},
   };

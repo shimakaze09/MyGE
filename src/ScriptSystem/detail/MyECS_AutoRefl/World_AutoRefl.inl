@@ -29,21 +29,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
       Field{"Update", &My::MyECS::World::Update},
       Field{"DumpUpdateJobGraph", &My::MyECS::World::DumpUpdateJobGraph},
       Field{"GenUpdateFrameGraph", &My::MyECS::World::GenUpdateFrameGraph},
-      Field{"AddCommand", &My::MyECS::World::AddCommand,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "command"},
-                     }},
-            }},
-      /*Field{"Accept", &My::MyECS::World::Accept,
-              AttrList {
-                      Attr{MY_MYSREFL_NAME_ARG(0),
-                              AttrList{
-                                      Attr{Name::name, "listener"},
-                              }
-                      },
-              }
-      },*/
+      Field{"AddCommand", &My::MyECS::World::AddCommand},
+      // Field{"Accept", &My::MyECS::World::Accept},
   };
 };

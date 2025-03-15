@@ -14,24 +14,10 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityQuery>
       Field{"locator", &My::MyECS::EntityQuery::locator},
       Field{Name::constructor,
             WrapConstructor<My::MyECS::EntityQuery(My::MyECS::ArchetypeFilter,
-                                                   My::MyECS::CmptLocator)>(),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "filter"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "locator"},
-                     }},
-            }},
+                                                   My::MyECS::CmptLocator)>()},
       Field{"HashCode", &My::MyECS::EntityQuery::HashCode},
-      Field{"operator==", &My::MyECS::EntityQuery::operator==,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "query"},
-                     }},
-            }},
-  };
+      Field{
+          "operator==",
+          &My::MyECS::EntityQuery::operator== },
+      };
 };

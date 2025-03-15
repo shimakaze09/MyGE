@@ -1,7 +1,3 @@
-//
-// Created by Admin on 14/03/2025.
-//
-
 #include <MyGE/ScriptSystem/LuaContext.h>
 #include <MyLuaPP/MyLuaPP.h>
 
@@ -10,7 +6,7 @@
 #include <vector>
 
 #include "InitMyECS.h"
-#include "InitMyGraphviz.h"
+#include "InitUGraphviz.h"
 #include "LuaArray.h"
 #include "LuaBuffer.h"
 #include "LuaMemory.h"
@@ -80,9 +76,9 @@ void LuaContext::Clear() {
 
 class LuaArray_CmptType : public LuaArray<My::MyECS::CmptType> {};
 template <>
-struct My::USRefl::TypeInfo<LuaArray_CmptType>
-    : My::USRefl::TypeInfoBase<LuaArray_CmptType,
-                               Base<LuaArray<My::MyECS::CmptType>>> {
+struct My::MySRefl::TypeInfo<LuaArray_CmptType>
+    : My::MySRefl::TypeInfoBase<LuaArray_CmptType,
+                                Base<LuaArray<My::MyECS::CmptType>>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {};
@@ -92,7 +88,7 @@ lua_State* LuaContext::Impl::Construct() {
   lua_State* L = luaL_newstate(); /* opens Lua */
   luaL_openlibs(L);               /* opens the standard libraries */
   detail::InitMyECS(L);
-  detail::InitMyGraphviz(L);
+  detail::InitUGraphviz(L);
   MyLuaPP::Register<LuaArray_CmptType>(L);
   MyLuaPP::Register<LuaBuffer>(L);
   MyLuaPP::Register<LuaMemory>(L);

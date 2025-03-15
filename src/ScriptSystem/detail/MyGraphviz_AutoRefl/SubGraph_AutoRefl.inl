@@ -5,141 +5,34 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGraphviz::Subgraph>
-    : My::MySRefl::TypeInfoBase<My::MyGraphviz::Subgraph> {
+struct My::MySRefl::TypeInfo<My::UGraphviz::Subgraph>
+    : My::MySRefl::TypeInfoBase<My::UGraphviz::Subgraph> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            WrapConstructor<My::MyGraphviz::Subgraph(My::MyGraphviz::Registry*,
-                                                     std::string)>(),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "registry"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "id"},
-                     }},
-            }},
-      Field{Name::destructor, WrapDestructor<My::MyGraphviz::Subgraph>()},
-      Field{"GetID", &My::MyGraphviz::Subgraph::GetID},
-      Field{"GetSubgraph", &My::MyGraphviz::Subgraph::GetSubgraph,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "subgraphID"},
-                     }},
-            }},
-      Field{"GetRegistry", &My::MyGraphviz::Subgraph::GetRegistry},
-      Field{"GenSubgraph", &My::MyGraphviz::Subgraph::GenSubgraph,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "ID"},
-                     }},
-            }},
-      Field{"RegisterGraphAttr", &My::MyGraphviz::Subgraph::RegisterGraphAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
+      Field{Name::constructor, WrapConstructor<My::UGraphviz::Subgraph(
+                                   My::UGraphviz::Registry*, std::string)>()},
+      Field{Name::destructor, WrapDestructor<My::UGraphviz::Subgraph>()},
+      Field{"GetID", &My::UGraphviz::Subgraph::GetID},
+      Field{"GetSubgraph", &My::UGraphviz::Subgraph::GetSubgraph},
+      Field{"GetRegistry", &My::UGraphviz::Subgraph::GetRegistry},
+      Field{"GenSubgraph", &My::UGraphviz::Subgraph::GenSubgraph},
+      Field{"RegisterGraphAttr", &My::UGraphviz::Subgraph::RegisterGraphAttr},
       Field{"RegisterGraphNodeAttr",
-            &My::MyGraphviz::Subgraph::RegisterGraphNodeAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
+            &My::UGraphviz::Subgraph::RegisterGraphNodeAttr},
       Field{"RegisterGraphEdgeAttr",
-            &My::MyGraphviz::Subgraph::RegisterGraphEdgeAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
+            &My::UGraphviz::Subgraph::RegisterGraphEdgeAttr},
       Field{"DeregisterGraphAttr",
-            &My::MyGraphviz::Subgraph::DeregisterGraphAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-            }},
+            &My::UGraphviz::Subgraph::DeregisterGraphAttr},
       Field{"DeregisterGraphNodeAttr",
-            &My::MyGraphviz::Subgraph::DeregisterGraphNodeAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-            }},
+            &My::UGraphviz::Subgraph::DeregisterGraphNodeAttr},
       Field{"DeregisterGraphEdgeAttr",
-            &My::MyGraphviz::Subgraph::DeregisterGraphEdgeAttr,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "key"},
-                     }},
-            }},
-      Field{"HaveNode", &My::MyGraphviz::Subgraph::HaveNode,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "nodeIndex"},
-                     }},
-            }},
-      Field{"HaveEdge", &My::MyGraphviz::Subgraph::HaveEdge,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "edgeIndex"},
-                     }},
-            }},
-      Field{"AddNode", &My::MyGraphviz::Subgraph::AddNode,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "nodeIndex"},
-                     }},
-            }},
-      Field{"AddEdge", &My::MyGraphviz::Subgraph::AddEdge,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "edgeIndex"},
-                     }},
-            }},
-      Field{"EraseNode", &My::MyGraphviz::Subgraph::EraseNode,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "nodeIndex"},
-                     }},
-            }},
-      Field{"EraseEdge", &My::MyGraphviz::Subgraph::EraseEdge,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "edgeIndex"},
-                     }},
-            }},
+            &My::UGraphviz::Subgraph::DeregisterGraphEdgeAttr},
+      Field{"HaveNode", &My::UGraphviz::Subgraph::HaveNode},
+      Field{"HaveEdge", &My::UGraphviz::Subgraph::HaveEdge},
+      Field{"AddNode", &My::UGraphviz::Subgraph::AddNode},
+      Field{"AddEdge", &My::UGraphviz::Subgraph::AddEdge},
+      Field{"EraseNode", &My::UGraphviz::Subgraph::EraseNode},
+      Field{"EraseEdge", &My::UGraphviz::Subgraph::EraseEdge},
   };
 };

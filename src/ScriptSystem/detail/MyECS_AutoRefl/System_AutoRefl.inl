@@ -10,31 +10,10 @@ struct My::MySRefl::TypeInfo<My::MyECS::System>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      /*Field{Name::constructor,
-      WrapConstructor<My::MyECS::System(My::MyECS::World *, std::string)>(),
-          AttrList {
-              Attr{MY_MYSREFL_NAME_ARG(0),
-                  AttrList{
-                      Attr{Name::name, "world"},
-                  }
-              },
-              Attr{MY_MYSREFL_NAME_ARG(1),
-                  AttrList{
-                      Attr{Name::name, "name"},
-                  }
-              },
-          }
-      },*/
+      // Field{Name::constructor,
+      // WrapConstructor<My::MyECS::System(My::MyECS::World *, std::string)>()},
       Field{"GetWorld", &My::MyECS::System::GetWorld},
       Field{"GetName", &My::MyECS::System::GetName},
-      /*Field{"OnUpdate", &My::MyECS::System::OnUpdate,
-          AttrList {
-              Attr{MY_MYSREFL_NAME_ARG(0),
-                  AttrList{
-                      Attr{Name::name, "schedule"},
-                  }
-              },
-          }
-      },*/
+      // Field{"OnUpdate", &My::MyECS::System::OnUpdate},
   };
 };

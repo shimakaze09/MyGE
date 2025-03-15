@@ -11,102 +11,34 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityMngr>
 
   static constexpr FieldList fields = {
       Field{"cmptTraits", &My::MyECS::EntityMngr::cmptTraits},
-      Field{"Create",
-            static_cast<My::MyECS::Entity (My::MyECS::EntityMngr::*)(
-                const My::MyECS::CmptType*, size_t)>(
-                &My::MyECS::EntityMngr::Create),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
-      Field{"Instantiate", &My::MyECS::EntityMngr::Instantiate,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
-      Field{"Attach",
-            static_cast<void (My::MyECS::EntityMngr::*)(
-                My::MyECS::Entity, const My::MyECS::CmptType*, size_t)>(
-                &My::MyECS::EntityMngr::Attach),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
-      Field{"Detach", &My::MyECS::EntityMngr::Detach,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "types"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(2),
-                     AttrList{
-                         Attr{Name::name, "num"},
-                     }},
-            }},
-      Field{"Have", &My::MyECS::EntityMngr::Have,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-                Attr{MY_MYSREFL_NAME_ARG(1)},
-            }},
-      Field{"Get", &My::MyECS::EntityMngr::Get,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-                Attr{MY_MYSREFL_NAME_ARG(1)},
-            }},
-      Field{"Components", &My::MyECS::EntityMngr::Components,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
-      Field{"Exist", &My::MyECS::EntityMngr::Exist,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
-      Field{"Destroy", &My::MyECS::EntityMngr::Destroy,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
-      Field{"EntityNum", &My::MyECS::EntityMngr::EntityNum,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
-      Field{"LocateSingletons", &My::MyECS::EntityMngr::LocateSingletons,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
-      Field{"IsSingleton", &My::MyECS::EntityMngr::IsSingleton,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
-      Field{"GetSingletonEntity", &My::MyECS::EntityMngr::GetSingletonEntity,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0)},
-            }},
+      Field{
+          "Create",
+          static_cast<My::MyECS::Entity (My::MyECS::EntityMngr::*)(
+              const My::MyECS::CmptType*, size_t)>(
+              &My::MyECS::EntityMngr::Create),
+      },
+      Field{"Instantiate", &My::MyECS::EntityMngr::Instantiate},
+      Field{
+          "Attach",
+          static_cast<void (My::MyECS::EntityMngr::*)(
+              My::MyECS::Entity, const My::MyECS::CmptType*, size_t)>(
+              &My::MyECS::EntityMngr::Attach),
+      },
+      Field{"Detach", &My::MyECS::EntityMngr::Detach},
+      Field{"Have", &My::MyECS::EntityMngr::Have},
+      Field{"Get", &My::MyECS::EntityMngr::Get},
+      Field{"Components", &My::MyECS::EntityMngr::Components},
+      Field{"Exist", &My::MyECS::EntityMngr::Exist},
+      Field{"Destroy", &My::MyECS::EntityMngr::Destroy},
+      Field{"EntityNum", &My::MyECS::EntityMngr::EntityNum},
+      Field{"LocateSingletons", &My::MyECS::EntityMngr::LocateSingletons},
+      Field{"IsSingleton", &My::MyECS::EntityMngr::IsSingleton},
+      Field{"GetSingletonEntity", &My::MyECS::EntityMngr::GetSingletonEntity},
       Field{
           "GetSingleton",
           static_cast<My::MyECS::CmptPtr (My::MyECS::EntityMngr::*)(
               My::MyECS::CmptType) const>(&My::MyECS::EntityMngr::GetSingleton),
-          AttrList{
-              Attr{MY_MYSREFL_NAME_ARG(0)},
-          }},
-      Field{"Accept", &My::MyECS::EntityMngr::Accept,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "listener"},
-                     }},
-            }},
+      },
+      Field{"Accept", &My::MyECS::EntityMngr::Accept},
   };
 };

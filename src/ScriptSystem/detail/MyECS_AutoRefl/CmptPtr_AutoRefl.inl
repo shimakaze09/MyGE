@@ -11,17 +11,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptPtr>
 
   static constexpr FieldList fields = {
       Field{Name::constructor,
-            WrapConstructor<My::MyECS::CmptPtr(My::MyECS::CmptType, void *)>(),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "type"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "p"},
-                     }},
-            }},
+            WrapConstructor<My::MyECS::CmptPtr(My::MyECS::CmptType, void *)>()},
       Field{"Type", &My::MyECS::CmptPtr::Type},
       Field{"Ptr", &My::MyECS::CmptPtr::Ptr},
       Field{"Valid", &My::MyECS::CmptPtr::Valid},

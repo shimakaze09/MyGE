@@ -28,11 +28,11 @@ class PrintSystem : public System {
 };
 
 int main() {
-  RTDCmptTraits::Instance()
+  World w;
+
+  w.entityMngr.cmptTraits
       .Register<Children, LocalToParent, LocalToWorld, Parent, Rotation,
                 RotationEuler, Scale, Translation, WorldToLocal>();
-
-  World w;
 
   w.systemMngr.Register<PrintSystem, LocalToParentSystem, RotationEulerSystem,
                         TRSToLocalToParentSystem, TRSToLocalToWorldSystem,

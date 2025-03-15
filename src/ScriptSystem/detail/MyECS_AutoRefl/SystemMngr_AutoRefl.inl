@@ -11,48 +11,20 @@ struct My::MySRefl::TypeInfo<My::MyECS::SystemMngr>
 
   static constexpr FieldList fields = {
       Field{Name::constructor,
-            WrapConstructor<My::MyECS::SystemMngr(My::MyECS::World *)>(),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "world"},
-                     }},
-            }},
+            WrapConstructor<My::MyECS::SystemMngr(My::MyECS::World *)>()},
       /*Field{"Register",
-      static_cast<void(My::MyECS::SystemMngr::*)(std::unique_ptr<My::MyECS::System>)>(&My::MyECS::SystemMngr::Register),
-          AttrList {
-              Attr{MY_MYSREFL_NAME_ARG(0),
-                  AttrList{
-                      Attr{Name::name, "system"},
-                  }
-              },
-          }
-             },*/
+          static_cast<void(My::MyECS::SystemMngr::*)(std::unique_ptr<My::MyECS::System>)>(&My::MyECS::SystemMngr::Register),
+      },*/
       Field{
           "IsRegister",
           static_cast<bool (My::MyECS::SystemMngr::*)(std::string_view) const>(
               &My::MyECS::SystemMngr::IsRegister),
-          AttrList{
-              Attr{MY_MYSREFL_NAME_ARG(0),
-                   AttrList{
-                       Attr{Name::name, "name"},
-                   }},
-          }},
-      Field{"Deregister",
-            static_cast<void (My::MyECS::SystemMngr::*)(std::string_view)>(
-                &My::MyECS::SystemMngr::Deregister),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "name"},
-                     }},
-            }},
-      Field{"Accept", &My::MyECS::SystemMngr::Accept,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "listener"},
-                     }},
-            }},
+      },
+      Field{
+          "Deregister",
+          static_cast<void (My::MyECS::SystemMngr::*)(std::string_view)>(
+              &My::MyECS::SystemMngr::Deregister),
+      },
+      Field{"Accept", &My::MyECS::SystemMngr::Accept},
   };
 };

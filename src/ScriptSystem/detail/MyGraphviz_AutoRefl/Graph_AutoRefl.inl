@@ -5,38 +5,19 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGraphviz::Graph>
-    : My::MySRefl::TypeInfoBase<My::MyGraphviz::Graph,
-                                Base<My::MyGraphviz::Subgraph>> {
+struct My::MySRefl::TypeInfo<My::UGraphviz::Graph>
+    : My::MySRefl::TypeInfoBase<My::UGraphviz::Graph,
+                                Base<My::UGraphviz::Subgraph>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
       Field{Name::constructor,
-            WrapConstructor<My::MyGraphviz::Graph(std::string, bool)>(),
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "id"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "isDigraph"},
-                         Attr{"Name::default_value", false},
-                     }},
-            }},
-      Field{Name::destructor, WrapDestructor<My::MyGraphviz::Graph>()},
-      /*Field{Name::constructor,
-      WrapConstructor<My::MyGraphviz::Graph(My::MyGraphviz::Graph &&)>(),
-              AttrList {
-                      Attr{MY_MYSREFL_NAME_ARG(0)},
-              }
-      },*/
-      /*Field{"operator=", &My::MyGraphviz::Graph::operator=,
-              AttrList {
-                      Attr{MY_MYSREFL_NAME_ARG(0)},
-              }
-      },*/
-      Field{"Dump", &My::MyGraphviz::Graph::Dump},
-      Field{"IsDigraph", &My::MyGraphviz::Graph::IsDigraph},
+            WrapConstructor<My::UGraphviz::Graph(std::string, bool)>()},
+      Field{Name::destructor, WrapDestructor<My::UGraphviz::Graph>()},
+      // Field{Name::constructor,
+      // WrapConstructor<My::UGraphviz::Graph(My::UGraphviz::Graph &&)>()},
+      // Field{"operator=", &My::UGraphviz::Graph::operator=},
+      Field{"Dump", &My::UGraphviz::Graph::Dump},
+      Field{"IsDigraph", &My::UGraphviz::Graph::IsDigraph},
   };
 };

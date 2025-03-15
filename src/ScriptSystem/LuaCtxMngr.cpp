@@ -1,7 +1,3 @@
-//
-// Created by Admin on 15/03/2025.
-//
-
 #include <MyGE/ScriptSystem/LuaContext.h>
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
 
