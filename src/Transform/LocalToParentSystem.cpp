@@ -33,15 +33,12 @@ void LocalToParentSystem::ChildLocalToWorld(const transformf& parent_l2w,
 }
 
 void LocalToParentSystem::OnUpdate(MyECS::Schedule& schedule) {
-  MyECS::ArchetypeFilter rootFilter{
-      TypeList<>{},       // all
-      TypeList<>{},       // any
-      TypeList<Parent>{}  // none
-  };
+  MyECS::ArchetypeFilter rootFilter;
+  rootFilter.none = { CmptType::Of<Parent> };
 
   schedule.InsertNone(TRSToLocalToWorldSystem::SystemFuncName,
                       MyECS::CmptType::Of<Parent>);
-  schedule.Register(
+  schedule.RegisterEntityJob(
       [this](const LocalToWorld* l2w, const Children* children) {
         for (const auto& child : children->value)
           ChildLocalToWorld(l2w->value, child);

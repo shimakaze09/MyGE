@@ -11,14 +11,15 @@
 using namespace My::MyGE;
 
 void TRSToLocalToWorldSystem::OnUpdate(MyECS::Schedule& schedule) {
-  MyECS::ArchetypeFilter filter{
-      TypeList<LocalToWorld>{},
-      TypeList<MyECS::Latest<Translation>, MyECS::Latest<Rotation>,
-               MyECS::Latest<Scale>>{},
-      TypeList<>{},
+  MyECS::ArchetypeFilter filter;
+  filter.all = {MyECS::CmptType::Of<MyECS::Write<LocalToWorld>>};
+  filter.any = {
+      MyECS::CmptType::Of<MyECS::Latest<Translation>>,
+      MyECS::CmptType::Of<MyECS::Latest<Rotation>>,
+      MyECS::CmptType::Of<MyECS::Latest<Scale>>,
   };
 
-  schedule.Register(
+  schedule.RegisterChunkJob(
       [](MyECS::ChunkView chunk) {
         auto chunkL2W = chunk.GetCmptArray<LocalToWorld>();
         auto chunkT = chunk.GetCmptArray<Translation>();

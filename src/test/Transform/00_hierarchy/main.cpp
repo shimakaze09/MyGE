@@ -17,7 +17,7 @@ class PrintSystem : public System {
   mutex m;
 
   virtual void OnUpdate(Schedule& schedule) override {
-    schedule.Register(
+    schedule.RegisterEntityJob(
         [&](const LocalToWorld* l2w) {
           m.lock();
           l2w->value.print();
