@@ -5,16 +5,16 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
-    : My::MySRefl::TypeInfoBase<My::DustEngine::LuaBuffer> {
+struct My::MySRefl::TypeInfo<My::MyGE::LuaBuffer>
+    : My::MySRefl::TypeInfoBase<My::MyGE::LuaBuffer> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{"ptr", &My::DustEngine::LuaBuffer::ptr},
-      Field{"size", &My::DustEngine::LuaBuffer::size},
-      Field{Name::constructor, WrapConstructor<My::DustEngine::LuaBuffer()>()},
+      Field{"ptr", &My::MyGE::LuaBuffer::ptr},
+      Field{"size", &My::MyGE::LuaBuffer::size},
+      Field{Name::constructor, WrapConstructor<My::MyGE::LuaBuffer()>()},
       Field{Name::constructor,
-            WrapConstructor<My::DustEngine::LuaBuffer(void*, uint64_t)>(),
+            WrapConstructor<My::MyGE::LuaBuffer(void*, uint64_t)>(),
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -25,17 +25,16 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "size"},
                      }},
             }},
-      Field{
-          Name::constructor,
-          WrapConstructor<My::DustEngine::LuaBuffer(MyECS::Entity*, size_t)>()},
-      Field{"GetEntity", &My::DustEngine::LuaBuffer::GetEntity,
+      Field{Name::constructor,
+            WrapConstructor<My::MyGE::LuaBuffer(MyECS::Entity*, size_t)>()},
+      Field{"GetEntity", &My::MyGE::LuaBuffer::GetEntity,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "offset"},
                      }},
             }},
-      Field{"SetEntity", &My::DustEngine::LuaBuffer::SetEntity,
+      Field{"SetEntity", &My::MyGE::LuaBuffer::SetEntity,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -46,14 +45,14 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "e"},
                      }},
             }},
-      Field{"GetPointer", &My::DustEngine::LuaBuffer::GetPointer,
+      Field{"GetPointer", &My::MyGE::LuaBuffer::GetPointer,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "offset"},
                      }},
             }},
-      Field{"SetPointer", &My::DustEngine::LuaBuffer::SetPointer,
+      Field{"SetPointer", &My::MyGE::LuaBuffer::SetPointer,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -64,20 +63,18 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "p"},
                      }},
             }},
-      Field{
-          "GetBuffer",
-          static_cast<My::DustEngine::LuaBuffer (My::DustEngine::LuaBuffer::*)(
-              size_t) const>(&My::DustEngine::LuaBuffer::GetBuffer),
-          AttrList{
-              Attr{MY_MYSREFL_NAME_ARG(0),
-                   AttrList{
-                       Attr{Name::name, "offset"},
-                   }},
-          }},
+      Field{"GetBuffer",
+            static_cast<My::MyGE::LuaBuffer (My::MyGE::LuaBuffer::*)(size_t)
+                            const>(&My::MyGE::LuaBuffer::GetBuffer),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+            }},
       Field{"SetBuffer",
-            static_cast<void (My::DustEngine::LuaBuffer::*)(
-                size_t, My::DustEngine::LuaBuffer)>(
-                &My::DustEngine::LuaBuffer::SetBuffer),
+            static_cast<void (My::MyGE::LuaBuffer::*)(
+                size_t, My::MyGE::LuaBuffer)>(&My::MyGE::LuaBuffer::SetBuffer),
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -88,23 +85,22 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "buffer"},
                      }},
             }},
-      Field{
-          "GetBuffer",
-          static_cast<My::DustEngine::LuaBuffer (My::DustEngine::LuaBuffer::*)(
-              size_t, uint64_t) const>(&My::DustEngine::LuaBuffer::GetBuffer),
-          AttrList{
-              Attr{MY_MYSREFL_NAME_ARG(0),
-                   AttrList{
-                       Attr{Name::name, "offset"},
-                   }},
-              Attr{MY_MYSREFL_NAME_ARG(1),
-                   AttrList{
-                       Attr{Name::name, "size"},
-                   }},
-          }},
+      Field{"GetBuffer",
+            static_cast<My::MyGE::LuaBuffer (My::MyGE::LuaBuffer::*)(
+                size_t, uint64_t) const>(&My::MyGE::LuaBuffer::GetBuffer),
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "size"},
+                     }},
+            }},
       Field{"SetBuffer",
-            static_cast<void (My::DustEngine::LuaBuffer::*)(
-                size_t, void*, size_t)>(&My::DustEngine::LuaBuffer::SetBuffer),
+            static_cast<void (My::MyGE::LuaBuffer::*)(size_t, void*, size_t)>(
+                &My::MyGE::LuaBuffer::SetBuffer),
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -119,32 +115,14 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "size"},
                      }},
             }},
-      Field{"GetBool", &My::DustEngine::LuaBuffer::GetBool,
+      Field{"GetBool", &My::MyGE::LuaBuffer::GetBool,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "offset"},
                      }},
             }},
-      Field{"SetBool", &My::DustEngine::LuaBuffer::SetBool,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
-      Field{"GetInt8", &My::DustEngine::LuaBuffer::GetInt8,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-            }},
-      Field{"SetInt8", &My::DustEngine::LuaBuffer::SetInt8,
+      Field{"SetBool", &My::MyGE::LuaBuffer::SetBool,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -155,32 +133,14 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "value"},
                      }},
             }},
-      Field{"GetInt16", &My::DustEngine::LuaBuffer::GetInt16,
+      Field{"GetInt8", &My::MyGE::LuaBuffer::GetInt8,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "offset"},
                      }},
             }},
-      Field{"SetInt16", &My::DustEngine::LuaBuffer::SetInt16,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
-      Field{"GetInt32", &My::DustEngine::LuaBuffer::GetInt32,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-            }},
-      Field{"SetInt32", &My::DustEngine::LuaBuffer::SetInt32,
+      Field{"SetInt8", &My::MyGE::LuaBuffer::SetInt8,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -191,32 +151,14 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "value"},
                      }},
             }},
-      Field{"GetInt64", &My::DustEngine::LuaBuffer::GetInt64,
+      Field{"GetInt16", &My::MyGE::LuaBuffer::GetInt16,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "offset"},
                      }},
             }},
-      Field{"SetInt64", &My::DustEngine::LuaBuffer::SetInt64,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
-      Field{"GetUInt8", &My::DustEngine::LuaBuffer::GetUInt8,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-            }},
-      Field{"SetUInt8", &My::DustEngine::LuaBuffer::SetUInt8,
+      Field{"SetInt16", &My::MyGE::LuaBuffer::SetInt16,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -227,32 +169,14 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "value"},
                      }},
             }},
-      Field{"GetUInt16", &My::DustEngine::LuaBuffer::GetUInt16,
+      Field{"GetInt32", &My::MyGE::LuaBuffer::GetInt32,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "offset"},
                      }},
             }},
-      Field{"SetUInt16", &My::DustEngine::LuaBuffer::SetUInt16,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
-      Field{"GetUInt32", &My::DustEngine::LuaBuffer::GetUInt32,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-            }},
-      Field{"SetUInt32", &My::DustEngine::LuaBuffer::SetUInt32,
+      Field{"SetInt32", &My::MyGE::LuaBuffer::SetInt32,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -263,32 +187,14 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "value"},
                      }},
             }},
-      Field{"GetUInt64", &My::DustEngine::LuaBuffer::GetUInt64,
+      Field{"GetInt64", &My::MyGE::LuaBuffer::GetInt64,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "offset"},
                      }},
             }},
-      Field{"SetUInt64", &My::DustEngine::LuaBuffer::SetUInt64,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-                Attr{MY_MYSREFL_NAME_ARG(1),
-                     AttrList{
-                         Attr{Name::name, "value"},
-                     }},
-            }},
-      Field{"GetFloat", &My::DustEngine::LuaBuffer::GetFloat,
-            AttrList{
-                Attr{MY_MYSREFL_NAME_ARG(0),
-                     AttrList{
-                         Attr{Name::name, "offset"},
-                     }},
-            }},
-      Field{"SetFloat", &My::DustEngine::LuaBuffer::SetFloat,
+      Field{"SetInt64", &My::MyGE::LuaBuffer::SetInt64,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -299,14 +205,14 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "value"},
                      }},
             }},
-      Field{"GetDouble", &My::DustEngine::LuaBuffer::GetDouble,
+      Field{"GetUInt8", &My::MyGE::LuaBuffer::GetUInt8,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
                          Attr{Name::name, "offset"},
                      }},
             }},
-      Field{"SetDouble", &My::DustEngine::LuaBuffer::SetDouble,
+      Field{"SetUInt8", &My::MyGE::LuaBuffer::SetUInt8,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -317,7 +223,97 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "value"},
                      }},
             }},
-      Field{"GetCString", &My::DustEngine::LuaBuffer::GetCString,
+      Field{"GetUInt16", &My::MyGE::LuaBuffer::GetUInt16,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+            }},
+      Field{"SetUInt16", &My::MyGE::LuaBuffer::SetUInt16,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "value"},
+                     }},
+            }},
+      Field{"GetUInt32", &My::MyGE::LuaBuffer::GetUInt32,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+            }},
+      Field{"SetUInt32", &My::MyGE::LuaBuffer::SetUInt32,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "value"},
+                     }},
+            }},
+      Field{"GetUInt64", &My::MyGE::LuaBuffer::GetUInt64,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+            }},
+      Field{"SetUInt64", &My::MyGE::LuaBuffer::SetUInt64,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "value"},
+                     }},
+            }},
+      Field{"GetFloat", &My::MyGE::LuaBuffer::GetFloat,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+            }},
+      Field{"SetFloat", &My::MyGE::LuaBuffer::SetFloat,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "value"},
+                     }},
+            }},
+      Field{"GetDouble", &My::MyGE::LuaBuffer::GetDouble,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+            }},
+      Field{"SetDouble", &My::MyGE::LuaBuffer::SetDouble,
+            AttrList{
+                Attr{MY_MYSREFL_NAME_ARG(0),
+                     AttrList{
+                         Attr{Name::name, "offset"},
+                     }},
+                Attr{MY_MYSREFL_NAME_ARG(1),
+                     AttrList{
+                         Attr{Name::name, "value"},
+                     }},
+            }},
+      Field{"GetCString", &My::MyGE::LuaBuffer::GetCString,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{
@@ -328,7 +324,7 @@ struct My::MySRefl::TypeInfo<My::DustEngine::LuaBuffer>
                          Attr{Name::name, "size"},
                      }},
             }},
-      Field{"SetCString", &My::DustEngine::LuaBuffer::SetCString,
+      Field{"SetCString", &My::MyGE::LuaBuffer::SetCString,
             AttrList{
                 Attr{MY_MYSREFL_NAME_ARG(0),
                      AttrList{

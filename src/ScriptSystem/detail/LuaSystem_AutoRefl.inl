@@ -5,15 +5,14 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::DustEngine::LuaSystem>
-    : My::MySRefl::TypeInfoBase<My::DustEngine::LuaSystem,
-                                Base<MyECS::System>> {
+struct My::MySRefl::TypeInfo<My::MyGE::LuaSystem>
+    : My::MySRefl::TypeInfoBase<My::MyGE::LuaSystem, Base<MyECS::System>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{"RegisterSystem", &My::DustEngine::LuaSystem::RegisterSystem},
-      Field{"RegisterEntityJob", &My::DustEngine::LuaSystem::RegisterEntityJob},
-      Field{"RegisterChunkJob", &My::DustEngine::LuaSystem::RegisterChunkJob},
-      Field{"RegisterJob", &My::DustEngine::LuaSystem::RegisterJob},
+      Field{"RegisterSystem", &My::MyGE::LuaSystem::RegisterSystem},
+      Field{"RegisterEntityJob", &My::MyGE::LuaSystem::RegisterEntityJob},
+      Field{"RegisterChunkJob", &My::MyGE::LuaSystem::RegisterChunkJob},
+      Field{"RegisterJob", &My::MyGE::LuaSystem::RegisterJob},
   };
 };
