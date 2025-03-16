@@ -49,6 +49,7 @@ class AssetMngr {
   void* LoadAsset(const std::filesystem::path& path);
   // returns the first asset object of type at given path
   void* LoadAsset(const std::filesystem::path& path, const std::type_info&);
+  // returns the first asset object of type at given path
   template <typename T>
   T* LoadAsset(const std::filesystem::path& path);
 

@@ -689,3 +689,17 @@ FodyWeavers.xsd
 
 # Dependencies
 _deps/
+
+# Miscs
+*Config.h
+ 
+*.myscene
+
+*.bmp
+*.png
+*.jpg
+*.gif
+*.dds
+
+*.mp4
+*.pdf

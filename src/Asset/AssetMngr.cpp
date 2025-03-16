@@ -30,7 +30,9 @@ struct AssetMngr::Impl {
 
     template <typename T>
     static std::function<void(void*)> DefaultDeletor() noexcept {
-      return [](void* p) { delete (T*)p; };
+      return [](void* p) {
+        delete (T*)p;
+      };
     }
 
     template <typename T>
@@ -57,7 +59,9 @@ struct AssetMngr::Impl {
 
 AssetMngr::AssetMngr() : pImpl{new Impl} {}
 
-AssetMngr::~AssetMngr() { delete pImpl; }
+AssetMngr::~AssetMngr() {
+  delete pImpl;
+}
 
 void AssetMngr::Clear() {
   pImpl->asset2path.clear();
@@ -91,7 +95,8 @@ const std::filesystem::path& AssetMngr::GUIDToAssetPath(
 void AssetMngr::ImportAsset(const std::filesystem::path& path) {
   assert(!path.empty() && path.is_relative());
 
-  if (pImpl->path2guid.find(path) != pImpl->path2guid.end()) return;
+  if (pImpl->path2guid.find(path) != pImpl->path2guid.end())
+    return;
   assert(std::filesystem::exists(path));
   auto metapath = std::filesystem::path{path}.concat(".meta");
   bool existMeta = std::filesystem::exists(metapath);
@@ -302,7 +307,8 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
   ImportAsset(path);
   if (path.extension() == ".lua") {
     auto target = pImpl->path2assert.find(path);
-    if (target != pImpl->path2assert.end()) return target->second.ptr.get();
+    if (target != pImpl->path2assert.end())
+      return target->second.ptr.get();
 
     auto str = Impl::LoadText(path);
     auto lua = new LuaScript(std::move(str));
@@ -311,14 +317,16 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
     return lua;
   } else if (path.extension() == ".obj") {
     auto target = pImpl->path2assert.find(path);
-    if (target != pImpl->path2assert.end()) return target->second.ptr.get();
+    if (target != pImpl->path2assert.end())
+      return target->second.ptr.get();
     auto mesh = Impl::LoadObj(path);
     pImpl->path2assert.emplace_hint(target, path, Impl::Asset{mesh});
     pImpl->asset2path.emplace(mesh, path);
     return mesh;
   } else if (path.extension() == ".hlsl") {
     auto target = pImpl->path2assert.find(path);
-    if (target != pImpl->path2assert.end()) return target->second.ptr.get();
+    if (target != pImpl->path2assert.end())
+      return target->second.ptr.get();
 
     auto str = Impl::LoadText(path);
     auto hlsl = new HLSLFile(std::move(str));
@@ -327,7 +335,8 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
     return hlsl;
   } else if (path.extension() == ".shader") {
     auto target = pImpl->path2assert.find(path);
-    if (target != pImpl->path2assert.end()) return target->second.ptr.get();
+    if (target != pImpl->path2assert.end())
+      return target->second.ptr.get();
 
     auto shaderJSON = Impl::LoadJSON(path);
     auto guidstr = shaderJSON["hlslFile"].GetString();
@@ -348,14 +357,16 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
              path.extension() == ".bmp" || path.extension() == ".hdr" ||
              path.extension() == ".tga") {
     auto target = pImpl->path2assert.find(path);
-    if (target != pImpl->path2assert.end()) return target->second.ptr.get();
+    if (target != pImpl->path2assert.end())
+      return target->second.ptr.get();
     auto img = new Image(path.string());
     pImpl->path2assert.emplace_hint(target, path, Impl::Asset{img});
     pImpl->asset2path.emplace(img, path);
     return img;
   } else if (path.extension() == ".tex2d") {
     auto target = pImpl->path2assert.find(path);
-    if (target != pImpl->path2assert.end()) return target->second.ptr.get();
+    if (target != pImpl->path2assert.end())
+      return target->second.ptr.get();
 
     auto tex2dJSON = Impl::LoadJSON(path);
     auto guidstr = tex2dJSON["image"].GetString();
@@ -374,7 +385,8 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
     return tex2d;
   } else if (path.extension() == ".mat") {
     auto target = pImpl->path2assert.find(path);
-    if (target != pImpl->path2assert.end()) return target->second.ptr.get();
+    if (target != pImpl->path2assert.end())
+      return target->second.ptr.get();
 
     auto materialJSON = Impl::LoadJSON(path);
     auto guidstr = materialJSON["shader"].GetString();
@@ -403,29 +415,36 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path,
                            const std::type_info& typeinfo) {
   ImportAsset(path);
   if (path.extension() == ".lua") {
-    if (typeinfo != typeid(LuaScript)) return nullptr;
+    if (typeinfo != typeid(LuaScript))
+      return nullptr;
 
     return LoadAsset(path);
   } else if (path.extension() == ".obj") {
-    if (typeinfo != typeid(Mesh)) return nullptr;
+    if (typeinfo != typeid(Mesh))
+      return nullptr;
 
     return LoadAsset(path);
   } else if (path.extension() == ".hlsl") {
-    if (typeinfo != typeid(HLSLFile)) return nullptr;
+    if (typeinfo != typeid(HLSLFile))
+      return nullptr;
     return LoadAsset(path);
   } else if (path.extension() == ".shader") {
-    if (typeinfo != typeid(Shader)) return nullptr;
+    if (typeinfo != typeid(Shader))
+      return nullptr;
     return LoadAsset(path);
   } else if (path.extension() == ".png" || path.extension() == ".jpg" ||
              path.extension() == ".bmp" || path.extension() == ".hdr" ||
              path.extension() == ".tga") {
-    if (typeinfo != typeid(Image)) return nullptr;
+    if (typeinfo != typeid(Image))
+      return nullptr;
     return LoadAsset(path);
   } else if (path.extension() == ".tex2d") {
-    if (typeinfo != typeid(Texture2D)) return nullptr;
+    if (typeinfo != typeid(Texture2D))
+      return nullptr;
     return LoadAsset(path);
   } else if (path.extension() == ".mat") {
-    if (typeinfo != typeid(Material)) return nullptr;
+    if (typeinfo != typeid(Material))
+      return nullptr;
     return LoadAsset(path);
   } else {
     assert(false);
@@ -434,6 +453,9 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path,
 }
 
 void AssetMngr::CreateAsset(void* ptr, const std::filesystem::path& path) {
+  if (std::filesystem::exists(path))
+    return;
+
   if (path.extension() == ".shader") {
     auto shader = reinterpret_cast<Shader*>(ptr);
     auto guid = AssetPathToGUID(GetAssetPath(shader->hlslFile));
@@ -557,11 +579,14 @@ Mesh* AssetMngr::Impl::LoadObj(const std::filesystem::path& path) {
 
   bool success = reader.ParseFromFile(path.string());
 
-  if (!reader.Warning().empty()) std::cout << reader.Warning() << std::endl;
+  if (!reader.Warning().empty())
+    std::cout << reader.Warning() << std::endl;
 
-  if (!reader.Error().empty()) std::cerr << reader.Error() << std::endl;
+  if (!reader.Error().empty())
+    std::cerr << reader.Error() << std::endl;
 
-  if (!success) return nullptr;
+  if (!success)
+    return nullptr;
 
   const auto& attrib = reader.GetAttrib();
   const auto& shapes = reader.GetShapes();
@@ -607,7 +632,8 @@ Mesh* AssetMngr::Impl::LoadObj(const std::filesystem::path& path) {
     size_t index_offset = 0;
     for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
       auto fv = shapes[s].mesh.num_face_vertices[f];
-      if (fv != 3) return nullptr;  // only support triangle mesh
+      if (fv != 3)
+        return nullptr;  // only support triangle mesh
 
       valu3 face;
       // Loop over vertices in the face.
