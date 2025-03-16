@@ -25,7 +25,6 @@ const int gNumFrameResources = 3;
 
 constexpr size_t ID_PSO_opaque = 0;
 constexpr size_t ID_RootSignature_default = 0;
-constexpr size_t ID_Texture2D_chessboard = 0;
 
 constexpr size_t ID_ShaderByteCode_std_vs = 0;
 constexpr size_t ID_ShaderByteCode_opaque_ps = 1;
@@ -188,6 +187,9 @@ class DeferApp : public D3DApp {
   My::MyDX12::FG::Executor fgExecutor;
   My::MyFG::Compiler fgCompiler;
   My::MyFG::FrameGraph fg;
+
+  // resources
+  My::MyGE::Texture2D* chessboardTex2D;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
@@ -199,7 +201,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     DeferApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    if (!theApp.Initialize())
+      return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -214,11 +217,13 @@ DeferApp::DeferApp(HINSTANCE hInstance)
     : D3DApp(hInstance), fg{"frame graph"} {}
 
 DeferApp::~DeferApp() {
-  if (!uDevice.IsNull()) FlushCommandQueue();
+  if (!uDevice.IsNull())
+    FlushCommandQueue();
 }
 
 bool DeferApp::Initialize() {
-  if (!D3DApp::Initialize()) return false;
+  if (!D3DApp::Initialize())
+    return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(uDevice.raw.Get());
 
@@ -403,7 +408,9 @@ void DeferApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -550,14 +557,18 @@ void DeferApp::LoadTextures() {
   auto chessboardImg =
       My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
           "../assets/textures/chessboard.png");
-  auto chessboardTex2D = new My::MyGE::Texture2D;
+  chessboardTex2D = new My::MyGE::Texture2D;
   chessboardTex2D->image = chessboardImg;
-  My::MyGE::AssetMngr::Instance().CreateAsset(
-      chessboardTex2D, "../assets/textures/chessboard.tex2d");
+  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
+          chessboardTex2D, "../assets/textures/chessboard.tex2d")) {
+    delete chessboardTex2D;
+    chessboardTex2D =
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
+            "../assets/textures/chessboard.tex2d");
+  }
 
   My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), ID_Texture2D_chessboard,
-      chessboardTex2D);
+      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), chessboardTex2D);
 }
 
 void DeferApp::BuildRootSignature() {
@@ -679,8 +690,8 @@ void DeferApp::BuildMaterials() {
   woodCrate->Name = "woodCrate";
   woodCrate->MatCBIndex = 0;
   woodCrate->DiffuseSrvGpuHandle =
-      My::MyGE::RsrcMngrDX12::Instance().GetTextureSrvGpuHandle(
-          ID_Texture2D_chessboard);
+      My::MyGE::RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(
+          chessboardTex2D);
   woodCrate->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
   woodCrate->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
   woodCrate->Roughness = 0.2f;
@@ -703,7 +714,8 @@ void DeferApp::BuildRenderItems() {
   mAllRitems.push_back(std::move(boxRitem));
 
   // All the render items are opaque.
-  for (auto& e : mAllRitems) mOpaqueRitems.push_back(e.get());
+  for (auto& e : mAllRitems)
+    mOpaqueRitems.push_back(e.get());
 }
 
 void DeferApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList,

@@ -4,8 +4,10 @@
 
 #pragma once
 
+#include "Object.h"
+
 namespace My::MyGE {
-class Texture {
+class Texture : public Object {
  public:
   virtual ~Texture() = default;
 

@@ -11,6 +11,11 @@
 using namespace My::MyGE;
 
 int main() {
+  // Enable run-time memory check for debug builds.
+#if defined(DEBUG) | defined(_DEBUG)
+  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
   std::filesystem::path path = "../assets/shaders/Default.hlsl";
 
   if (!std::filesystem::is_directory("../assets/shaders"))
@@ -23,8 +28,10 @@ int main() {
   std::cout << AssetMngr::Instance().Contains(hlslFile) << std::endl;
   auto guid = AssetMngr::Instance().AssetPathToGUID(path);
   std::cout << guid.str() << std::endl;
-  std::cout << AssetMngr::Instance().GUIDToAssetPath(guid).string() << std::endl;
-  std::cout << AssetMngr::Instance().GetAssetPath(hlslFile).string() << std::endl;
+  std::cout << AssetMngr::Instance().GUIDToAssetPath(guid).string()
+            << std::endl;
+  std::cout << AssetMngr::Instance().GetAssetPath(hlslFile).string()
+            << std::endl;
 
   auto shader = new Shader;
   shader->hlslFile = hlslFile;
@@ -33,11 +40,14 @@ int main() {
   shader->targetName = "5_0";
   shader->shaderName = "Default";
 
-  AssetMngr::Instance().CreateAsset(shader, "../assets/shaders/Default.shader");
+  if (!AssetMngr::Instance().CreateAsset(shader,
+                                         "../assets/shaders/Default.shader"))
+    delete shader;
 
   AssetMngr::Instance().Clear();
   AssetMngr::Instance().ImportAsset(path);
-  auto reloadedShader = AssetMngr::Instance().LoadAsset<Shader>("../assets/shaders/Default.shader");
+  auto reloadedShader = AssetMngr::Instance().LoadAsset<Shader>(
+      "../assets/shaders/Default.shader");
   std::cout << reloadedShader->hlslFile->GetString() << std::endl;
   std::cout << reloadedShader->shaderName << std::endl;
   std::cout << reloadedShader->vertexName << std::endl;
