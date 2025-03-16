@@ -14,8 +14,6 @@
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
 
-#include <memory>
-
 #include "../common/GeometryGenerator.h"
 #include "../common/MathHelper.h"
 #include "../common/d3dApp.h"
@@ -26,8 +24,13 @@ using namespace DirectX::PackedVector;
 
 const int gNumFrameResources = 3;
 
-constexpr size_t ID_PSO_opaque = 0;
-constexpr size_t ID_RootSignature_default = 0;
+constexpr size_t ID_PSO_geometry = 0;
+constexpr size_t ID_PSO_defer_light = 1;
+constexpr size_t ID_PSO_screen = 2;
+
+constexpr size_t ID_RootSignature_geometry = 0;
+constexpr size_t ID_RootSignature_screen = 1;
+constexpr size_t ID_RootSignature_defer_light = 2;
 
 struct ObjectConstants {
   DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
@@ -145,22 +148,9 @@ class DeferApp : public D3DApp {
   My::MyDX12::FrameRsrcMngr* mCurrFrameRsrcMngr = nullptr;
   int mCurrFrameRsrcMngrIndex = 0;
 
-  // UINT mCbvSrvDescriptorSize = 0;
-
-  // ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-
-  // ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
-  My::MyDX12::DescriptorHeapAllocation mSrvDescriptorHeap;
-
-  // std::unordered_map<std::string,
-  // std::unique_ptr<My::MyDX12::MeshGeometry>> mGeometries;
   std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
-  std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
-  // std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
 
   std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
-
-  // ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
 
   // List of all the render items.
   std::vector<std::unique_ptr<RenderItem>> mAllRitems;
@@ -176,7 +166,7 @@ class DeferApp : public D3DApp {
 
   float mTheta = 1.3f * XM_PI;
   float mPhi = 0.4f * XM_PI;
-  float mRadius = 4.0f;
+  float mRadius = 5.0f;
 
   POINT mLastMousePos;
 
@@ -186,9 +176,15 @@ class DeferApp : public D3DApp {
   My::MyFG::Compiler fgCompiler;
   My::MyFG::FrameGraph fg;
 
-  // resources
-  My::MyGE::Texture2D* chessboardTex2D;
-  My::MyGE::Shader* shader;
+  My::MyGE::Texture2D* albedoTex2D;
+  My::MyGE::Texture2D* roughnessTex2D;
+  My::MyGE::Texture2D* metalnessTex2D;
+
+  My::MyGE::Shader* defaultShader;
+  My::MyGE::Shader* screenShader;
+  My::MyGE::Shader* geomrtryShader;
+  My::MyGE::Shader* deferShader;
+
   My::MyGE::Mesh* mesh;
 };
 
@@ -201,8 +197,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     DeferApp theApp(hInstance);
-    if (!theApp.Initialize())
-      return 0;
+    if (!theApp.Initialize()) return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -217,18 +212,18 @@ DeferApp::DeferApp(HINSTANCE hInstance)
     : D3DApp(hInstance), fg{"frame graph"} {}
 
 DeferApp::~DeferApp() {
-  if (!uDevice.IsNull())
-    FlushCommandQueue();
+  if (!uDevice.IsNull()) FlushCommandQueue();
 }
 
 bool DeferApp::Initialize() {
-  if (!D3DApp::Initialize())
-    return false;
+  if (!D3DApp::Initialize()) return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(uDevice.raw.Get());
 
   My::MyDX12::DescriptorHeapMngr::Instance().Init(uDevice.raw.Get(), 1024, 1024,
                                                   1024, 1024, 1024);
+
+  // fgRsrcMngr.Init(uGCmdList, uDevice);
 
   // Reset the command list to prep for initialization commands.
   ThrowIfFailed(uGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
@@ -310,13 +305,11 @@ void DeferApp::Draw(const GameTimer& gt) {
 
   // A command list can be reset after it has been added to the command queue
   // via ExecuteCommandList. Reusing the command list reuses memory.
-  ThrowIfFailed(uGCmdList->Reset(
-      cmdListAlloc.Get(),
-      My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_opaque)));
-
+  ThrowIfFailed(uGCmdList->Reset(cmdListAlloc.Get(), nullptr));
   uGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
                                    .GetCSUGpuDH()
                                    ->GetDescriptorHeap());
+
   uGCmdList->RSSetViewports(1, &mScreenViewport);
   uGCmdList->RSSetScissorRects(1, &mScissorRect);
 
@@ -329,56 +322,181 @@ void DeferApp::Draw(const GameTimer& gt) {
   fgExecutor.NewFrame();
   ;
 
+  auto gbuffer0 = fg.RegisterResourceNode("GBuffer0");
+  auto gbuffer1 = fg.RegisterResourceNode("GBuffer1");
+  auto gbuffer2 = fg.RegisterResourceNode("GBuffer2");
   auto backbuffer = fg.RegisterResourceNode("Back Buffer");
   auto depthstencil = fg.RegisterResourceNode("Depth Stencil");
-  auto pass = fg.RegisterPassNode("Pass", {}, {backbuffer, depthstencil});
-
-  D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-  dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-  dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-  dsvDesc.Format = mDepthStencilFormat;
-  dsvDesc.Texture2D.MipSlice = 0;
+  auto gbPass = fg.RegisterPassNode(
+      "GBuffer Pass", {}, {gbuffer0, gbuffer1, gbuffer2, depthstencil});
+  /*auto debugPass = fg.AddPassNode(
+          "Debug",
+          { gbuffer1 },
+          { backbuffer }
+  );*/
+  auto deferLightingPass = fg.RegisterPassNode(
+      "Defer Lighting", {gbuffer0, gbuffer1, gbuffer2}, {backbuffer});
 
   (*fgRsrcMngr)
+      .RegisterTemporalRsrc(gbuffer0,
+                            My::MyDX12::FG::RsrcType::RT2D(
+                                DXGI_FORMAT_R32G32B32A32_FLOAT, mClientWidth,
+                                mClientHeight, Colors::Black))
+      .RegisterTemporalRsrc(gbuffer1,
+                            My::MyDX12::FG::RsrcType::RT2D(
+                                DXGI_FORMAT_R32G32B32A32_FLOAT, mClientWidth,
+                                mClientHeight, Colors::Black))
+      .RegisterTemporalRsrc(gbuffer2,
+                            My::MyDX12::FG::RsrcType::RT2D(
+                                DXGI_FORMAT_R32G32B32A32_FLOAT, mClientWidth,
+                                mClientHeight, Colors::Black))
+
+      .RegisterRsrcTable(
+          {{gbuffer0,
+            My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT)},
+           {gbuffer1,
+            My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT)},
+           {gbuffer2,
+            My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT)}})
+
       .RegisterImportedRsrc(backbuffer,
                             {CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT})
       .RegisterImportedRsrc(depthstencil, {mDepthStencilBuffer.Get(),
                                            D3D12_RESOURCE_STATE_DEPTH_WRITE})
-      .RegisterPassRsrcs(pass, backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,
+
+      .RegisterPassRsrcs(gbPass, gbuffer0, D3D12_RESOURCE_STATE_RENDER_TARGET,
                          My::MyDX12::FG::RsrcImplDesc_RTV_Null{})
-      .RegisterPassRsrcs(pass, depthstencil, D3D12_RESOURCE_STATE_DEPTH_WRITE,
-                         dsvDesc);
+      .RegisterPassRsrcs(gbPass, gbuffer1, D3D12_RESOURCE_STATE_RENDER_TARGET,
+                         My::MyDX12::FG::RsrcImplDesc_RTV_Null{})
+      .RegisterPassRsrcs(gbPass, gbuffer2, D3D12_RESOURCE_STATE_RENDER_TARGET,
+                         My::MyDX12::FG::RsrcImplDesc_RTV_Null{})
+      .RegisterPassRsrcs(gbPass, depthstencil, D3D12_RESOURCE_STATE_DEPTH_WRITE,
+                         My::MyDX12::Desc::DSV::Basic(mDepthStencilFormat))
+
+      /*.RegisterPassRsrcs(debugPass, gbuffer1,
+      D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+              My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT))
+
+      .RegisterPassRsrcs(debugPass, backbuffer,
+      D3D12_RESOURCE_STATE_RENDER_TARGET,
+              My::MyDX12::FG::RsrcImplDesc_RTV_Null{})*/
+
+      .RegisterPassRsrcs(
+          deferLightingPass, gbuffer0,
+          D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+          My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT))
+      .RegisterPassRsrcs(
+          deferLightingPass, gbuffer1,
+          D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+          My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT))
+      .RegisterPassRsrcs(
+          deferLightingPass, gbuffer2,
+          D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+          My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT))
+
+      .RegisterPassRsrcs(deferLightingPass, backbuffer,
+                         D3D12_RESOURCE_STATE_RENDER_TARGET,
+                         My::MyDX12::FG::RsrcImplDesc_RTV_Null{});
 
   fgExecutor.RegisterPassFunc(
-      pass, [&](const My::MyDX12::FG::PassRsrcs& rsrcs) {
-        // Clear the back buffer and depth buffer.
-        uGCmdList.ClearRenderTargetView(
-            rsrcs.find(backbuffer)->second.cpuHandle, Colors::LightSteelBlue);
-        uGCmdList.ClearDepthStencilView(
-            rsrcs.find(depthstencil)->second.cpuHandle);
+      gbPass, [&](const My::MyDX12::FG::PassRsrcs& rsrcs) {
+        uGCmdList->SetPipelineState(
+            My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_geometry));
+        auto gb0 = rsrcs.find(gbuffer0)->second;
+        auto gb1 = rsrcs.find(gbuffer1)->second;
+        auto gb2 = rsrcs.find(gbuffer2)->second;
+        auto ds = rsrcs.find(depthstencil)->second;
+
+        // Clear the render texture and depth buffer.
+        uGCmdList.ClearRenderTargetView(gb0.cpuHandle, Colors::Black);
+        uGCmdList.ClearRenderTargetView(gb1.cpuHandle, Colors::Black);
+        uGCmdList.ClearRenderTargetView(gb2.cpuHandle, Colors::Black);
+        uGCmdList.ClearDepthStencilView(ds.cpuHandle);
 
         // Specify the buffers we are going to render to.
-        uGCmdList.OMSetRenderTarget(rsrcs.find(backbuffer)->second.cpuHandle,
-                                    rsrcs.find(depthstencil)->second.cpuHandle);
-
-        // uGCmdList.SetDescriptorHeaps(mSrvDescriptorHeap.Get());
+        std::array rts{gb0.cpuHandle, gb1.cpuHandle, gb2.cpuHandle};
+        uGCmdList->OMSetRenderTargets(rts.size(), rts.data(), false,
+                                      &ds.cpuHandle);
 
         uGCmdList->SetGraphicsRootSignature(
             My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
-                ID_RootSignature_default));
+                ID_RootSignature_geometry));
 
         auto passCB =
             mCurrFrameRsrcMngr
                 ->GetResource<My::MyDX12::ArrayUploadBuffer<PassConstants>>(
-                    "ArrayUploadBuffer<PassConstants>")
+                    "gbPass constants")
                 .GetResource();
         uGCmdList->SetGraphicsRootConstantBufferView(
-            2, passCB->GetGPUVirtualAddress());
-
-        DrawRenderItems(uGCmdList.raw.Get(), mOpaqueRitems);
+            4, passCB->GetGPUVirtualAddress());
 
         DrawRenderItems(uGCmdList.raw.Get(), mOpaqueRitems);
       });
+
+  // fgExecutor.RegisterPassFunc(
+  //	debugPass,
+  //	[&](const My::MyDX12::FG::PassRsrcs& rsrcs) {
+  //		uGCmdList->SetPipelineState(My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_screen));
+  //		auto img = rsrcs.find(gbuffer1)->second;
+  //		auto bb = rsrcs.find(backbuffer)->second;
+  //
+  //		//uGCmdList->CopyResource(bb.resource, rt.resource);
+
+  //		// Clear the render texture and depth buffer.
+  //		uGCmdList.ClearRenderTargetView(bb.cpuHandle,
+  // Colors::LightSteelBlue);
+
+  //		// Specify the buffers we are going to render to.
+  //		//uGCmdList.OMSetRenderTarget(bb.cpuHandle, ds.cpuHandle);
+  //		uGCmdList->OMSetRenderTargets(1, &bb.cpuHandle, false, nullptr);
+
+  //		uGCmdList->SetGraphicsRootSignature(My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_screen));
+
+  //		uGCmdList->SetGraphicsRootDescriptorTable(0, img.gpuHandle);
+
+  //		uGCmdList->IASetVertexBuffers(0, 0, nullptr);
+  //		uGCmdList->IASetIndexBuffer(nullptr);
+  //		uGCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  //		uGCmdList->DrawInstanced(6, 1, 0, 0);
+  //	}
+  //);
+
+  fgExecutor.RegisterPassFunc(
+      deferLightingPass, [&](const My::MyDX12::FG::PassRsrcs& rsrcs) {
+        uGCmdList->SetPipelineState(
+            My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_defer_light));
+        auto gb0 = rsrcs.find(gbuffer0)->second;
+        auto gb1 = rsrcs.find(gbuffer1)->second;
+        auto gb2 = rsrcs.find(gbuffer2)->second;
+
+        auto bb = rsrcs.find(backbuffer)->second;
+
+        // uGCmdList->CopyResource(bb.resource, rt.resource);
+
+        // Clear the render texture and depth buffer.
+        uGCmdList.ClearRenderTargetView(bb.cpuHandle, Colors::LightSteelBlue);
+
+        // Specify the buffers we are going to render to.
+        // uGCmdList.OMSetRenderTarget(bb.cpuHandle, ds.cpuHandle);
+        uGCmdList->OMSetRenderTargets(1, &bb.cpuHandle, false, nullptr);
+
+        uGCmdList->SetGraphicsRootSignature(
+            My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
+                ID_RootSignature_defer_light));
+
+        uGCmdList->SetGraphicsRootDescriptorTable(0, gb0.gpuHandle);
+
+        uGCmdList->IASetVertexBuffers(0, 0, nullptr);
+        uGCmdList->IASetIndexBuffer(nullptr);
+        uGCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        uGCmdList->DrawInstanced(6, 1, 0, 0);
+      });
+
+  static bool flag{false};
+  if (!flag) {
+    OutputDebugStringA(fg.ToGraphvizGraph().Dump().c_str());
+    flag = true;
+  }
 
   auto [success, crst] = fgCompiler.Compile(fg);
   fgExecutor.Execute(crst, *fgRsrcMngr);
@@ -393,11 +511,6 @@ void DeferApp::Draw(const GameTimer& gt) {
   ThrowIfFailed(mSwapChain->Present(0, 0));
   mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
-  //// Advance the fence value to mark commands up to this fence point.
-  //// Add an instruction to the command queue to set a new fence point.
-  //// Because we are on the GPU timeline, the new fence point won't be
-  //// set until the GPU finishes processing all the commands prior to this
-  /// Signal().
   mCurrFrameRsrcMngr->Signal(uCmdQueue.raw.Get(), ++mCurrentFence);
 }
 
@@ -408,9 +521,7 @@ void DeferApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) {
-  ReleaseCapture();
-}
+void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
 
 void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -435,7 +546,7 @@ void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
     mRadius += dx - dy;
 
     // Restrict the radius.
-    mRadius = MathHelper::Clamp(mRadius, 4.0f, 150.0f);
+    mRadius = MathHelper::Clamp(mRadius, 5.0f, 150.0f);
   }
 
   mLastMousePos.x = x;
@@ -549,81 +660,219 @@ void DeferApp::UpdateMainPassCB(const GameTimer& gt) {
   auto& currPassCB =
       mCurrFrameRsrcMngr
           ->GetResource<My::MyDX12::ArrayUploadBuffer<PassConstants>>(
-              "ArrayUploadBuffer<PassConstants>");
+              "gbPass constants");
   currPassCB.Set(0, mMainPassCB);
 }
 
 void DeferApp::LoadTextures() {
-  auto chessboardImg =
+  auto albedoImg = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
+      "../assets/textures/iron/albedo.png");
+  auto roughnessImg =
       My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-          "../assets/textures/chessboard.png");
-  chessboardTex2D = new My::MyGE::Texture2D;
-  chessboardTex2D->image = chessboardImg;
+          "../assets/textures/iron/roughness.png");
+  auto metalnessImg =
+      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
+          "../assets/textures/iron/metalness.png");
+
+  albedoTex2D = new My::MyGE::Texture2D;
+  albedoTex2D->image = albedoImg;
   if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          chessboardTex2D, "../assets/textures/chessboard.tex2d")) {
-    delete chessboardTex2D;
-    chessboardTex2D =
+          albedoTex2D, "../assets/textures/iron/albedo.tex2d")) {
+    delete albedoTex2D;
+    albedoTex2D =
         My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/chessboard.tex2d");
+            "../assets/textures/iron/albedo.tex2d");
+  }
+
+  roughnessTex2D = new My::MyGE::Texture2D;
+  roughnessTex2D->image = roughnessImg;
+  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
+          roughnessTex2D, "../assets/textures/iron/roughness.tex2d")) {
+    delete roughnessTex2D;
+    roughnessTex2D =
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
+            "../assets/textures/iron/roughness.tex2d");
+  }
+
+  metalnessTex2D = new My::MyGE::Texture2D;
+  metalnessTex2D->image = metalnessImg;
+  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
+          metalnessTex2D, "../assets/textures/iron/metalness.tex2d")) {
+    delete metalnessTex2D;
+    metalnessTex2D =
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
+            "../assets/textures/iron/metalness.tex2d");
   }
 
   My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), chessboardTex2D);
+      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), albedoTex2D);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), roughnessTex2D);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), metalnessTex2D);
 }
 
 void DeferApp::BuildRootSignature() {
-  CD3DX12_DESCRIPTOR_RANGE texTable;
-  texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+  {  // geometry
+    CD3DX12_DESCRIPTOR_RANGE texRange0;
+    texRange0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+    CD3DX12_DESCRIPTOR_RANGE texRange1;
+    texRange1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+    CD3DX12_DESCRIPTOR_RANGE texRange2;
+    texRange2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
 
-  // Root parameter can be a table, root descriptor or root constants.
-  CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+    // Root parameter can be a table, root descriptor or root constants.
+    CD3DX12_ROOT_PARAMETER slotRootParameter[6];
 
-  // Perfomance TIP: Order from most frequent to least frequent.
-  slotRootParameter[0].InitAsDescriptorTable(1, &texTable,
-                                             D3D12_SHADER_VISIBILITY_PIXEL);
-  // slotRootParameter[0].InitAsShaderResourceView(0, 0,
-  // D3D12_SHADER_VISIBILITY_PIXEL);
-  slotRootParameter[1].InitAsConstantBufferView(0);
-  slotRootParameter[2].InitAsConstantBufferView(1);
-  slotRootParameter[3].InitAsConstantBufferView(2);
+    // Perfomance TIP: Order from most frequent to least frequent.
+    slotRootParameter[0].InitAsDescriptorTable(1, &texRange0);
+    slotRootParameter[1].InitAsDescriptorTable(1, &texRange1);
+    slotRootParameter[2].InitAsDescriptorTable(1, &texRange2);
+    slotRootParameter[3].InitAsConstantBufferView(0);
+    slotRootParameter[4].InitAsConstantBufferView(1);
+    slotRootParameter[5].InitAsConstantBufferView(2);
 
-  auto staticSamplers = My::MyGE::RsrcMngrDX12::Instance().GetStaticSamplers();
+    auto staticSamplers =
+        My::MyGE::RsrcMngrDX12::Instance().GetStaticSamplers();
 
-  // A root signature is an array of root parameters.
-  CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
-      4, slotRootParameter, (UINT)staticSamplers.size(), staticSamplers.data(),
-      D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+    // A root signature is an array of root parameters.
+    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
+        6, slotRootParameter, (UINT)staticSamplers.size(),
+        staticSamplers.data(),
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
-  My::MyGE::RsrcMngrDX12::Instance().RegisterRootSignature(
-      ID_RootSignature_default, &rootSigDesc);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterRootSignature(
+        ID_RootSignature_geometry, &rootSigDesc);
+  }
+
+  {  // screen
+    CD3DX12_DESCRIPTOR_RANGE texTable;
+    texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+
+    // Root parameter can be a table, root descriptor or root constants.
+    CD3DX12_ROOT_PARAMETER slotRootParameter[1];
+
+    // Perfomance TIP: Order from most frequent to least frequent.
+    slotRootParameter[0].InitAsDescriptorTable(1, &texTable,
+                                               D3D12_SHADER_VISIBILITY_PIXEL);
+
+    auto staticSamplers =
+        My::MyGE::RsrcMngrDX12::Instance().GetStaticSamplers();
+
+    // A root signature is an array of root parameters.
+    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
+        1, slotRootParameter, (UINT)staticSamplers.size(),
+        staticSamplers.data(),
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+    My::MyGE::RsrcMngrDX12::Instance().RegisterRootSignature(
+        ID_RootSignature_screen, &rootSigDesc);
+  }
+  {  // defer lighting
+    CD3DX12_DESCRIPTOR_RANGE texTable;
+    texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);
+
+    // Root parameter can be a table, root descriptor or root constants.
+    CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+
+    // Perfomance TIP: Order from most frequent to least frequent.
+    slotRootParameter[0].InitAsDescriptorTable(1, &texTable,
+                                               D3D12_SHADER_VISIBILITY_PIXEL);
+    slotRootParameter[1].InitAsConstantBufferView(0);
+    slotRootParameter[2].InitAsConstantBufferView(1);
+    slotRootParameter[3].InitAsConstantBufferView(2);
+
+    auto staticSamplers =
+        My::MyGE::RsrcMngrDX12::Instance().GetStaticSamplers();
+
+    // A root signature is an array of root parameters.
+    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
+        4, slotRootParameter, (UINT)staticSamplers.size(),
+        staticSamplers.data(),
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+    My::MyGE::RsrcMngrDX12::Instance().RegisterRootSignature(
+        ID_RootSignature_defer_light, &rootSigDesc);
+  }
 }
 
 void DeferApp::BuildDescriptorHeaps() {}
 
 void DeferApp::BuildShadersAndInputLayout() {
-  std::filesystem::path hlslPath = "../assets/shaders/Default.hlsl";
-  std::filesystem::path shaderPath = "../assets/shaders/Default.shader";
+  std::filesystem::path hlslDefaultPath = "../assets/shaders/Default.hlsl";
+  std::filesystem::path shaderDefaultPath = "../assets/shaders/Default.shader";
+  std::filesystem::path hlslScreenPath = "../assets/shaders/Screen.hlsl";
+  std::filesystem::path shaderScreenPath = "../assets/shaders/Screen.shader";
+  std::filesystem::path hlslGeomrtryPath = "../assets/shaders/Geometry.hlsl";
+  std::filesystem::path shaderGeometryPath =
+      "../assets/shaders/Geometry.shader";
+  std::filesystem::path hlslDeferPath = "../assets/shaders/deferLighting.hlsl";
+  std::filesystem::path shaderDeferPath =
+      "../assets/shaders/deferLighting.shader";
 
   if (!std::filesystem::is_directory("../assets/shaders"))
     std::filesystem::create_directories("../assets/shaders");
 
   auto& assetMngr = My::MyGE::AssetMngr::Instance();
-  assetMngr.ImportAsset(hlslPath);
-  auto hlslFile = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslPath);
+  auto hlslDefault = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslDefaultPath);
+  auto hlslScreen = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslScreenPath);
+  auto hlslGeomrtry = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslGeomrtryPath);
+  auto hlslDefer = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslDeferPath);
 
-  shader = new My::MyGE::Shader;
-  shader->hlslFile = hlslFile;
-  shader->vertexName = "vert";
-  shader->fragmentName = "frag";
-  shader->targetName = "5_0";
-  shader->shaderName = "Default";
+  defaultShader = new My::MyGE::Shader;
+  screenShader = new My::MyGE::Shader;
+  geomrtryShader = new My::MyGE::Shader;
+  deferShader = new My::MyGE::Shader;
 
-  if (!assetMngr.CreateAsset(shader, shaderPath)) {
-    delete shader;
-    shader = assetMngr.LoadAsset<My::MyGE::Shader>(shaderPath);
+  defaultShader->hlslFile = hlslDefault;
+  screenShader->hlslFile = hlslScreen;
+  geomrtryShader->hlslFile = hlslGeomrtry;
+  deferShader->hlslFile = hlslDefer;
+
+  defaultShader->vertexName = "VS";
+  screenShader->vertexName = "VS";
+  geomrtryShader->vertexName = "VS";
+  deferShader->vertexName = "VS";
+
+  defaultShader->fragmentName = "PS";
+  screenShader->fragmentName = "PS";
+  geomrtryShader->fragmentName = "PS";
+  deferShader->fragmentName = "PS";
+
+  defaultShader->targetName = "5_0";
+  screenShader->targetName = "5_0";
+  geomrtryShader->targetName = "5_0";
+  deferShader->targetName = "5_0";
+
+  defaultShader->shaderName = "Default";
+  screenShader->shaderName = "Screen";
+  geomrtryShader->shaderName = "Geometry";
+  deferShader->shaderName = "Defer";
+
+  if (!assetMngr.CreateAsset(defaultShader, shaderDefaultPath)) {
+    delete defaultShader;
+    defaultShader = assetMngr.LoadAsset<My::MyGE::Shader>(shaderDefaultPath);
   }
 
-  My::MyGE::RsrcMngrDX12::Instance().RegisterShader(shader);
+  if (!assetMngr.CreateAsset(screenShader, shaderScreenPath)) {
+    delete screenShader;
+    screenShader = assetMngr.LoadAsset<My::MyGE::Shader>(shaderScreenPath);
+  }
+
+  if (!assetMngr.CreateAsset(geomrtryShader, shaderGeometryPath)) {
+    delete geomrtryShader;
+    geomrtryShader = assetMngr.LoadAsset<My::MyGE::Shader>(shaderGeometryPath);
+  }
+
+  if (!assetMngr.CreateAsset(deferShader, shaderDeferPath)) {
+    delete deferShader;
+    deferShader = assetMngr.LoadAsset<My::MyGE::Shader>(shaderDeferPath);
+  }
+
+  My::MyGE::RsrcMngrDX12::Instance().RegisterShader(defaultShader);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterShader(screenShader);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterShader(geomrtryShader);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterShader(deferShader);
 
   mInputLayout = {
       {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
@@ -643,14 +892,34 @@ void DeferApp::BuildShapeGeometry() {
 }
 
 void DeferApp::BuildPSOs() {
-  auto opaquePsoDesc = My::MyDX12::Desc::PSO::Basic(
+  auto screenPsoDesc = My::MyDX12::Desc::PSO::Basic(
       My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
-          ID_RootSignature_default),
+          ID_RootSignature_screen),
+      nullptr, 0,
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(screenShader),
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(screenShader),
+      mBackBufferFormat, DXGI_FORMAT_UNKNOWN);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_screen, &screenPsoDesc);
+
+  auto geometryPsoDesc = My::MyDX12::Desc::PSO::MRT(
+      My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
+          ID_RootSignature_geometry),
       mInputLayout.data(), (UINT)mInputLayout.size(),
-      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(shader),
-      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(shader),
-      mBackBufferFormat, mDepthStencilFormat);
-  My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_opaque, &opaquePsoDesc);
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader),
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader),
+      3, DXGI_FORMAT_R32G32B32A32_FLOAT, mDepthStencilFormat);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_geometry,
+                                                 &geometryPsoDesc);
+
+  auto deferLightingPsoDesc = My::MyDX12::Desc::PSO::Basic(
+      My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
+          ID_RootSignature_defer_light),
+      nullptr, 0,
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(deferShader),
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferShader),
+      mBackBufferFormat, DXGI_FORMAT_UNKNOWN);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_defer_light,
+                                                 &deferLightingPsoDesc);
 }
 
 void DeferApp::BuildFrameResources() {
@@ -662,9 +931,9 @@ void DeferApp::BuildFrameResources() {
     ThrowIfFailed(uDevice->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
 
-    fr->RegisterResource("CommandAllocator", std::move(allocator));
+    fr->RegisterResource("CommandAllocator", allocator);
 
-    fr->RegisterResource("ArrayUploadBuffer<PassConstants>",
+    fr->RegisterResource("gbPass constants",
                          My::MyDX12::ArrayUploadBuffer<PassConstants>{
                              uDevice.raw.Get(), 1, true});
 
@@ -678,7 +947,7 @@ void DeferApp::BuildFrameResources() {
 
     auto fgRsrcMngr = std::make_shared<My::MyDX12::FG::RsrcMngr>();
     fgRsrcMngr->Init(uGCmdList, uDevice);
-    fr->RegisterResource("FrameGraphRsrcMngr", std::move(fgRsrcMngr));
+    fr->RegisterResource("FrameGraphRsrcMngr", fgRsrcMngr);
 
     mFrameResources.emplace_back(std::move(fr));
   }
@@ -686,22 +955,27 @@ void DeferApp::BuildFrameResources() {
 
 void DeferApp::BuildMaterials() {
   auto woodCrate = std::make_unique<Material>();
-  woodCrate->Name = "woodCrate";
+  woodCrate->Name = "iron";
   woodCrate->MatCBIndex = 0;
-  woodCrate->DiffuseSrvGpuHandle =
+  woodCrate->AlbedoSrvGpuHandle =
+      My::MyGE::RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(albedoTex2D);
+  woodCrate->RoughnessSrvGpuHandle =
       My::MyGE::RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(
-          chessboardTex2D);
+          roughnessTex2D);
+  woodCrate->MetalnessSrvGpuHandle =
+      My::MyGE::RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(
+          metalnessTex2D);
   woodCrate->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
   woodCrate->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
   woodCrate->Roughness = 0.2f;
 
-  mMaterials["woodCrate"] = std::move(woodCrate);
+  mMaterials["iron"] = std::move(woodCrate);
 }
 
 void DeferApp::BuildRenderItems() {
   auto boxRitem = std::make_unique<RenderItem>();
   boxRitem->ObjCBIndex = 0;
-  boxRitem->Mat = mMaterials["woodCrate"].get();
+  boxRitem->Mat = mMaterials["iron"].get();
   boxRitem->Geo = &My::MyGE::RsrcMngrDX12::Instance().GetMeshGPUBuffer(mesh);
   boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
   boxRitem->IndexCount =
@@ -712,8 +986,7 @@ void DeferApp::BuildRenderItems() {
   mAllRitems.push_back(std::move(boxRitem));
 
   // All the render items are opaque.
-  for (auto& e : mAllRitems)
-    mOpaqueRitems.push_back(e.get());
+  for (auto& e : mAllRitems) mOpaqueRitems.push_back(e.get());
 }
 
 void DeferApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList,
@@ -747,11 +1020,11 @@ void DeferApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList,
     D3D12_GPU_VIRTUAL_ADDRESS matCBAddress =
         matCB->GetGPUVirtualAddress() + ri->Mat->MatCBIndex * matCBByteSize;
 
-    cmdList->SetGraphicsRootDescriptorTable(0, ri->Mat->DiffuseSrvGpuHandle);
-    // cmdList->SetGraphicsRootShaderResourceView(0,
-    // mTextures["woodCrate"]->Resource->GetGPUVirtualAddress());
-    cmdList->SetGraphicsRootConstantBufferView(1, objCBAddress);
-    cmdList->SetGraphicsRootConstantBufferView(3, matCBAddress);
+    cmdList->SetGraphicsRootDescriptorTable(0, ri->Mat->AlbedoSrvGpuHandle);
+    cmdList->SetGraphicsRootDescriptorTable(1, ri->Mat->RoughnessSrvGpuHandle);
+    cmdList->SetGraphicsRootDescriptorTable(2, ri->Mat->MetalnessSrvGpuHandle);
+    cmdList->SetGraphicsRootConstantBufferView(3, objCBAddress);
+    cmdList->SetGraphicsRootConstantBufferView(5, matCBAddress);
 
     cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation,
                                   ri->BaseVertexLocation, 0);
