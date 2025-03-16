@@ -17,7 +17,7 @@
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
 #include <MyGE/Transform/Transform.h>
-#include <UGM/UGM.h>
+#include <MyGM/MyGM.h>
 
 #include "../common/GeometryGenerator.h"
 #include "../common/MathHelper.h"

@@ -17,7 +17,7 @@
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
 #include <MyGE/Transform/Transform.h>
-#include <UGM/UGM.h>
+#include <MyGM/MyGM.h>
 
 #include "../common/GeometryGenerator.h"
 #include "../common/MathHelper.h"
@@ -31,6 +31,7 @@ const int gNumFrameResources = 3;
 
 struct RotateSystem : My::MyECS::System {
   using My::MyECS::System::System;
+
   virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
     My::MyECS::ArchetypeFilter filter;
     filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshFilter>};

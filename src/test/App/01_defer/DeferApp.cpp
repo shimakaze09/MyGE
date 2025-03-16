@@ -2,14 +2,6 @@
 // Created by Admin on 16/03/2025.
 //
 
-//***************************************************************************************
-// DeferApp.cpp by Frank Luna (C) 2015 All Rights Reserved.
-//***************************************************************************************
-
-//***************************************************************************************
-// DeferApp.cpp by Frank Luna (C) 2015 All Rights Reserved.
-//***************************************************************************************
-
 #include <MyDX12/UploadBuffer.h>
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Core/HLSLFile.h>
@@ -28,10 +20,6 @@ using namespace DirectX;
 using namespace DirectX::PackedVector;
 
 const int gNumFrameResources = 3;
-
-constexpr size_t ID_PSO_geometry = 0;
-constexpr size_t ID_PSO_defer_light = 1;
-constexpr size_t ID_PSO_screen = 2;
 
 constexpr size_t ID_RootSignature_geometry = 0;
 constexpr size_t ID_RootSignature_screen = 1;
@@ -188,6 +176,10 @@ class DeferApp : public D3DApp {
   My::MyGE::Mesh* mesh;
 
   std::unique_ptr<My::MyDX12::FrameResourceMngr> frameRsrcMngr;
+
+  size_t ID_PSO_geometry;
+  size_t ID_PSO_defer_light;
+  size_t ID_PSO_screen;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
@@ -442,8 +434,8 @@ void DeferApp::Draw() {
 
   // fgExecutor.RegisterPassFunc(
   //	debugPass,
-  //	[&](ID3D12GraphicsCommandList* cmdList, const My::MyDX12::FG::PassRsrcs&
-  // rsrcs) { 		auto heap =
+  //	[&](ID3D12GraphicsCommandList* cmdList, const
+  // My::MyDX12::FG::PassRsrcs& rsrcs) { 		auto heap =
   // My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->GetDescriptorHeap();
   //		cmdList->SetDescriptorHeaps(1, &heap);
   //		cmdList->RSSetViewports(1, &mScreenViewport);
@@ -887,7 +879,8 @@ void DeferApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(screenShader),
       mBackBufferFormat, DXGI_FORMAT_UNKNOWN);
   screenPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
-  My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_screen, &screenPsoDesc);
+  ID_PSO_screen =
+      My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(&screenPsoDesc);
 
   auto geometryPsoDesc = My::MyDX12::Desc::PSO::MRT(
       My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
@@ -897,8 +890,8 @@ void DeferApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader),
       3, DXGI_FORMAT_R32G32B32A32_FLOAT, mDepthStencilFormat);
   geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
-  My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_geometry,
-                                                 &geometryPsoDesc);
+  ID_PSO_geometry =
+      My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(&geometryPsoDesc);
 
   auto deferLightingPsoDesc = My::MyDX12::Desc::PSO::Basic(
       My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
@@ -908,8 +901,8 @@ void DeferApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferShader),
       mBackBufferFormat, DXGI_FORMAT_UNKNOWN);
   deferLightingPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
-  My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_defer_light,
-                                                 &deferLightingPsoDesc);
+  ID_PSO_defer_light =
+      My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(&deferLightingPsoDesc);
 }
 
 void DeferApp::BuildFrameResources() {
@@ -963,8 +956,8 @@ void DeferApp::BuildRenderItems() {
   boxRitem->Geo = &My::MyGE::RsrcMngrDX12::Instance().GetMeshGPUBuffer(mesh);
   boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
   boxRitem->IndexCount =
-      boxRitem->Geo->IndexBufferByteSize /
-      (boxRitem->Geo->IndexFormat == DXGI_FORMAT_R16_UINT ? 2 : 4);
+      boxRitem->Geo->IndexBufferView().SizeInBytes /
+      (boxRitem->Geo->IndexBufferView().Format == DXGI_FORMAT_R16_UINT ? 2 : 4);
   boxRitem->StartIndexLocation = 0;
   boxRitem->BaseVertexLocation = 0;
   mAllRitems.push_back(std::move(boxRitem));
