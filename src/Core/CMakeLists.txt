@@ -39,4 +39,5 @@ ADD_TARGET(
         My::MyGM_core
         My::MyDP_core
         My::MyGE_Transform
+        My::MyGE__deps_imgui
 )

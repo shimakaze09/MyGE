@@ -20,6 +20,9 @@
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
 #include <MyGE/Transform/Transform.h>
+#include <MyGE/_deps/imgui/imgui.h>
+#include <MyGE/_deps/imgui/imgui_impl_dx12.h>
+#include <MyGE/_deps/imgui/imgui_impl_win32.h>
 #include <MyGM/MyGM.h>
 
 using namespace My::MyGE;
@@ -47,6 +50,7 @@ struct StdPipeline::Impl {
     My::transformf World = My::transformf::eye();
     My::transformf TexTransform = My::transformf::eye();
   };
+
   struct PassConstants {
     My::transformf View = My::transformf::eye();
     My::transformf InvView = My::transformf::eye();
@@ -78,12 +82,15 @@ struct StdPipeline::Impl {
       My::pointf3 Position = {0.0f, 0.0f, 0.0f};  // point/spot light only
       float SpotPower = 64.0f;                    // spot light only
     };
+
     Light Lights[16];
   };
+
   struct MatConstants {
     My::rgbf albedoFactor;
     float roughnessFactor;
   };
+
   struct RenderContext {
     Camera cam;
     valf<16> view;
@@ -95,6 +102,7 @@ struct StdPipeline::Impl {
 
       valf<16> l2w;
     };
+
     std::unordered_map<const Shader*,
                        std::unordered_map<const Material*, std::vector<Object>>>
         objectMap;
@@ -107,8 +115,8 @@ struct StdPipeline::Impl {
   MyDX12::FrameResourceMngr frameRsrcMngr;
 
   My::MyDX12::FG::Executor fgExecutor;
-  My::UFG::Compiler fgCompiler;
-  My::UFG::FrameGraph fg;
+  My::MyFG::Compiler fgCompiler;
+  My::MyFG::FrameGraph fg;
 
   My::MyGE::Shader* screenShader;
   My::MyGE::Shader* geomrtryShader;
@@ -621,6 +629,13 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->IASetIndexBuffer(nullptr);
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         cmdList->DrawInstanced(6, 1, 0, 0);
+
+        //==
+
+        if (ImGui::GetCurrentContext()) {
+          ImGui::Render();
+          ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmdList);
+        }
       });
 
   static bool flag{false};

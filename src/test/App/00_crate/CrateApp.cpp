@@ -173,8 +173,8 @@ class DeferApp : public D3DApp {
   // frame graph
   // My::MyDX12::FG::RsrcMngr fgRsrcMngr;
   My::MyDX12::FG::Executor fgExecutor;
-  My::UFG::Compiler fgCompiler;
-  My::UFG::FrameGraph fg;
+  My::MyFG::Compiler fgCompiler;
+  My::MyFG::FrameGraph fg;
 
   // resources
   My::MyGE::Texture2D* chessboardTex2D;
