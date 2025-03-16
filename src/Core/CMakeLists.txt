@@ -14,6 +14,7 @@ SET(components
         Camera
         MeshFilter
         MeshRenderer
+        WorldTime
 )
 
 SET(refls "")

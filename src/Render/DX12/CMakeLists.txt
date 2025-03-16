@@ -1,7 +1,7 @@
 ADD_TARGET(
         MODE STATIC
         SOURCE
-        "${PROJECT_SOURCE_DIR}/include/MyGE/Render/DX12"
+        "${PROJECT_SOURCE_DIR}/include/MyGE/Render"
         INC
         "${PROJECT_SOURCE_DIR}/include"
         LIB
