@@ -12,11 +12,11 @@ using namespace My::MyGE;
 
 void TRSToLocalToParentSystem::OnUpdate(MyECS::Schedule& schedule) {
   MyECS::ArchetypeFilter filter;
-  filter.all = {MyECS::CmptType::Of<MyECS::Write<LocalToParent>>};
+  filter.all = {MyECS::CmptAccessType::Of<MyECS::Write<LocalToParent>>};
   filter.any = {
-      MyECS::CmptType::Of<MyECS::Latest<Translation>>,
-      MyECS::CmptType::Of<MyECS::Latest<Rotation>>,
-      MyECS::CmptType::Of<MyECS::Latest<Scale>>,
+      MyECS::CmptAccessType::Of<MyECS::Latest<Translation>>,
+      MyECS::CmptAccessType::Of<MyECS::Latest<Rotation>>,
+      MyECS::CmptAccessType::Of<MyECS::Latest<Scale>>,
   };
 
   schedule.RegisterChunkJob(

@@ -65,4 +65,4 @@ class AssetMngr {
 };
 }  // namespace My::MyGE
 
-#include "detail/AssetMngr.inl"
+#include "details/AssetMngr.inl"
