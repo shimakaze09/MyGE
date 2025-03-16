@@ -21,13 +21,11 @@ struct RsrcMngrDX12::Impl {
     ID3D12Resource* resource;
     MyDX12::DescriptorHeapAllocation allocationSRV;
   };
-
   struct RenderTargetGPUData {
     vector<ID3D12Resource*> resources;
     MyDX12::DescriptorHeapAllocation allocationSRV;
     MyDX12::DescriptorHeapAllocation allocationRTV;
   };
-
   struct ShaderCompileData {
     Microsoft::WRL::ComPtr<ID3DBlob> vsByteCode;
     Microsoft::WRL::ComPtr<ID3DBlob> psByteCode;
@@ -36,6 +34,7 @@ struct RsrcMngrDX12::Impl {
   bool isInit{false};
   ID3D12Device* device{nullptr};
   DirectX::ResourceUploadBatch* upload{nullptr};
+  MyDX12::ResourceDeleteBatch deleteBatch;
 
   unordered_map<size_t, Texture2DGPUData> texture2DMap;
   unordered_map<size_t, RenderTargetGPUData> renderTargetMap;
@@ -129,15 +128,12 @@ void RsrcMngrDX12::Clear() {
         move(tex.allocationSRV));
     MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         move(tex.allocationRTV));
-    for (auto rsrc : tex.resources)
-      rsrc->Release();
+    for (auto rsrc : tex.resources) rsrc->Release();
   }
 
-  for (auto& [name, rootSig] : pImpl->rootSignatureMap)
-    rootSig->Release();
+  for (auto& [name, rootSig] : pImpl->rootSignatureMap) rootSig->Release();
 
-  for (auto& [name, PSO] : pImpl->PSOMap)
-    PSO->Release();
+  for (auto& [name, PSO] : pImpl->PSOMap) PSO->Release();
 
   pImpl->device = nullptr;
   delete pImpl->upload;
@@ -156,6 +152,10 @@ DirectX::ResourceUploadBatch& RsrcMngrDX12::GetUpload() const {
   return *pImpl->upload;
 }
 
+MyDX12::ResourceDeleteBatch& RsrcMngrDX12::GetDeleteBatch() const {
+  return pImpl->deleteBatch;
+}
+
 // RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
 //	DirectX::ResourceUploadBatch& upload,
 //	size_t id,
@@ -172,7 +172,7 @@ DirectX::ResourceUploadBatch& RsrcMngrDX12::GetUpload() const {
 //	tex.resources.resize(num);
 //
 //	tex.allocationSRV =
-// MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(num);
+//MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(num);
 //
 //	for (UINT i = 0; i < num; i++) {
 //		bool isCubeMap;
@@ -190,7 +190,7 @@ DirectX::ResourceUploadBatch& RsrcMngrDX12::GetUpload() const {
 //			isCubeMap ?
 //			MyDX12::Desc::SRV::TexCube(tex.resources[i]->GetDesc().Format)
 //			:
-// MyDX12::Desc::SRV::Tex2D(tex.resources[i]->GetDesc().Format);
+//MyDX12::Desc::SRV::Tex2D(tex.resources[i]->GetDesc().Format);
 //
 //		pImpl->device->CreateShaderResourceView(tex.resources[i],
 //&srvDesc, tex.allocationSRV.GetCpuHandle(i));
@@ -243,7 +243,7 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
 //	tex.resources.resize(num);
 //
 //	tex.allocationSRV =
-// MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(static_cast<uint32_t>(num));
+//MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(static_cast<uint32_t>(num));
 //
 //	constexpr DXGI_FORMAT channelMap[] = {
 //		DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT,
@@ -256,8 +256,8 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
 //		D3D12_SUBRESOURCE_DATA data;
 //		data.pData = tex2Ds[i]->image->data;
 //		data.RowPitch = tex2Ds[i]->image->width *
-// tex2Ds[i]->image->channel * sizeof(float); 		data.SlicePitch =
-// tex2Ds[i]->image->height * data.RowPitch;
+//tex2Ds[i]->image->channel * sizeof(float); 		data.SlicePitch =
+//tex2Ds[i]->image->height * data.RowPitch;
 //
 //		DirectX::CreateTextureFromMemory(
 //			pImpl->device,
@@ -286,13 +286,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTexture2DSrvCpuHandle(
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())
       ->second.allocationSRV.GetCpuHandle(0);
 }
-
 D3D12_GPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTexture2DSrvGpuHandle(
     const Texture2D* tex2D) const {
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())
       ->second.allocationSRV.GetGpuHandle(0);
 }
-
 ID3D12Resource* RsrcMngrDX12::GetTexture2DResource(
     const Texture2D* tex2D) const {
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())->second.resource;
@@ -300,18 +298,73 @@ ID3D12Resource* RsrcMngrDX12::GetTexture2DResource(
 
 // MyDX12::DescriptorHeapAllocation& RsrcMngrDX12::GetTextureRtvs(const
 // Texture2D* tex2D) const { 	return
-// pImpl->textureMap.find(tex2D->GetInstanceID())->second.allocationRTV;
+//pImpl->textureMap.find(tex2D->GetInstanceID())->second.allocationRTV;
 // }
 
-MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterStaticMesh(
-    DirectX::ResourceUploadBatch& upload, Mesh* mesh) {
-  auto& meshGPUBuffer = pImpl->meshMap[mesh->GetInstanceID()];
-  meshGPUBuffer.InitBuffer(
-      pImpl->device, upload, mesh->GetVertexBufferData(),
-      (UINT)mesh->GetVertexBufferVertexCount(),
-      (UINT)mesh->GetVertexBufferVertexStride(), mesh->GetIndices().data(),
-      (UINT)mesh->GetIndices().size(), DXGI_FORMAT_R32_UINT);
-  return meshGPUBuffer;
+MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
+    DirectX::ResourceUploadBatch& upload,
+    MyDX12::ResourceDeleteBatch& deleteBatch,
+    ID3D12GraphicsCommandList* cmdList, Mesh* mesh) {
+  auto target = pImpl->meshMap.find(mesh->GetInstanceID());
+  if (target == pImpl->meshMap.end()) {
+    if (mesh->IsDirty()) mesh->UpdateVertexBuffer();
+
+    auto vb_data = mesh->GetVertexBufferData();
+    auto vb_count = (UINT)mesh->GetVertexBufferVertexCount();
+    auto vb_stride = (UINT)mesh->GetVertexBufferVertexStride();
+    auto ib_data = mesh->GetIndices().data();
+    auto ib_count = (UINT)mesh->GetIndices().size();
+    auto ib_format = DXGI_FORMAT_R32_UINT;
+
+    if (mesh->IsEditable()) {
+      auto [iter, success] = pImpl->meshMap.try_emplace(
+          mesh->GetInstanceID(), pImpl->device, cmdList,
+          mesh->GetVertexBufferData(), (UINT)mesh->GetVertexBufferVertexCount(),
+          (UINT)mesh->GetVertexBufferVertexStride(), mesh->GetIndices().data(),
+          (UINT)mesh->GetIndices().size(), DXGI_FORMAT_R32_UINT);
+      assert(success);
+      return iter->second;
+    } else {
+      auto [iter, success] = pImpl->meshMap.try_emplace(
+          mesh->GetInstanceID(), pImpl->device, upload,
+          mesh->GetVertexBufferData(), (UINT)mesh->GetVertexBufferVertexCount(),
+          (UINT)mesh->GetVertexBufferVertexStride(), mesh->GetIndices().data(),
+          (UINT)mesh->GetIndices().size(), DXGI_FORMAT_R32_UINT);
+      assert(success);
+      return iter->second;
+    }
+  } else {
+    auto& meshGpuBuffer = target->second;
+    if (!meshGpuBuffer.IsStatic()) {
+      if (mesh->IsEditable()) {
+        if (mesh->IsDirty()) {
+          mesh->UpdateVertexBuffer();
+          meshGpuBuffer.Update(
+              pImpl->device, cmdList, mesh->GetVertexBufferData(),
+              (UINT)mesh->GetVertexBufferVertexCount(),
+              (UINT)mesh->GetVertexBufferVertexStride(),
+              mesh->GetIndices().data(), (UINT)mesh->GetIndices().size(),
+              DXGI_FORMAT_R32_UINT);
+        }
+        // else
+        //	;// do nothing
+      } else {
+        if (mesh->IsDirty()) {
+          meshGpuBuffer.UpdateAndConvertToStatic(
+              deleteBatch, pImpl->device, cmdList, mesh->GetVertexBufferData(),
+              (UINT)mesh->GetVertexBufferVertexCount(),
+              (UINT)mesh->GetVertexBufferVertexStride(),
+              mesh->GetIndices().data(), (UINT)mesh->GetIndices().size(),
+              DXGI_FORMAT_R32_UINT);
+        } else
+          meshGpuBuffer.ConvertToStatic();
+      }
+    } else
+      assert(!mesh->IsEditable() && !mesh->IsDirty());
+
+    return meshGpuBuffer;
+  }
+  return pImpl->meshMap.find(mesh->GetInstanceID())->second;
 }
 
 // MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterDynamicMesh(
@@ -360,9 +413,9 @@ const ID3DBlob* RsrcMngrDX12::GetShaderByteCode_ps(const Shader* shader) const {
 //	tex.resources.resize(1);
 //
 //	tex.allocationSRV =
-// MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+//MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
 //	tex.allocationRTV =
-// MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
+//MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
 //
 //	// create resource
 //	D3D12_RESOURCE_DESC texDesc;
@@ -397,7 +450,7 @@ const ID3DBlob* RsrcMngrDX12::GetShaderByteCode_ps(const Shader* shader) const {
 //	rtvDesc.Texture2D.MipSlice = 0;
 //	rtvDesc.Texture2D.PlaneSlice = 0; // ?
 //	pImpl->device->CreateRenderTargetView(tex.resources[0], &rtvDesc,
-// tex.allocationRTV.GetCpuHandle());
+//tex.allocationRTV.GetCpuHandle());
 //
 //	pImpl->textureMap.emplace(id, move(tex));
 //
@@ -408,9 +461,9 @@ const ID3DBlob* RsrcMngrDX12::GetShaderByteCode_ps(const Shader* shader) const {
 // DXGI_FORMAT format) { 	Impl::Texture tex; 	tex.resources.resize(1);
 //
 //	tex.allocationSRV =
-// MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+//MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
 //	tex.allocationRTV =
-// MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(6);
+//MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(6);
 //
 //	// create resource
 //	D3D12_RESOURCE_DESC texDesc;

@@ -10,7 +10,7 @@
 
 namespace My::MyGE {
 struct MeshFilter {
-  const Mesh* mesh{nullptr};
+  Mesh* mesh{nullptr};
 };
 }  // namespace My::MyGE
 

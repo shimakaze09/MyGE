@@ -26,6 +26,7 @@ class RsrcMngrDX12 {
   }
 
   DirectX::ResourceUploadBatch& GetUpload() const;
+  MyDX12::ResourceDeleteBatch& GetDeleteBatch() const;
 
   RsrcMngrDX12& Init(ID3D12Device* device);
   void Clear();
@@ -42,9 +43,10 @@ class RsrcMngrDX12 {
   /*RsrcMngrDX12& RegisterTexture2DArray(DirectX::ResourceUploadBatch& upload,
           size_t id, const Texture2D** tex2Ds, size_t num);*/
 
-  // non-const mesh -> update
-  MyDX12::MeshGPUBuffer& RegisterStaticMesh(
-      DirectX::ResourceUploadBatch& upload, Mesh* mesh);
+  MyDX12::MeshGPUBuffer& RegisterMesh(DirectX::ResourceUploadBatch& upload,
+                                      MyDX12::ResourceDeleteBatch& deleteBatch,
+                                      ID3D12GraphicsCommandList* cmdList,
+                                      Mesh* mesh);
 
   /*MyDX12::MeshGPUBuffer& RegisterDynamicMesh(
           size_t id,

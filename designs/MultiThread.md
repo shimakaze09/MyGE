@@ -1,50 +1,31 @@
-# Multithreading
+# Multi-Threading
 
-## Pipeline
+CPU work is as follows:
 
-CPU tasks are as follows:
+1. World update (**parallel**)
+2. Wait and world -> GPU (flush)
+3. Frame graph
+    1. Register resource nodes
+    2. Register pass nodes
+    3. Compile frame graph
+    4. **Parallelly** execute frame graph (avoid conflict for some operations)
+    5. Sequentially commit command lists to the command queue
 
-1. world update (**parallel**)
-2. world -> context
-3. wait
-4. frame graph
-    1. register resource nodes
-    2. register pass nodes
-    3. compile frame graph
-    4. **parallelly** execute frame graph (avoid conflict for some operations)
-5. sequentially commit command lists to the command queue
+Steps 1 and 3 are internally parallel, and the world cannot be modified during step 2.
 
-If these steps are executed sequentially, some CPU resources would be wasted (not utilizing parallelism)
+- Level 1: Directly execute each step serially, and 3.4 is executed serially
 
-Consider using **multithreaded pipeline mode**, dividing into two pipeline stages:
+- Level 2: 3.4 in parallel
+- Level 3: Pipeline parallel mode for steps 1-2 and 3
 
-- 1-2: update
-- 3-5: draw
+- Level 4: To implement pipeline parallel mode for steps 1-2 as well, data uploads are divided into 3 tiers:
+    - Tier 1: Upload large dynamic data (meshes, textures, etc.), copy small data (pass, material, object constants)
+    - Tier 2: Mark static data that needs uploading as locked (not allowed to delete), allowing step 1 to run, then
+      upload this data and gradually unlock
+    - Tier 3: Upload small data
 
-> Both stages have internal multithreading, so generally all cores run at full capacity
->
-> Additionally, update is typically longer than draw, so according to the barrel effect, there's no need to further divide draw
->
-> If needed (draw is indeed longer than update, and CPU is the bottleneck), draw can be further divided
->
-> Too many pipeline stages will cause latency issues
+Level 2 will definitely be implemented.
 
-## Triple Buffering
+Level 3 can be implemented later.
 
-The buffering here refers to dynamic variable buffers, such as per object constant buffer, per material constant buffer, etc.
-
-Since CPU and GPU operate asynchronously, double buffering is required at minimum to enable parallelism between CPU and GPU
-
-> After CPU submits render instructions, it can enter the next frame without waiting for GPU to complete rendering instructions. However, when CPU needs to fill new frame data (various constant buffers) to GPU, if GPU is still reading these buffers, a conflict occurs, requiring waiting for GPU execution to complete before updating data. Double buffering solves this problem (assuming GPU is the bottleneck or CPU and GPU take similar time).
-
-Considering situations where CPU and GPU take similar time per frame, with only double buffering, due to latency in command submission from CPU to GPU and GPU notifying CPU of render completion, stalls may occur in both CPU and GPU [^triple_buffer]. Triple buffering can avoid this problem (when CPU or GPU is clearly the bottleneck, this latency has no impact)
-
-![image: ../Art/ResourceManagement_TripleBuffering_2x.png](https://developer.apple.com/library/archive/documentation/3DDrawing/Conceptual/MTLBestPracticesGuide/Art/ResourceManagement_TripleBuffering_2x.png)
-
-> In the diagram, "Commit Frame n" and "Frame n callback" represent the command transfer latency
-
-In summary, double buffering solves data conflicts, while triple buffering solves command transfer latency
-
-# References
-
-[^triple_buffer]: https://developer.apple.com/library/archive/documentation/3DDrawing/Conceptual/MTLBestPracticesGuide/TripleBuffering.html
+Level 4 will have a significant impact on the entire framework.

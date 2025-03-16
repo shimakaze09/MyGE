@@ -1,45 +1,52 @@
-# shader constant buffer
+# Shader Constant Buffer
 
-Each shader needs some constant buffers
+Each shader requires some constant buffers.
 
-Assuming they change every frame
+Assuming they change every frame.
 
-The engine will provide each shader with any number of constant buffers with manually adjustable sizes
+The engine provides each shader with any number of manually resizable constant buffers.
 
-The tentative usage strategy is as follows:
+The provisional usage strategy is as follows:
 
-- Frame resources have a dedicated constant buffer for each shader
+- Frame resources provide a dedicated constant buffer for each shader
 - The constant buffer will be filled with per camera, per material, and per object data
-- Each frame first counts the number of materials involved in each shader and the number of objects for each material, then calculates the size of the constant buffer and fills in the data (recalculating everything each frame)
+- Each frame first counts the number of materials involved in each shader and the number of objects for each material,
+  calculating the size of the constant buffer, then fills in the data (recalculating everything every frame)
 
 > **Example**
 >
-> Assume
+> Assume:
 >
 > - 2 shaders
 > - Each shader has 2 materials
 > - Each material has 2 objects
 > - 2 cameras
 >
-> > Naming and sizes
+> > Naming and sizes:
 > >
 > > - shader0
-      > >   - material00 (size_0_m)
-              > >     - object000 (size_0_o)
+      > >
+- material00 (size_0_m)
+  > >
+- object000 (size_0_o)
 > >     - object001 (size_0_o)
 > >   - material01 (size_0_m)
-        > >     - object010 (size_0_o)
+        > >
+- object010 (size_0_o)
 > >     - object011 (size_0_o)
 > > - shader1
-      > >   - material10 (size_1_m)
-              > >     - object100 (size_1_o)
+      > >
+- material10 (size_1_m)
+  > >
+- object100 (size_1_o)
 > >     - object101 (size_1_o)
 > >   - material11 (size_1_m)
-        > >     - object110 (size_1_o)
+        > >
+- object110 (size_1_o)
 > >     - object111 (size_1_o)
 > > - camera0, camera1
 >
-> Then the constant buffer layout would be
+> The constant buffer layout would be:
 >
 > ```
 > [shader0 constant buffer]
@@ -63,8 +70,9 @@ The tentative usage strategy is as follows:
 > object111
 > ```
 
-The constant buffer used by shaders is [MyDX12::DynamicConstantBuffer](https://github.com/shimakaze09/MyDX12/tree/main/include/MyDX12)
+The constant buffer used by shaders
+is [MyDX12::DynamicConstantBuffer](https://github.com/shimakaze09/MyDX12/tree/main/include/MyDX12).
 
-Frame resources contain [ShaderCBMngrDX12](../include/MyGE/Render/DX12/ShaderCBMngrDX12.h)
+Frame resources include [ShaderCBMngrDX12](../include/MyGE/Render/DX12/ShaderCBMngrDX12.h).
 
-A shared buffer between multiple shaders might be considered in the future
+A shared buffer between multiple shaders may be considered in the future.

@@ -50,7 +50,8 @@ void Mesh::SetSubMeshCount(size_t num) {
     }
   } else {
     size_t cnt = submeshes.size() - num;
-    for (size_t i = 0; i < cnt; i++) submeshes.pop_back();
+    for (size_t i = 0; i < cnt; i++)
+      submeshes.pop_back();
   }
 }
 
@@ -78,21 +79,23 @@ bool Mesh::IsVertexValid() {
     return false;
 }
 
-void Mesh::UpdateVertexBuffer(bool setToNonEditable) {
+void Mesh::UpdateVertexBuffer() {
+  assert(IsDirty());
+
   assert(IsVertexValid());
-
-  if (setToNonEditable) isEditable = false;
-
-  if (!IsDirty()) return;
 
   size_t num = GetVertexBufferVertexCount();
 
   size_t stride = 0;
   stride += sizeof(decltype(positions)::value_type);
-  if (!uv.empty()) stride += sizeof(decltype(uv)::value_type);
-  if (!normals.empty()) stride += sizeof(decltype(normals)::value_type);
-  if (!tangents.empty()) stride += sizeof(decltype(tangents)::value_type);
-  if (!colors.empty()) stride += sizeof(decltype(colors)::value_type);
+  if (!uv.empty())
+    stride += sizeof(decltype(uv)::value_type);
+  if (!normals.empty())
+    stride += sizeof(decltype(normals)::value_type);
+  if (!tangents.empty())
+    stride += sizeof(decltype(tangents)::value_type);
+  if (!colors.empty())
+    stride += sizeof(decltype(colors)::value_type);
 
   vertexBuffer.resize(stride * positions.size());
 

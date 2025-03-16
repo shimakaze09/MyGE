@@ -44,6 +44,8 @@ class Mesh : public Object {
   void SetSubMeshCount(size_t num);
   void SetSubMesh(size_t index, SubMeshDescriptor desc);
 
+  void SetToNonEditable() noexcept { isEditable = false; }
+
   bool IsDirty() const noexcept { return dirty; }
 
   bool IsEditable() const noexcept { return isEditable; }
@@ -60,9 +62,9 @@ class Mesh : public Object {
     return vertexBuffer.size() / positions.size();
   }
 
-  // if dirty, update vertex buffer and set non dirty
-  // call by the pipeline, need to update GPU buffer
-  void UpdateVertexBuffer(bool setToNonEditable = false);
+  // asset(IsDirty())
+  // call by the engine, need to update GPU buffer
+  void UpdateVertexBuffer();
 
   // non empty and every attributes have same num
   bool IsVertexValid();

@@ -47,6 +47,7 @@ struct StdPipeline::Impl {
     My::transformf World = My::transformf::eye();
     My::transformf TexTransform = My::transformf::eye();
   };
+
   struct PassConstants {
     My::transformf View = My::transformf::eye();
     My::transformf InvView = My::transformf::eye();
@@ -78,12 +79,15 @@ struct StdPipeline::Impl {
       My::pointf3 Position = {0.0f, 0.0f, 0.0f};  // point/spot light only
       float SpotPower = 64.0f;                    // spot light only
     };
+
     Light Lights[16];
   };
+
   struct MatConstants {
     My::rgbf albedoFactor;
     float roughnessFactor;
   };
+
   struct RenderContext {
     Camera cam;
     valf<16> view;
@@ -95,6 +99,7 @@ struct StdPipeline::Impl {
 
       valf<16> l2w;
     };
+
     std::unordered_map<const Shader*,
                        std::unordered_map<const Material*, std::vector<Object>>>
         objectMap;
@@ -392,7 +397,8 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
 
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
+    for (const auto& [mat, objects] : mat2objects)
+      objectNum += objects.size();
     if (shader->shaderName == "Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
       buffer->Reserve(
@@ -434,6 +440,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
       frameRsrcMngr.GetCurrentFrameResource()
           ->GetResource<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>>(
               "CommandAllocator");
+  cmdAlloc->Reset();
 
   fg.Clear();
   auto fgRsrcMngr =
@@ -667,7 +674,9 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() { delete pImpl; }
+StdPipeline::~StdPipeline() {
+  delete pImpl;
+}
 
 void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->UpdateRenderContext(world);
@@ -683,7 +692,9 @@ void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   // register mesh, shader, texture
 }
 
-void StdPipeline::Render() { pImpl->Render(GetResizeData(), GetFrameData()); }
+void StdPipeline::Render() {
+  pImpl->Render(GetResizeData(), GetFrameData());
+}
 
 void StdPipeline::EndFrame() {
   pImpl->frameRsrcMngr.EndFrame(initDesc.cmdQueue);
