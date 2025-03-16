@@ -15,13 +15,14 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
     MyECS::Schedule* s, sol::function systemFunc, std::string name,
     MyECS::ArchetypeFilter filter, MyECS::CmptLocator cmptLocator,
     MyECS::SingletonLocator singletonLocator) {
-  assert(!cmptLocator.CmptTypes().empty());
+  assert(!cmptLocator.CmptAccessTypes().empty());
   auto bytes = systemFunc.dump();
   auto sysfunc = s->RegisterChunkJob(
       [bytes = std::move(bytes), cmptLocator = std::move(cmptLocator)](
           MyECS::World* w, MyECS::SingletonsView singletonsView,
           MyECS::ChunkView chunk) {
-        if (chunk.EntityNum() == 0) return;
+        if (chunk.EntityNum() == 0)
+          return;
 
         auto luaCtx = LuaCtxMngr::Instance().GetContext(w);
         auto L = luaCtx->Request();
@@ -31,14 +32,14 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
 
           auto arrayEntity = chunk.GetCmptArray<MyECS::Entity>();
           std::vector<void*> cmpts;
-          std::vector<MyECS::CmptType> types;
-          std::vector<MyECS::CmptPtr> cmptPtrs;
+          std::vector<MyECS::CmptAccessType> types;
+          std::vector<MyECS::CmptAccessPtr> cmptPtrs;
           std::vector<size_t> sizes;
-          cmpts.reserve(cmptLocator.CmptTypes().size());
-          types.reserve(cmptLocator.CmptTypes().size());
-          cmptPtrs.reserve(cmptLocator.CmptTypes().size());
-          sizes.reserve(cmptLocator.CmptTypes().size());
-          for (const auto& t : cmptLocator.CmptTypes()) {
+          cmpts.reserve(cmptLocator.CmptAccessTypes().size());
+          types.reserve(cmptLocator.CmptAccessTypes().size());
+          cmptPtrs.reserve(cmptLocator.CmptAccessTypes().size());
+          sizes.reserve(cmptLocator.CmptAccessTypes().size());
+          for (const auto& t : cmptLocator.CmptAccessTypes()) {
             cmpts.push_back(chunk.GetCmptArray(t));
             types.push_back(t);
             cmptPtrs.emplace_back(t, cmpts.back());

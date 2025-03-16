@@ -10,8 +10,9 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptsView>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::CmptsView(
-                                   const My::MyECS::CmptPtr *, size_t)>()},
+      Field{Name::constructor,
+            WrapConstructor<My::MyECS::CmptsView(
+                const My::MyECS::CmptAccessPtr *, size_t)>()},
       Field{"GetCmpt", &My::MyECS::CmptsView::GetCmpt},
       Field{"Components", &My::MyECS::CmptsView::Components},
       Field{"NumberOfComponents", &My::MyECS::CmptsView::NumberOfComponents},

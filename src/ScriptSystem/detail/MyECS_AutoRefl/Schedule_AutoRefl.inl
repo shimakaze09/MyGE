@@ -13,11 +13,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::Schedule>
   static constexpr FieldList fields = {
       Field{"LockFilter", &My::MyECS::Schedule::LockFilter},
       Field{"Order", &My::MyECS::Schedule::Order},
-      Field{"InsertAll", &My::MyECS::Schedule::InsertAll},
-      Field{"InsertAny", &My::MyECS::Schedule::InsertAny},
       Field{"InsertNone", &My::MyECS::Schedule::InsertNone},
-      Field{"EraseAll", &My::MyECS::Schedule::EraseAll},
-      Field{"EraseAny", &My::MyECS::Schedule::EraseAny},
       Field{"EraseNone", &My::MyECS::Schedule::EraseNone},
   };
 };

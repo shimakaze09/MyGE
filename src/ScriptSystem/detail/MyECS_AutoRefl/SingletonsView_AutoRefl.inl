@@ -10,8 +10,9 @@ struct My::MySRefl::TypeInfo<My::MyECS::SingletonsView>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::SingletonsView(
-                                   const My::MyECS::CmptPtr *, size_t)>()},
+      Field{Name::constructor,
+            WrapConstructor<My::MyECS::SingletonsView(
+                const My::MyECS::CmptAccessPtr *, size_t)>()},
       Field{"GetSingleton", &My::MyECS::SingletonsView::GetSingleton},
       Field{"Singletons", &My::MyECS::SingletonsView::Singletons},
       Field{"NumberOfSingletons",

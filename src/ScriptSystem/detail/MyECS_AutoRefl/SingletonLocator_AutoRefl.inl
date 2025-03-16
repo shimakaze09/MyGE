@@ -10,8 +10,9 @@ struct My::MySRefl::TypeInfo<My::MyECS::SingletonLocator>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::SingletonLocator(
-                                   const My::MyECS::CmptType *, size_t)>()},
+      Field{Name::constructor,
+            WrapConstructor<My::MyECS::SingletonLocator(
+                const My::MyECS::CmptAccessType *, size_t)>()},
       Field{Name::constructor,
             WrapConstructor<My::MyECS::SingletonLocator()>()},
       Field{"SingletonTypes", &My::MyECS::SingletonLocator::SingletonTypes},

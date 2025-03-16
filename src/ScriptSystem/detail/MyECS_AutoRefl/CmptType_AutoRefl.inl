@@ -10,17 +10,55 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptType>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::CmptType(
-                                   size_t, My::MyECS::AccessMode)>()},
-      Field{Name::constructor, WrapConstructor<My::MyECS::CmptType(
-                                   std::string_view, My::MyECS::AccessMode)>()},
+      Field{Name::constructor, WrapConstructor<My::MyECS::CmptType(size_t)>()},
+      Field{Name::constructor,
+            WrapConstructor<My::MyECS::CmptType(std::string_view)>()},
       Field{"HashCode", &My::MyECS::CmptType::HashCode},
-      Field{"GetAccessMode", &My::MyECS::CmptType::GetAccessMode},
       Field{"Invalid", &My::MyECS::CmptType::Invalid},
+      Field{"Valid", &My::MyECS::CmptType::Valid},
       Field{"operator<", &My::MyECS::CmptType::operator<},
-            Field{"operator==", &My::MyECS::CmptType::operator== },
-                  Field{
-                      "operator!=",
-                      &My::MyECS::CmptType::operator!= },
-            };
+            Field{"operator<=", &My::MyECS::CmptType::operator<= },
+                  Field{"operator>", &My::MyECS::CmptType::operator> },
+                        Field{"operator>=", &My::MyECS::CmptType::operator>= },
+                              Field{"operator==",
+                                    &My::MyECS::CmptType::operator== },
+                                    Field{
+                                        "operator!=",
+                                        &My::MyECS::CmptType::operator!= },
+                              };
+};
+
+template <>
+struct My::MySRefl::TypeInfo<My::MyECS::CmptAccessType>
+    : My::MySRefl::TypeInfoBase<My::MyECS::CmptAccessType> {
+  static constexpr AttrList attrs = {};
+
+  static constexpr FieldList fields = {
+      Field{Name::constructor, WrapConstructor<My::MyECS::CmptAccessType(
+                                   size_t, My::MyECS::AccessMode)>()},
+      Field{Name::constructor, WrapConstructor<My::MyECS::CmptAccessType(
+                                   std::string_view, My::MyECS::AccessMode)>()},
+      Field{Name::constructor,
+            WrapConstructor<My::MyECS::CmptAccessType(
+                My::MyECS::CmptType, My::MyECS::AccessMode)>()},
+      Field{Name::constructor,
+            WrapConstructor<My::MyECS::CmptAccessType(My::MyECS::CmptType)>()},
+      Field{"HashCode", &My::MyECS::CmptAccessType::HashCode},
+      Field{"GetCmptType", &My::MyECS::CmptAccessType::GetCmptType},
+      Field{"GetAccessMode", &My::MyECS::CmptAccessType::GetAccessMode},
+      Field{"Invalid", &My::MyECS::CmptAccessType::Invalid},
+      Field{"Valid", &My::MyECS::CmptAccessType::Valid},
+      Field{
+          "operator<", &My::MyECS::CmptAccessType::operator<},
+          Field{
+              "operator<=", &My::MyECS::CmptAccessType::operator<= },
+              Field{
+                  "operator>", &My::MyECS::CmptAccessType::operator> },
+                  Field{"operator>=", &My::MyECS::CmptAccessType::operator>= },
+                        Field{"operator==",
+                              &My::MyECS::CmptAccessType::operator== },
+                              Field{
+                                  "operator!=",
+                                  &My::MyECS::CmptAccessType::operator!= },
+                        };
 };
