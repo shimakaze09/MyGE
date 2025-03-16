@@ -76,10 +76,10 @@ struct MatConstants {
 };
 
 struct RenderContext {
-  std::vector<My::MyECS::Entity> cameras;
+  std::vector<My::UECS::Entity> cameras;
 
   struct Object {
-    My::MyECS::Entity entity;
+    My::UECS::Entity entity;
     size_t submeshIdx;
   };
   std::unordered_map<
@@ -88,11 +88,11 @@ struct RenderContext {
       objectMap;
 };
 
-struct RotateSystem : My::MyECS::System {
-  using My::MyECS::System::System;
-  virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
-    My::MyECS::ArchetypeFilter filter;
-    filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshFilter>};
+struct RotateSystem : My::UECS::System {
+  using My::UECS::System::System;
+  virtual void OnUpdate(My::UECS::Schedule& schedule) override {
+    My::UECS::ArchetypeFilter filter;
+    filter.all = {My::UECS::CmptType::Of<My::MyGE::MeshFilter>};
     schedule.RegisterEntityJob(
         [](My::MyGE::Rotation* rot) {
           rot->value =
@@ -113,15 +113,15 @@ class WorldApp : public D3DApp {
 
  private:
   virtual void OnResize() override;
-  virtual void Update(const GameTimer& gt) override;
-  virtual void Draw(const GameTimer& gt) override;
+  virtual void Update() override;
+  virtual void Draw() override;
 
   virtual void OnMouseDown(WPARAM btnState, int x, int y) override;
   virtual void OnMouseUp(WPARAM btnState, int x, int y) override;
   virtual void OnMouseMove(WPARAM btnState, int x, int y) override;
 
-  void OnKeyboardInput(const GameTimer& gt);
-  void UpdateCamera(const GameTimer& gt);
+  void OnKeyboardInput();
+  void UpdateCamera();
 
   void LoadTextures();
   void BuildRootSignature();
@@ -147,8 +147,8 @@ class WorldApp : public D3DApp {
 
   // frame graph
   My::MyDX12::FG::Executor fgExecutor;
-  My::MyFG::Compiler fgCompiler;
-  My::MyFG::FrameGraph fg;
+  My::UFG::Compiler fgCompiler;
+  My::UFG::FrameGraph fg;
 
   My::MyGE::Shader* screenShader;
   My::MyGE::Shader* geomrtryShader;
@@ -158,8 +158,8 @@ class WorldApp : public D3DApp {
   My::MyGE::Texture2D* roughnessTex2D;
   My::MyGE::Texture2D* metalnessTex2D;
 
-  My::MyECS::World world;
-  My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
+  My::UECS::World world;
+  My::UECS::Entity cam{My::UECS::Entity::Invalid()};
   float fov{0.33f * My::PI<float>};
 
   std::unique_ptr<My::MyDX12::FrameResourceMngr> frameRsrcMngr;
@@ -216,7 +216,7 @@ bool WorldApp::Initialize() {
       world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::WorldToLocal,
                               My::MyGE::Camera, My::MyGE::Translation,
                               My::MyGE::Rotation>();
-  cam = std::get<My::MyECS::Entity>(e0);
+  cam = std::get<My::UECS::Entity>(e0);
 
   int num = 11;
   for (int i = 0; i < num; i++) {
@@ -271,9 +271,9 @@ void WorldApp::OnResize() {
   }
 }
 
-void WorldApp::Update(const GameTimer& gt) {
-  OnKeyboardInput(gt);
-  UpdateCamera(gt);
+void WorldApp::Update() {
+  OnKeyboardInput();
+  UpdateCamera();
 
   world.Update();
 
@@ -292,8 +292,8 @@ void WorldApp::Update(const GameTimer& gt) {
 
   mMainPassCB.NearZ = 1.0f;
   mMainPassCB.FarZ = 1000.0f;
-  mMainPassCB.TotalTime = gt.TotalTime();
-  mMainPassCB.DeltaTime = gt.DeltaTime();
+  mMainPassCB.TotalTime = My::MyGE::GameTimer::Instance().TotalTime();
+  mMainPassCB.DeltaTime = My::MyGE::GameTimer::Instance().DeltaTime();
   mMainPassCB.AmbientLight = {0.25f, 0.25f, 0.35f, 1.0f};
   mMainPassCB.Lights[0].Direction = {0.57735f, -0.57735f, 0.57735f};
   mMainPassCB.Lights[0].Strength = {0.6f, 0.6f, 0.6f};
@@ -305,9 +305,9 @@ void WorldApp::Update(const GameTimer& gt) {
   renderContext.cameras.clear();
   renderContext.objectMap.clear();
 
-  My::MyECS::ArchetypeFilter objectFilter;
-  objectFilter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshFilter>,
-                      My::MyECS::CmptType::Of<My::MyGE::MeshRenderer>};
+  My::UECS::ArchetypeFilter objectFilter;
+  objectFilter.all = {My::UECS::CmptType::Of<My::MyGE::MeshFilter>,
+                      My::UECS::CmptType::Of<My::MyGE::MeshRenderer>};
   auto objectEntities = world.entityMngr.GetEntityArray(objectFilter);
   for (auto e : objectEntities) {
     auto meshFilter = world.entityMngr.Get<My::MyGE::MeshFilter>(e);
@@ -319,8 +319,8 @@ void WorldApp::Update(const GameTimer& gt) {
     }
   }
 
-  My::MyECS::ArchetypeFilter cameraFilter;
-  cameraFilter.all = {My::MyECS::CmptType::Of<My::MyGE::Camera>};
+  My::UECS::ArchetypeFilter cameraFilter;
+  cameraFilter.all = {My::UECS::CmptType::Of<My::MyGE::Camera>};
   renderContext.cameras = world.entityMngr.GetEntityArray(cameraFilter);
 
   // Cycle through the circular frame resource array.
@@ -373,8 +373,8 @@ void WorldApp::Update(const GameTimer& gt) {
   }
 }
 
-void WorldApp::Draw(const GameTimer& gt) {
-  auto cmdListAlloc =
+void WorldApp::Draw() {
+  auto cmdAlloc =
       frameRsrcMngr->GetCurrentFrameResource()
           ->GetResource<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>>(
               "CommandAllocator");
@@ -382,17 +382,15 @@ void WorldApp::Draw(const GameTimer& gt) {
   // Reuse the memory associated with command recording.
   // We can only reset when the associated command lists have finished execution
   // on the GPU.
-  ThrowIfFailed(cmdListAlloc->Reset());
+  // ThrowIfFailed(cmdAlloc->Reset());
 
   // A command list can be reset after it has been added to the command queue
   // via ExecuteCommandList. Reusing the command list reuses memory.
-  ThrowIfFailed(uGCmdList->Reset(cmdListAlloc.Get(), nullptr));
-  uGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
-                                   .GetCSUGpuDH()
-                                   ->GetDescriptorHeap());
+  /*ThrowIfFailed(uGCmdList->Reset(cmdAlloc.Get(), nullptr));
+  uGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->GetDescriptorHeap());
 
   uGCmdList->RSSetViewports(1, &mScreenViewport);
-  uGCmdList->RSSetScissorRects(1, &mScissorRect);
+  uGCmdList->RSSetScissorRects(1, &mScissorRect);*/
 
   fg.Clear();
   auto fgRsrcMngr =
@@ -479,72 +477,90 @@ void WorldApp::Draw(const GameTimer& gt) {
                          D3D12_RESOURCE_STATE_RENDER_TARGET,
                          My::MyDX12::FG::RsrcImplDesc_RTV_Null{});
 
-  fgExecutor.RegisterPassFunc(
-      gbPass, [&](const My::MyDX12::FG::PassRsrcs& rsrcs) {
-        uGCmdList->SetPipelineState(
-            My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_geometry));
-        auto gb0 = rsrcs.find(gbuffer0)->second;
-        auto gb1 = rsrcs.find(gbuffer1)->second;
-        auto gb2 = rsrcs.find(gbuffer2)->second;
-        auto ds = rsrcs.find(depthstencil)->second;
+  fgExecutor.RegisterPassFunc(gbPass, [&](ID3D12GraphicsCommandList* cmdList,
+                                          const My::MyDX12::FG::PassRsrcs&
+                                              rsrcs) {
+    auto heap = My::MyDX12::DescriptorHeapMngr::Instance()
+                    .GetCSUGpuDH()
+                    ->GetDescriptorHeap();
+    cmdList->SetDescriptorHeaps(1, &heap);
+    cmdList->RSSetViewports(1, &mScreenViewport);
+    cmdList->RSSetScissorRects(1, &mScissorRect);
 
-        // Clear the render texture and depth buffer.
-        uGCmdList.ClearRenderTargetView(gb0.cpuHandle, Colors::Black);
-        uGCmdList.ClearRenderTargetView(gb1.cpuHandle, Colors::Black);
-        uGCmdList.ClearRenderTargetView(gb2.cpuHandle, Colors::Black);
-        uGCmdList.ClearDepthStencilView(ds.cpuHandle);
+    cmdList->SetPipelineState(
+        My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_geometry));
+    auto gb0 = rsrcs.find(gbuffer0)->second;
+    auto gb1 = rsrcs.find(gbuffer1)->second;
+    auto gb2 = rsrcs.find(gbuffer2)->second;
+    auto ds = rsrcs.find(depthstencil)->second;
 
-        // Specify the buffers we are going to render to.
-        std::array rts{gb0.cpuHandle, gb1.cpuHandle, gb2.cpuHandle};
-        uGCmdList->OMSetRenderTargets(rts.size(), rts.data(), false,
-                                      &ds.cpuHandle);
+    // Clear the render texture and depth buffer.
+    cmdList->ClearRenderTargetView(gb0.cpuHandle, Colors::Black, 0, nullptr);
+    cmdList->ClearRenderTargetView(gb1.cpuHandle, Colors::Black, 0, nullptr);
+    cmdList->ClearRenderTargetView(gb2.cpuHandle, Colors::Black, 0, nullptr);
+    cmdList->ClearDepthStencilView(
+        ds.cpuHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0,
+        0, nullptr);
 
-        uGCmdList->SetGraphicsRootSignature(
-            My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
-                ID_RootSignature_geometry));
+    // Specify the buffers we are going to render to.
+    std::array rts{gb0.cpuHandle, gb1.cpuHandle, gb2.cpuHandle};
+    cmdList->OMSetRenderTargets(rts.size(), rts.data(), false, &ds.cpuHandle);
 
-        auto passCB =
-            frameRsrcMngr->GetCurrentFrameResource()
-                ->GetResource<My::MyGE::ShaderCBMngrDX12>("ShaderCBMngrDX12")
-                .GetBuffer(geomrtryShader)
-                ->GetResource();
-        uGCmdList->SetGraphicsRootConstantBufferView(
-            4, passCB->GetGPUVirtualAddress());
+    cmdList->SetGraphicsRootSignature(
+        My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
+            ID_RootSignature_geometry));
 
-        DrawRenderItems(uGCmdList.raw.Get());
-      });
+    auto passCB =
+        frameRsrcMngr->GetCurrentFrameResource()
+            ->GetResource<My::MyGE::ShaderCBMngrDX12>("ShaderCBMngrDX12")
+            .GetBuffer(geomrtryShader)
+            ->GetResource();
+    cmdList->SetGraphicsRootConstantBufferView(4,
+                                               passCB->GetGPUVirtualAddress());
+
+    DrawRenderItems(cmdList);
+  });
 
   // fgExecutor.RegisterPassFunc(
   //	debugPass,
-  //	[&](const My::MyDX12::FG::PassRsrcs& rsrcs) {
-  //		uGCmdList->SetPipelineState(My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_screen));
+  //	[&](ID3D12GraphicsCommandList* cmdList, const My::MyDX12::FG::PassRsrcs&
+  // rsrcs) {
+  //		cmdList->SetPipelineState(My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_screen));
   //		auto img = rsrcs.find(gbuffer1)->second;
   //		auto bb = rsrcs.find(backbuffer)->second;
   //
-  //		//uGCmdList->CopyResource(bb.resource, rt.resource);
+  //		//cmdList->CopyResource(bb.resource, rt.resource);
 
   //		// Clear the render texture and depth buffer.
-  //		uGCmdList.ClearRenderTargetView(bb.cpuHandle,
+  //		cmdList.ClearRenderTargetView(bb.cpuHandle,
   // Colors::LightSteelBlue);
 
   //		// Specify the buffers we are going to render to.
-  //		//uGCmdList.OMSetRenderTarget(bb.cpuHandle, ds.cpuHandle);
-  //		uGCmdList->OMSetRenderTargets(1, &bb.cpuHandle, false, nullptr);
+  //		//cmdList.OMSetRenderTarget(bb.cpuHandle, ds.cpuHandle);
+  //		cmdList->OMSetRenderTargets(1, &bb.cpuHandle, false, nullptr);
 
-  //		uGCmdList->SetGraphicsRootSignature(My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_screen));
+  //		cmdList->SetGraphicsRootSignature(My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_screen));
 
-  //		uGCmdList->SetGraphicsRootDescriptorTable(0, img.gpuHandle);
+  //		cmdList->SetGraphicsRootDescriptorTable(0, img.gpuHandle);
 
-  //		uGCmdList->IASetVertexBuffers(0, 0, nullptr);
-  //		uGCmdList->IASetIndexBuffer(nullptr);
-  //		uGCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  //		uGCmdList->DrawInstanced(6, 1, 0, 0);
+  //		cmdList->IASetVertexBuffers(0, 0, nullptr);
+  //		cmdList->IASetIndexBuffer(nullptr);
+  //		cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  //		cmdList->DrawInstanced(6, 1, 0, 0);
   //	}
   //);
 
   fgExecutor.RegisterPassFunc(
-      deferLightingPass, [&](const My::MyDX12::FG::PassRsrcs& rsrcs) {
-        uGCmdList->SetPipelineState(
+      deferLightingPass, [&](ID3D12GraphicsCommandList* cmdList,
+                             const My::MyDX12::FG::PassRsrcs& rsrcs) {
+        auto heap = My::MyDX12::DescriptorHeapMngr::Instance()
+                        .GetCSUGpuDH()
+                        ->GetDescriptorHeap();
+        cmdList->SetDescriptorHeaps(1, &heap);
+        cmdList->RSSetViewports(1, &mScreenViewport);
+        cmdList->RSSetScissorRects(1, &mScissorRect);
+
+        cmdList->SetPipelineState(
             My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_defer_light));
         auto gb0 = rsrcs.find(gbuffer0)->second;
         auto gb1 = rsrcs.find(gbuffer1)->second;
@@ -552,25 +568,26 @@ void WorldApp::Draw(const GameTimer& gt) {
 
         auto bb = rsrcs.find(backbuffer)->second;
 
-        // uGCmdList->CopyResource(bb.resource, rt.resource);
+        // cmdList->CopyResource(bb.resource, rt.resource);
 
         // Clear the render texture and depth buffer.
-        uGCmdList.ClearRenderTargetView(bb.cpuHandle, Colors::LightSteelBlue);
+        cmdList->ClearRenderTargetView(bb.cpuHandle, Colors::LightSteelBlue, 0,
+                                       nullptr);
 
         // Specify the buffers we are going to render to.
-        // uGCmdList.OMSetRenderTarget(bb.cpuHandle, ds.cpuHandle);
-        uGCmdList->OMSetRenderTargets(1, &bb.cpuHandle, false, nullptr);
+        // cmdList.OMSetRenderTarget(bb.cpuHandle, ds.cpuHandle);
+        cmdList->OMSetRenderTargets(1, &bb.cpuHandle, false, nullptr);
 
-        uGCmdList->SetGraphicsRootSignature(
+        cmdList->SetGraphicsRootSignature(
             My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
                 ID_RootSignature_defer_light));
 
-        uGCmdList->SetGraphicsRootDescriptorTable(0, gb0.gpuHandle);
+        cmdList->SetGraphicsRootDescriptorTable(0, gb0.gpuHandle);
 
-        uGCmdList->IASetVertexBuffers(0, 0, nullptr);
-        uGCmdList->IASetIndexBuffer(nullptr);
-        uGCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        uGCmdList->DrawInstanced(6, 1, 0, 0);
+        cmdList->IASetVertexBuffers(0, 0, nullptr);
+        cmdList->IASetIndexBuffer(nullptr);
+        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        cmdList->DrawInstanced(6, 1, 0, 0);
       });
 
   static bool flag{false};
@@ -580,13 +597,14 @@ void WorldApp::Draw(const GameTimer& gt) {
   }
 
   auto [success, crst] = fgCompiler.Compile(fg);
-  fgExecutor.Execute(crst, *fgRsrcMngr);
+  fgExecutor.Execute(uDevice.raw.Get(), uCmdQueue.raw.Get(), cmdAlloc.Get(),
+                     crst, *fgRsrcMngr);
 
   // Done recording commands.
-  ThrowIfFailed(uGCmdList->Close());
+  // ThrowIfFailed(cmdList->Close());
 
   // Add the command list to the queue for execution.
-  uCmdQueue.Execute(uGCmdList.raw.Get());
+  // uCmdQueue.Execute(cmdList.raw.Get());
 
   // Swap the back and front buffers
   ThrowIfFailed(mSwapChain->Present(0, 0));
@@ -634,9 +652,9 @@ void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
   mLastMousePos.y = y;
 }
 
-void WorldApp::OnKeyboardInput(const GameTimer& gt) {}
+void WorldApp::OnKeyboardInput() {}
 
-void WorldApp::UpdateCamera(const GameTimer& gt) {
+void WorldApp::UpdateCamera() {
   My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
                    mRadius * sinf(mTheta) * cosf(mPhi)};
   auto camera = world.entityMngr.Get<My::MyGE::Camera>(cam);
@@ -860,8 +878,8 @@ void WorldApp::BuildShapeGeometry() {
       "../assets/models/cube.obj");
   My::MyGE::RsrcMngrDX12::Instance().RegisterStaticMesh(
       My::MyGE::RsrcMngrDX12::Instance().GetUpload(), mesh);
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshFilter>};
+  My::UECS::ArchetypeFilter filter;
+  filter.all = {My::UECS::CmptType::Of<My::MyGE::MeshFilter>};
   auto meshFilters =
       world.entityMngr.GetCmptArray<My::MyGE::MeshFilter>(filter);
   for (auto meshFilter : meshFilters) meshFilter->mesh = mesh;
@@ -876,6 +894,8 @@ void WorldApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(screenShader),
       mBackBufferFormat, DXGI_FORMAT_UNKNOWN);
   screenPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
+  screenPsoDesc.DepthStencilState.DepthEnable = false;
+  screenPsoDesc.DepthStencilState.StencilEnable = false;
   My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_screen, &screenPsoDesc);
 
   auto geometryPsoDesc = My::MyDX12::Desc::PSO::MRT(
@@ -897,6 +917,8 @@ void WorldApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferShader),
       mBackBufferFormat, DXGI_FORMAT_UNKNOWN);
   deferLightingPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
+  deferLightingPsoDesc.DepthStencilState.DepthEnable = false;
+  deferLightingPsoDesc.DepthStencilState.StencilEnable = false;
   My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_defer_light,
                                                  &deferLightingPsoDesc);
 }
@@ -913,7 +935,6 @@ void WorldApp::BuildFrameResources() {
                          My::MyGE::ShaderCBMngrDX12{uDevice.raw.Get()});
 
     auto fgRsrcMngr = std::make_shared<My::MyDX12::FG::RsrcMngr>();
-    fgRsrcMngr->Init(uGCmdList, uDevice);
     fr->RegisterResource("FrameGraphRsrcMngr", fgRsrcMngr);
   }
 }
@@ -931,8 +952,8 @@ void WorldApp::BuildMaterials() {
     material =
         My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(matPath);
   }
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshRenderer>};
+  My::UECS::ArchetypeFilter filter;
+  filter.all = {My::UECS::CmptType::Of<My::MyGE::MeshRenderer>};
   auto meshRenderers =
       world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
   for (auto meshRenderer : meshRenderers)

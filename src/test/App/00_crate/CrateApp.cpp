@@ -116,19 +116,19 @@ class DeferApp : public D3DApp {
 
  private:
   virtual void OnResize() override;
-  virtual void Update(const GameTimer& gt) override;
-  virtual void Draw(const GameTimer& gt) override;
+  virtual void Update() override;
+  virtual void Draw() override;
 
   virtual void OnMouseDown(WPARAM btnState, int x, int y) override;
   virtual void OnMouseUp(WPARAM btnState, int x, int y) override;
   virtual void OnMouseMove(WPARAM btnState, int x, int y) override;
 
-  void OnKeyboardInput(const GameTimer& gt);
-  void UpdateCamera(const GameTimer& gt);
-  void AnimateMaterials(const GameTimer& gt);
-  void UpdateObjectCBs(const GameTimer& gt);
-  void UpdateMaterialCBs(const GameTimer& gt);
-  void UpdateMainPassCB(const GameTimer& gt);
+  void OnKeyboardInput();
+  void UpdateCamera();
+  void AnimateMaterials();
+  void UpdateObjectCBs();
+  void UpdateMaterialCBs();
+  void UpdateMainPassCB();
 
   void LoadTextures();
   void BuildRootSignature();
@@ -150,8 +150,8 @@ class DeferApp : public D3DApp {
   // ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
   My::MyDX12::DescriptorHeapAllocation mSrvDescriptorHeap;
 
-  // std::unordered_map<std::string,
-  // std::unique_ptr<My::MyDX12::MeshGeometry>> mGeometries;
+  // std::unordered_map<std::string, std::unique_ptr<My::MyDX12::MeshGeometry>>
+  // mGeometries;
   std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
   std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
   // std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
@@ -181,8 +181,8 @@ class DeferApp : public D3DApp {
   // frame graph
   // My::MyDX12::FG::RsrcMngr fgRsrcMngr;
   My::MyDX12::FG::Executor fgExecutor;
-  My::MyFG::Compiler fgCompiler;
-  My::MyFG::FrameGraph fg;
+  My::UFG::Compiler fgCompiler;
+  My::UFG::FrameGraph fg;
 
   // resources
   My::MyGE::Texture2D* chessboardTex2D;
@@ -281,23 +281,23 @@ void DeferApp::OnResize() {
   }
 }
 
-void DeferApp::Update(const GameTimer& gt) {
-  OnKeyboardInput(gt);
-  UpdateCamera(gt);
+void DeferApp::Update() {
+  OnKeyboardInput();
+  UpdateCamera();
 
   // Cycle through the circular frame resource array.
   // Has the GPU finished processing the commands of the current frame resource?
   // If not, wait until the GPU has completed commands up to this fence point.
   frameRsrcMngr->BeginFrame();
 
-  AnimateMaterials(gt);
-  UpdateObjectCBs(gt);
-  UpdateMaterialCBs(gt);
-  UpdateMainPassCB(gt);
+  AnimateMaterials();
+  UpdateObjectCBs();
+  UpdateMaterialCBs();
+  UpdateMainPassCB();
 }
 
-void DeferApp::Draw(const GameTimer& gt) {
-  auto cmdListAlloc =
+void DeferApp::Draw() {
+  auto cmdAlloc =
       frameRsrcMngr->GetCurrentFrameResource()
           ->GetResource<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>>(
               "CommandAllocator");
@@ -305,19 +305,16 @@ void DeferApp::Draw(const GameTimer& gt) {
   // Reuse the memory associated with command recording.
   // We can only reset when the associated command lists have finished execution
   // on the GPU.
-  ThrowIfFailed(cmdListAlloc->Reset());
+  ThrowIfFailed(cmdAlloc->Reset());
 
   // A command list can be reset after it has been added to the command queue
   // via ExecuteCommandList. Reusing the command list reuses memory.
-  ThrowIfFailed(uGCmdList->Reset(
-      cmdListAlloc.Get(),
-      My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_opaque)));
+  // ThrowIfFailed(uGCmdList->Reset(cmdAlloc.Get(),
+  // My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_opaque)));
 
-  uGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
-                                   .GetCSUGpuDH()
-                                   ->GetDescriptorHeap());
+  /*uGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->GetDescriptorHeap());
   uGCmdList->RSSetViewports(1, &mScreenViewport);
-  uGCmdList->RSSetScissorRects(1, &mScissorRect);
+  uGCmdList->RSSetScissorRects(1, &mScissorRect);*/
 
   fg.Clear();
   auto fgRsrcMngr =
@@ -349,20 +346,36 @@ void DeferApp::Draw(const GameTimer& gt) {
                          dsvDesc);
 
   fgExecutor.RegisterPassFunc(
-      pass, [&](const My::MyDX12::FG::PassRsrcs& rsrcs) {
+      pass, [&](ID3D12GraphicsCommandList* cmdList,
+                const My::MyDX12::FG::PassRsrcs& rsrcs) {
+        auto heap = My::MyDX12::DescriptorHeapMngr::Instance()
+                        .GetCSUGpuDH()
+                        ->GetDescriptorHeap();
+        cmdList->SetDescriptorHeaps(1, &heap);
+        cmdList->RSSetViewports(1, &mScreenViewport);
+        cmdList->RSSetScissorRects(1, &mScissorRect);
+
+        auto bb = rsrcs.find(backbuffer)->second;
+        auto ds = rsrcs.find(depthstencil)->second;
+
+        cmdList->SetPipelineState(
+            My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_opaque));
+
         // Clear the back buffer and depth buffer.
-        uGCmdList.ClearRenderTargetView(
-            rsrcs.find(backbuffer)->second.cpuHandle, Colors::LightSteelBlue);
-        uGCmdList.ClearDepthStencilView(
-            rsrcs.find(depthstencil)->second.cpuHandle);
+        cmdList->ClearRenderTargetView(bb.cpuHandle, Colors::LightSteelBlue, 0,
+                                       nullptr);
+        cmdList->ClearDepthStencilView(
+            ds.cpuHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+            1.f, 0, 0, nullptr);
 
         // Specify the buffers we are going to render to.
-        uGCmdList.OMSetRenderTarget(rsrcs.find(backbuffer)->second.cpuHandle,
-                                    rsrcs.find(depthstencil)->second.cpuHandle);
+        std::array rts{bb.cpuHandle};
+        cmdList->OMSetRenderTargets(rts.size(), rts.data(), false,
+                                    &ds.cpuHandle);
 
         // uGCmdList.SetDescriptorHeaps(mSrvDescriptorHeap.Get());
 
-        uGCmdList->SetGraphicsRootSignature(
+        cmdList->SetGraphicsRootSignature(
             My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
                 ID_RootSignature_default));
 
@@ -371,22 +384,21 @@ void DeferApp::Draw(const GameTimer& gt) {
                 ->GetResource<My::MyDX12::ArrayUploadBuffer<PassConstants>>(
                     "ArrayUploadBuffer<PassConstants>")
                 .GetResource();
-        uGCmdList->SetGraphicsRootConstantBufferView(
+        cmdList->SetGraphicsRootConstantBufferView(
             2, passCB->GetGPUVirtualAddress());
 
-        DrawRenderItems(uGCmdList.raw.Get(), mOpaqueRitems);
-
-        DrawRenderItems(uGCmdList.raw.Get(), mOpaqueRitems);
+        DrawRenderItems(cmdList, mOpaqueRitems);
       });
 
   auto [success, crst] = fgCompiler.Compile(fg);
-  fgExecutor.Execute(crst, *fgRsrcMngr);
+  fgExecutor.Execute(uDevice.raw.Get(), uCmdQueue.raw.Get(), cmdAlloc.Get(),
+                     crst, *fgRsrcMngr);
 
   // Done recording commands.
-  ThrowIfFailed(uGCmdList->Close());
+  //   ThrowIfFailed(uGCmdList->Close());
 
-  // Add the command list to the queue for execution.
-  uCmdQueue.Execute(uGCmdList.raw.Get());
+  //   // Add the command list to the queue for execution.
+  // uCmdQueue.Execute(uGCmdList.raw.Get());
 
   // Swap the back and front buffers
   ThrowIfFailed(mSwapChain->Present(0, 0));
@@ -439,9 +451,9 @@ void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
   mLastMousePos.y = y;
 }
 
-void DeferApp::OnKeyboardInput(const GameTimer& gt) {}
+void DeferApp::OnKeyboardInput() {}
 
-void DeferApp::UpdateCamera(const GameTimer& gt) {
+void DeferApp::UpdateCamera() {
   // Convert Spherical to Cartesian coordinates.
   mEyePos[0] = mRadius * sinf(mTheta) * sinf(mPhi);
   mEyePos[1] = mRadius * cosf(mTheta);
@@ -449,9 +461,9 @@ void DeferApp::UpdateCamera(const GameTimer& gt) {
   mView = My::transformf::look_at(mEyePos, {0.f});
 }
 
-void DeferApp::AnimateMaterials(const GameTimer& gt) {}
+void DeferApp::AnimateMaterials() {}
 
-void DeferApp::UpdateObjectCBs(const GameTimer& gt) {
+void DeferApp::UpdateObjectCBs() {
   auto& currObjectCB =
       frameRsrcMngr->GetCurrentFrameResource()
           ->GetResource<My::MyDX12::ArrayUploadBuffer<ObjectConstants>>(
@@ -478,7 +490,7 @@ void DeferApp::UpdateObjectCBs(const GameTimer& gt) {
   }
 }
 
-void DeferApp::UpdateMaterialCBs(const GameTimer& gt) {
+void DeferApp::UpdateMaterialCBs() {
   auto& currMaterialCB =
       frameRsrcMngr->GetCurrentFrameResource()
           ->GetResource<My::MyDX12::ArrayUploadBuffer<MaterialConstants>>(
@@ -505,7 +517,7 @@ void DeferApp::UpdateMaterialCBs(const GameTimer& gt) {
   }
 }
 
-void DeferApp::UpdateMainPassCB(const GameTimer& gt) {
+void DeferApp::UpdateMainPassCB() {
   mMainPassCB.View = mView;
   mMainPassCB.InvView = mMainPassCB.View.inverse();
   mMainPassCB.Proj = mProj;
@@ -518,8 +530,8 @@ void DeferApp::UpdateMainPassCB(const GameTimer& gt) {
 
   mMainPassCB.NearZ = 1.0f;
   mMainPassCB.FarZ = 1000.0f;
-  mMainPassCB.TotalTime = gt.TotalTime();
-  mMainPassCB.DeltaTime = gt.DeltaTime();
+  mMainPassCB.TotalTime = My::MyGE::GameTimer::Instance().TotalTime();
+  mMainPassCB.DeltaTime = My::MyGE::GameTimer::Instance().DeltaTime();
   mMainPassCB.AmbientLight = {0.25f, 0.25f, 0.35f, 1.0f};
   mMainPassCB.Lights[0].Direction = {0.57735f, -0.57735f, 0.57735f};
   mMainPassCB.Lights[0].Strength = {0.6f, 0.6f, 0.6f};
@@ -657,7 +669,6 @@ void DeferApp::BuildFrameResources() {
                              uDevice.raw.Get(), mAllRitems.size(), true});
 
     auto fgRsrcMngr = std::make_shared<My::MyDX12::FG::RsrcMngr>();
-    fgRsrcMngr->Init(uGCmdList, uDevice);
     fr->RegisterResource("FrameGraphRsrcMngr", std::move(fgRsrcMngr));
   }
 }

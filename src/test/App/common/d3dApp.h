@@ -9,7 +9,8 @@
 #include <crtdbg.h>
 #endif
 
-#include "GameTimer.h"
+#include <MyGE/Core/GameTimer.h>
+
 #include "d3dUtil.h"
 
 // Link necessary d3d12 libraries.
@@ -43,8 +44,8 @@ class D3DApp {
  protected:
   virtual void CreateRtvAndDsvDescriptorHeaps();
   virtual void OnResize();
-  virtual void Update(const GameTimer& gt) = 0;
-  virtual void Draw(const GameTimer& gt) = 0;
+  virtual void Update() = 0;
+  virtual void Draw() = 0;
 
   // Convenience overrides for handling mouse input.
   virtual void OnMouseDown(WPARAM btnState, int x, int y) {}
@@ -83,9 +84,6 @@ class D3DApp {
   // Set true to use 4X MSAA (?.1.8).  The default is false.
   bool m4xMsaaState = false;  // 4X MSAA enabled
   UINT m4xMsaaQuality = 0;    // quality level of 4X MSAA
-
-  // Used to keep track of the �delta-time?and game time (?.4).
-  GameTimer mTimer;
 
   Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
   Microsoft::WRL::ComPtr<IDXGISwapChain> mSwapChain;
