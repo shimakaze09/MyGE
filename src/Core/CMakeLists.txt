@@ -10,13 +10,32 @@ DOWNLOAD_FILE(
         SHA256 594c2fe35d49488b4382dbfaec8f98366defca819d916ac95becf3e75f4200b3
 )
 
+SET(components
+        Camera
+        MeshFilter
+        MeshRenderer
+)
+
+SET(refls "")
+
+FOREACH (cmpt ${components})
+    SET(dst "${PROJECT_SOURCE_DIR}/include/MyGE/Core/Components/details/${cmpt}_AutoRefl.inl")
+    MYSREFL_AUTO_REFL(
+            "${PROJECT_SOURCE_DIR}/include/MyGE/Core/Components/${cmpt}.h"
+            ${dst}
+    )
+    LIST(APPEND refls ${dst})
+ENDFOREACH ()
+
 ADD_TARGET(
         MODE STATIC
         SOURCE
         "${PROJECT_SOURCE_DIR}/include/MyGE/Core"
+        ${refls}
         INC
         "${PROJECT_SOURCE_DIR}/include"
         LIB
         My::MyGM_core
         My::MyDP_core
+        My::MyGE_Transform
 )
