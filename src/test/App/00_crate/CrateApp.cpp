@@ -8,7 +8,9 @@
 
 #include <MyDX12/UploadBuffer.h>
 #include <MyGE/Asset/AssetMngr.h>
+#include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
+#include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
 
 #include <memory>
@@ -154,8 +156,8 @@ class DeferApp : public D3DApp {
   // ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
   My::MyDX12::DescriptorHeapAllocation mSrvDescriptorHeap;
 
-  // std::unordered_map<std::string, std::unique_ptr<My::MyDX12::MeshGeometry>>
-  // mGeometries;
+  // std::unordered_map<std::string,
+  // std::unique_ptr<My::MyDX12::MeshGeometry>> mGeometries;
   std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
   std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
   // std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
@@ -190,6 +192,7 @@ class DeferApp : public D3DApp {
 
   // resources
   My::MyGE::Texture2D* chessboardTex2D;
+  My::MyGE::Shader* shader;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
@@ -201,8 +204,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     DeferApp theApp(hInstance);
-    if (!theApp.Initialize())
-      return 0;
+    if (!theApp.Initialize()) return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -217,13 +219,11 @@ DeferApp::DeferApp(HINSTANCE hInstance)
     : D3DApp(hInstance), fg{"frame graph"} {}
 
 DeferApp::~DeferApp() {
-  if (!uDevice.IsNull())
-    FlushCommandQueue();
+  if (!uDevice.IsNull()) FlushCommandQueue();
 }
 
 bool DeferApp::Initialize() {
-  if (!D3DApp::Initialize())
-    return false;
+  if (!D3DApp::Initialize()) return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(uDevice.raw.Get());
 
@@ -408,9 +408,7 @@ void DeferApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) {
-  ReleaseCapture();
-}
+void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
 
 void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -601,12 +599,36 @@ void DeferApp::BuildRootSignature() {
 void DeferApp::BuildDescriptorHeaps() {}
 
 void DeferApp::BuildShadersAndInputLayout() {
-  My::MyGE::RsrcMngrDX12::Instance().RegisterShaderByteCode(
-      ID_ShaderByteCode_std_vs, L"..\\assets\\shaders\\Default.hlsl", nullptr,
-      "VS", "vs_5_0");
-  My::MyGE::RsrcMngrDX12::Instance().RegisterShaderByteCode(
-      ID_ShaderByteCode_opaque_ps, L"..\\assets\\shaders\\Default.hlsl",
-      nullptr, "PS", "ps_5_0");
+  std::filesystem::path hlslPath = "../assets/shaders/Default.hlsl";
+  std::filesystem::path shaderPath = "../assets/shaders/Default.shader";
+
+  if (!std::filesystem::is_directory("../assets/shaders"))
+    std::filesystem::create_directories("../assets/shaders");
+
+  auto& assetMngr = My::MyGE::AssetMngr::Instance();
+  assetMngr.ImportAsset(hlslPath);
+  auto hlslFile = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslPath);
+  std::cout << hlslFile->GetString() << std::endl;
+
+  std::cout << assetMngr.Contains(hlslFile) << std::endl;
+  auto guid = assetMngr.AssetPathToGUID(hlslPath);
+  std::cout << guid.str() << std::endl;
+  std::cout << assetMngr.GUIDToAssetPath(guid).string() << std::endl;
+  std::cout << assetMngr.GetAssetPath(hlslFile).string() << std::endl;
+
+  shader = new My::MyGE::Shader;
+  shader->hlslFile = hlslFile;
+  shader->vertexName = "vert";
+  shader->fragmentName = "frag";
+  shader->targetName = "5_0";
+  shader->shaderName = "Default";
+
+  if (!assetMngr.CreateAsset(shader, shaderPath)) {
+    delete shader;
+    shader = assetMngr.LoadAsset<My::MyGE::Shader>(shaderPath);
+  }
+
+  My::MyGE::RsrcMngrDX12::Instance().RegisterShader(shader);
 
   mInputLayout = {
       {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
@@ -646,10 +668,8 @@ void DeferApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
           ID_RootSignature_default),
       mInputLayout.data(), (UINT)mInputLayout.size(),
-      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode(
-          ID_ShaderByteCode_std_vs),
-      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode(
-          ID_ShaderByteCode_opaque_ps),
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(shader),
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(shader),
       mBackBufferFormat, mDepthStencilFormat);
   My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_opaque, &opaquePsoDesc);
 }
@@ -714,8 +734,7 @@ void DeferApp::BuildRenderItems() {
   mAllRitems.push_back(std::move(boxRitem));
 
   // All the render items are opaque.
-  for (auto& e : mAllRitems)
-    mOpaqueRitems.push_back(e.get());
+  for (auto& e : mAllRitems) mOpaqueRitems.push_back(e.get());
 }
 
 void DeferApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList,

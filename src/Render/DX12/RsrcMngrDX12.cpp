@@ -2,7 +2,9 @@
 // Created by Admin on 16/03/2025.
 //
 
+#include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
+#include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
 
@@ -23,6 +25,10 @@ struct RsrcMngrDX12::Impl {
     MyDX12::DescriptorHeapAllocation allocationSRV;
     MyDX12::DescriptorHeapAllocation allocationRTV;
   };
+  struct ShaderCompileData {
+    Microsoft::WRL::ComPtr<ID3DBlob> vsByteCode;
+    Microsoft::WRL::ComPtr<ID3DBlob> psByteCode;
+  };
 
   bool isInit{false};
   ID3D12Device* device{nullptr};
@@ -30,9 +36,9 @@ struct RsrcMngrDX12::Impl {
 
   unordered_map<size_t, Texture2DGPUData> texture2DMap;
   unordered_map<size_t, RenderTargetGPUData> renderTargetMap;
+  unordered_map<size_t, ShaderCompileData> shaderMap;
 
   unordered_map<size_t, MyDX12::MeshGPUBuffer> meshGeoMap;
-  unordered_map<size_t, ID3DBlob*> shaderByteCodeMap;
   unordered_map<size_t, ID3D12RootSignature*> rootSignatureMap;
   unordered_map<size_t, ID3D12PipelineState*> PSOMap;
 
@@ -135,6 +141,7 @@ void RsrcMngrDX12::Clear() {
   pImpl->meshGeoMap.clear();
   pImpl->rootSignatureMap.clear();
   pImpl->PSOMap.clear();
+  pImpl->shaderMap.clear();
 
   pImpl->isInit = false;
 }
@@ -307,32 +314,29 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::GetMeshGPUBuffer(size_t id) const {
   return pImpl->meshGeoMap.find(id)->second;
 }
 
-ID3DBlob* RsrcMngrDX12::RegisterShaderByteCode(size_t id,
-                                               const wstring& filename,
-                                               const D3D_SHADER_MACRO* defines,
-                                               const string& entrypoint,
-                                               const string& target) {
-  auto shader = MyDX12::Util::CompileShaderFromFile(filename, defines,
-                                                    entrypoint, target);
-  auto ptr = shader.Detach();
-  pImpl->shaderByteCodeMap.emplace(id, ptr);
-  return ptr;
+RsrcMngrDX12& RsrcMngrDX12::RegisterShader(const Shader* shader) {
+  D3D_SHADER_MACRO macros[] = {{nullptr, nullptr}};
+  My::MyDX12::D3DInclude d3dInclude{shader->hlslFile->GetLocalDir(), "../"};
+  auto vsByteCode = MyDX12::Util::CompileShader(
+      shader->hlslFile->GetString(), macros, shader->vertexName,
+      "vs_" + shader->targetName, &d3dInclude);
+  auto psByteCode = MyDX12::Util::CompileShader(
+      shader->hlslFile->GetString(), macros, shader->fragmentName,
+      "ps_" + shader->targetName, &d3dInclude);
+  auto& shaderCompileData = pImpl->shaderMap[shader->GetInstanceID()];
+  shaderCompileData.vsByteCode = vsByteCode;
+  shaderCompileData.psByteCode = psByteCode;
+  return *this;
 }
 
-ID3DBlob* RsrcMngrDX12::RegisterShaderByteCode(std::size_t id,
-                                               std::string_view source,
-                                               const D3D_SHADER_MACRO* defines,
-                                               const std::string& entrypoint,
-                                               const std::string& target) {
-  auto shader =
-      MyDX12::Util::CompileShader(source, defines, entrypoint, target);
-  auto ptr = shader.Detach();
-  pImpl->shaderByteCodeMap.emplace(id, ptr);
-  return ptr;
+const ID3DBlob* RsrcMngrDX12::GetShaderByteCode_vs(const Shader* shader) const {
+  return pImpl->shaderMap.find(shader->GetInstanceID())
+      ->second.vsByteCode.Get();
 }
 
-ID3DBlob* RsrcMngrDX12::GetShaderByteCode(size_t id) const {
-  return pImpl->shaderByteCodeMap.find(id)->second;
+const ID3DBlob* RsrcMngrDX12::GetShaderByteCode_ps(const Shader* shader) const {
+  return pImpl->shaderMap.find(shader->GetInstanceID())
+      ->second.psByteCode.Get();
 }
 
 // RsrcMngrDX12& RsrcMngrDX12::RegisterRenderTexture2D(size_t id, UINT width,

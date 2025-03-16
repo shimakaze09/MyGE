@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include "Object.h"
+
 #include <string>
 
 namespace My::MyGE {
 class HLSLFile;
 
-struct Shader {
+struct Shader : Object {
   const HLSLFile* hlslFile;
   std::string shaderName;    // e.g. a/b/c/d
   std::string vertexName;    // e.g. vert
