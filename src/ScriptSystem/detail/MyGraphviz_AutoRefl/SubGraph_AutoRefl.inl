@@ -5,34 +5,34 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::UGraphviz::Subgraph>
-    : My::MySRefl::TypeInfoBase<My::UGraphviz::Subgraph> {
+struct My::MySRefl::TypeInfo<My::MyGraphviz::Subgraph>
+    : My::MySRefl::TypeInfoBase<My::MyGraphviz::Subgraph> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::UGraphviz::Subgraph(
-                                   My::UGraphviz::Registry*, std::string)>()},
-      Field{Name::destructor, WrapDestructor<My::UGraphviz::Subgraph>()},
-      Field{"GetID", &My::UGraphviz::Subgraph::GetID},
-      Field{"GetSubgraph", &My::UGraphviz::Subgraph::GetSubgraph},
-      Field{"GetRegistry", &My::UGraphviz::Subgraph::GetRegistry},
-      Field{"GenSubgraph", &My::UGraphviz::Subgraph::GenSubgraph},
-      Field{"RegisterGraphAttr", &My::UGraphviz::Subgraph::RegisterGraphAttr},
+      Field{Name::constructor, WrapConstructor<My::MyGraphviz::Subgraph(
+                                   My::MyGraphviz::Registry*, std::string)>()},
+      Field{Name::destructor, WrapDestructor<My::MyGraphviz::Subgraph>()},
+      Field{"GetID", &My::MyGraphviz::Subgraph::GetID},
+      Field{"GetSubgraph", &My::MyGraphviz::Subgraph::GetSubgraph},
+      Field{"GetRegistry", &My::MyGraphviz::Subgraph::GetRegistry},
+      Field{"GenSubgraph", &My::MyGraphviz::Subgraph::GenSubgraph},
+      Field{"RegisterGraphAttr", &My::MyGraphviz::Subgraph::RegisterGraphAttr},
       Field{"RegisterGraphNodeAttr",
-            &My::UGraphviz::Subgraph::RegisterGraphNodeAttr},
+            &My::MyGraphviz::Subgraph::RegisterGraphNodeAttr},
       Field{"RegisterGraphEdgeAttr",
-            &My::UGraphviz::Subgraph::RegisterGraphEdgeAttr},
+            &My::MyGraphviz::Subgraph::RegisterGraphEdgeAttr},
       Field{"DeregisterGraphAttr",
-            &My::UGraphviz::Subgraph::DeregisterGraphAttr},
+            &My::MyGraphviz::Subgraph::DeregisterGraphAttr},
       Field{"DeregisterGraphNodeAttr",
-            &My::UGraphviz::Subgraph::DeregisterGraphNodeAttr},
+            &My::MyGraphviz::Subgraph::DeregisterGraphNodeAttr},
       Field{"DeregisterGraphEdgeAttr",
-            &My::UGraphviz::Subgraph::DeregisterGraphEdgeAttr},
-      Field{"HaveNode", &My::UGraphviz::Subgraph::HaveNode},
-      Field{"HaveEdge", &My::UGraphviz::Subgraph::HaveEdge},
-      Field{"AddNode", &My::UGraphviz::Subgraph::AddNode},
-      Field{"AddEdge", &My::UGraphviz::Subgraph::AddEdge},
-      Field{"EraseNode", &My::UGraphviz::Subgraph::EraseNode},
-      Field{"EraseEdge", &My::UGraphviz::Subgraph::EraseEdge},
+            &My::MyGraphviz::Subgraph::DeregisterGraphEdgeAttr},
+      Field{"HaveNode", &My::MyGraphviz::Subgraph::HaveNode},
+      Field{"HaveEdge", &My::MyGraphviz::Subgraph::HaveEdge},
+      Field{"AddNode", &My::MyGraphviz::Subgraph::AddNode},
+      Field{"AddEdge", &My::MyGraphviz::Subgraph::AddEdge},
+      Field{"EraseNode", &My::MyGraphviz::Subgraph::EraseNode},
+      Field{"EraseEdge", &My::MyGraphviz::Subgraph::EraseEdge},
   };
 };

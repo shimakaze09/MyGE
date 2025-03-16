@@ -334,10 +334,10 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterShader(const Shader* shader) {
   D3D_SHADER_MACRO macros[] = {{nullptr, nullptr}};
   My::MyDX12::D3DInclude d3dInclude{shader->hlslFile->GetLocalDir(), "../"};
   auto vsByteCode = MyDX12::Util::CompileShader(
-      shader->hlslFile->GetString(), macros, shader->vertexName,
+      shader->hlslFile->GetText(), macros, shader->vertexName,
       "vs_" + shader->targetName, &d3dInclude);
   auto psByteCode = MyDX12::Util::CompileShader(
-      shader->hlslFile->GetString(), macros, shader->fragmentName,
+      shader->hlslFile->GetText(), macros, shader->fragmentName,
       "ps_" + shader->targetName, &d3dInclude);
   auto& shaderCompileData = pImpl->shaderMap[shader->GetInstanceID()];
   shaderCompileData.vsByteCode = vsByteCode;

@@ -3,11 +3,13 @@
 //
 
 #include <MyGE/Asset/AssetMngr.h>
+#include <MyGE/Core/DefaultAsset.h>
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Material.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
+#include <MyGE/Core/TextAsset.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/ScriptSystem/LuaScript.h>
 #include <MyGE/_deps/tinyobjloader/tiny_obj_loader.h>
@@ -93,212 +95,69 @@ const std::filesystem::path& AssetMngr::GUIDToAssetPath(
 
 void AssetMngr::ImportAsset(const std::filesystem::path& path) {
   assert(!path.empty() && path.is_relative());
+  assert(path.extension() != ".meta");
 
   if (pImpl->path2guid.find(path) != pImpl->path2guid.end()) return;
   assert(std::filesystem::exists(path));
   auto metapath = std::filesystem::path{path}.concat(".meta");
   bool existMeta = std::filesystem::exists(metapath);
   assert(!existMeta || !std::filesystem::is_directory(metapath));
-  if (path.extension() == ".lua") {
-    xg::Guid guid;
-    if (!existMeta) {
-      // generate meta file
 
-      guid = xg::newGuid();
+  /*if (path.extension() == ".lua"
+          || path.extension() == ".obj"
+          || path.extension() == ".hlsl"
+          || path.extension() == ".shader"
+          || path.extension() == ".png"
+          || path.extension() == ".jpg"
+          || path.extension() == ".bmp"
+          || path.extension() == ".hdr"
+          || path.extension() == ".tga"
+          || path.extension() == ".tex2d"
+          || path.extension() == ".mat"
+          || path.extension() == ".txt"
+          || std::filesystem::is_directory(path)
+  ) {
+  }*/
 
-      rapidjson::StringBuffer sb;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-      writer.StartObject();
-      writer.Key("guid");
-      writer.String(guid.str());
-      writer.EndObject();
+  xg::Guid guid;
+  if (!existMeta) {
+    // generate meta file
 
-      auto dirPath = path.parent_path();
-      if (!std::filesystem::is_directory(dirPath))
-        std::filesystem::create_directories(dirPath);
+    guid = xg::newGuid();
 
-      std::ofstream ofs(metapath);
-      assert(ofs.is_open());
-      ofs << sb.GetString();
-      ofs.close();
-    } else {
-      rapidjson::Document doc = Impl::LoadJSON(metapath);
-      guid = xg::Guid{doc["guid"].GetString()};
-    }
-    pImpl->path2guid.emplace(path, guid);
-    pImpl->guid2path.emplace(guid, path);
-  } else if (path.extension() == ".obj") {
-    xg::Guid guid;
-    if (!existMeta) {
-      // generate meta file
+    rapidjson::StringBuffer sb;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+    writer.StartObject();
+    writer.Key("guid");
+    writer.String(guid.str());
+    writer.EndObject();
 
-      guid = xg::newGuid();
+    auto dirPath = path.parent_path();
+    if (!std::filesystem::is_directory(dirPath))
+      std::filesystem::create_directories(dirPath);
 
-      rapidjson::StringBuffer sb;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-      writer.StartObject();
-      writer.Key("guid");
-      writer.String(guid.str());
-      writer.EndObject();
+    std::ofstream ofs(metapath);
+    assert(ofs.is_open());
+    ofs << sb.GetString();
+    ofs.close();
+  } else {
+    rapidjson::Document doc = Impl::LoadJSON(metapath);
+    guid = xg::Guid{doc["guid"].GetString()};
+  }
+  pImpl->path2guid.emplace(path, guid);
+  pImpl->guid2path.emplace(guid, path);
+}
 
-      auto dirPath = path.parent_path();
-      if (!std::filesystem::is_directory(dirPath))
-        std::filesystem::create_directories(dirPath);
+void AssetMngr::ImportAssetRecursively(const std::filesystem::path& directory) {
+  assert(!directory.has_extension());
+  ImportAsset(directory);
+  for (const auto& entry :
+       std::filesystem::recursive_directory_iterator(directory)) {
+    auto path = entry.path();
+    if (path.extension() == ".meta") continue;
 
-      std::ofstream ofs(metapath);
-      assert(ofs.is_open());
-      ofs << sb.GetString();
-      ofs.close();
-    } else {
-      rapidjson::Document doc = Impl::LoadJSON(metapath);
-      guid = xg::Guid{doc["guid"].GetString()};
-    }
-    pImpl->path2guid.emplace(path, guid);
-    pImpl->guid2path.emplace(guid, path);
-  } else if (path.extension() == ".hlsl") {
-    xg::Guid guid;
-    if (!existMeta) {
-      // generate meta file
-
-      guid = xg::newGuid();
-
-      rapidjson::StringBuffer sb;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-      writer.StartObject();
-      writer.Key("guid");
-      writer.String(guid.str());
-      writer.EndObject();
-
-      auto dirPath = path.parent_path();
-      if (!std::filesystem::is_directory(dirPath))
-        std::filesystem::create_directories(dirPath);
-
-      std::ofstream ofs(metapath);
-      assert(ofs.is_open());
-      ofs << sb.GetString();
-      ofs.close();
-    } else {
-      rapidjson::Document doc = Impl::LoadJSON(metapath);
-      guid = xg::Guid{doc["guid"].GetString()};
-    }
-    pImpl->path2guid.emplace(path, guid);
-    pImpl->guid2path.emplace(guid, path);
-  } else if (path.extension() == ".shader") {
-    xg::Guid guid;
-    if (!existMeta) {
-      // generate meta file
-
-      guid = xg::newGuid();
-
-      rapidjson::StringBuffer sb;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-      writer.StartObject();
-      writer.Key("guid");
-      writer.String(guid.str());
-      writer.EndObject();
-
-      auto dirPath = path.parent_path();
-      if (!std::filesystem::is_directory(dirPath))
-        std::filesystem::create_directories(dirPath);
-
-      std::ofstream ofs(metapath);
-      assert(ofs.is_open());
-      ofs << sb.GetString();
-      ofs.close();
-    } else {
-      rapidjson::Document doc = Impl::LoadJSON(metapath);
-      guid = xg::Guid{doc["guid"].GetString()};
-    }
-    pImpl->path2guid.emplace(path, guid);
-    pImpl->guid2path.emplace(guid, path);
-  } else if (path.extension() == ".png" || path.extension() == ".jpg" ||
-             path.extension() == ".bmp" || path.extension() == ".hdr" ||
-             path.extension() == ".tga") {
-    xg::Guid guid;
-    if (!existMeta) {
-      // generate meta file
-
-      guid = xg::newGuid();
-
-      rapidjson::StringBuffer sb;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-      writer.StartObject();
-      writer.Key("guid");
-      writer.String(guid.str());
-      writer.EndObject();
-
-      auto dirPath = path.parent_path();
-      if (!std::filesystem::is_directory(dirPath))
-        std::filesystem::create_directories(dirPath);
-
-      std::ofstream ofs(metapath);
-      assert(ofs.is_open());
-      ofs << sb.GetString();
-      ofs.close();
-    } else {
-      rapidjson::Document doc = Impl::LoadJSON(metapath);
-      guid = xg::Guid{doc["guid"].GetString()};
-    }
-    pImpl->path2guid.emplace(path, guid);
-    pImpl->guid2path.emplace(guid, path);
-  } else if (path.extension() == ".tex2d") {
-    xg::Guid guid;
-    if (!existMeta) {
-      // generate meta file
-
-      guid = xg::newGuid();
-
-      rapidjson::StringBuffer sb;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-      writer.StartObject();
-      writer.Key("guid");
-      writer.String(guid.str());
-      writer.EndObject();
-
-      auto dirPath = path.parent_path();
-      if (!std::filesystem::is_directory(dirPath))
-        std::filesystem::create_directories(dirPath);
-
-      std::ofstream ofs(metapath);
-      assert(ofs.is_open());
-      ofs << sb.GetString();
-      ofs.close();
-    } else {
-      rapidjson::Document doc = Impl::LoadJSON(metapath);
-      guid = xg::Guid{doc["guid"].GetString()};
-    }
-    pImpl->path2guid.emplace(path, guid);
-    pImpl->guid2path.emplace(guid, path);
-  } else if (path.extension() == ".mat") {
-    xg::Guid guid;
-    if (!existMeta) {
-      // generate meta file
-
-      guid = xg::newGuid();
-
-      rapidjson::StringBuffer sb;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-      writer.StartObject();
-      writer.Key("guid");
-      writer.String(guid.str());
-      writer.EndObject();
-
-      auto dirPath = path.parent_path();
-      if (!std::filesystem::is_directory(dirPath))
-        std::filesystem::create_directories(dirPath);
-
-      std::ofstream ofs(metapath);
-      assert(ofs.is_open());
-      ofs << sb.GetString();
-      ofs.close();
-    } else {
-      rapidjson::Document doc = Impl::LoadJSON(metapath);
-      guid = xg::Guid{doc["guid"].GetString()};
-    }
-    pImpl->path2guid.emplace(path, guid);
-    pImpl->guid2path.emplace(guid, path);
-  } else
-    assert("not support" && false);
+    ImportAsset(path);
+  }
 }
 
 void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
@@ -328,6 +187,15 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
     pImpl->path2assert.emplace_hint(target, path, Impl::Asset{hlsl});
     pImpl->asset2path.emplace(hlsl, path);
     return hlsl;
+  } else if (path.extension() == ".txt") {
+    auto target = pImpl->path2assert.find(path);
+    if (target != pImpl->path2assert.end()) return target->second.ptr.get();
+
+    auto str = Impl::LoadText(path);
+    auto text = new TextAsset(std::move(str));
+    pImpl->path2assert.emplace_hint(target, path, Impl::Asset{text});
+    pImpl->asset2path.emplace(text, path);
+    return text;
   } else if (path.extension() == ".shader") {
     auto target = pImpl->path2assert.find(path);
     if (target != pImpl->path2assert.end()) return target->second.ptr.get();
@@ -397,8 +265,13 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
     pImpl->asset2path.emplace(material, path);
     return material;
   } else {
-    assert(false);
-    return nullptr;
+    auto target = pImpl->path2assert.find(path);
+    if (target != pImpl->path2assert.end()) return target->second.ptr.get();
+
+    auto defaultAsset = new DefaultAsset;
+    pImpl->path2assert.emplace_hint(target, path, Impl::Asset{defaultAsset});
+    pImpl->asset2path.emplace(defaultAsset, path);
+    return defaultAsset;
   }
 }
 
@@ -431,8 +304,8 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path,
     if (typeinfo != typeid(Material)) return nullptr;
     return LoadAsset(path);
   } else {
-    assert(false);
-    return nullptr;
+    if (typeinfo != typeid(DefaultAsset)) return nullptr;
+    return LoadAsset(path);
   }
 }
 

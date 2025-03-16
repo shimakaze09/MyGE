@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "InitMyECS.h"
-#include "InitUGraphviz.h"
+#include "InitMyGraphviz.h"
 #include "LuaArray.h"
 #include "LuaBuffer.h"
 #include "LuaMemory.h"
@@ -88,7 +88,7 @@ lua_State* LuaContext::Impl::Construct() {
   lua_State* L = luaL_newstate(); /* opens Lua */
   luaL_openlibs(L);               /* opens the standard libraries */
   detail::InitMyECS(L);
-  detail::InitUGraphviz(L);
+  detail::InitMyGraphviz(L);
   MyLuaPP::Register<LuaArray_CmptType>(L);
   MyLuaPP::Register<LuaBuffer>(L);
   MyLuaPP::Register<LuaMemory>(L);

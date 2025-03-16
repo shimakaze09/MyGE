@@ -23,7 +23,7 @@ int main() {
 
   AssetMngr::Instance().ImportAsset(path);
   auto hlslFile = AssetMngr::Instance().LoadAsset<HLSLFile>(path);
-  std::cout << hlslFile->GetString() << std::endl;
+  std::cout << hlslFile->GetText() << std::endl;
 
   std::cout << AssetMngr::Instance().Contains(hlslFile) << std::endl;
   auto guid = AssetMngr::Instance().AssetPathToGUID(path);
@@ -48,7 +48,7 @@ int main() {
   AssetMngr::Instance().ImportAsset(path);
   auto reloadedShader = AssetMngr::Instance().LoadAsset<Shader>(
       "../assets/shaders/Default.shader");
-  std::cout << reloadedShader->hlslFile->GetString() << std::endl;
+  std::cout << reloadedShader->hlslFile->GetText() << std::endl;
   std::cout << reloadedShader->shaderName << std::endl;
   std::cout << reloadedShader->vertexName << std::endl;
   std::cout << reloadedShader->fragmentName << std::endl;
