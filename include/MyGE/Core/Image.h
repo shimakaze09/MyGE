@@ -62,4 +62,4 @@ class Image {
 };
 }  // namespace My::MyGE
 
-#include "detail/Image.inl"
+#include "details/Image.inl"

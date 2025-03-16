@@ -6,6 +6,7 @@
 // DeferApp.cpp by Frank Luna (C) 2015 All Rights Reserved.
 //***************************************************************************************
 
+#include <DirectXMath.h>
 #include <MyDX12/UploadBuffer.h>
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Core/HLSLFile.h>
@@ -13,6 +14,7 @@
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
+#include <MyGM/MyGM.h>
 
 #include <memory>
 
@@ -30,27 +32,27 @@ constexpr size_t ID_PSO_opaque = 0;
 constexpr size_t ID_RootSignature_default = 0;
 
 struct ObjectConstants {
-  DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
+  My::transformf World = My::transformf::eye();
+  My::transformf TexTransform = My::transformf::eye();
 };
 
 struct PassConstants {
-  DirectX::XMFLOAT4X4 View = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 InvView = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 Proj = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 InvProj = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 ViewProj = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 InvViewProj = MathHelper::Identity4x4();
-  DirectX::XMFLOAT3 EyePosW = {0.0f, 0.0f, 0.0f};
+  My::transformf View = My::transformf::eye();
+  My::transformf InvView = My::transformf::eye();
+  My::transformf Proj = My::transformf::eye();
+  My::transformf InvProj = My::transformf::eye();
+  My::transformf ViewProj = My::transformf::eye();
+  My::transformf InvViewProj = My::transformf::eye();
+  My::pointf3 EyePosW = {0.0f, 0.0f, 0.0f};
   float cbPerObjectPad1 = 0.0f;
-  DirectX::XMFLOAT2 RenderTargetSize = {0.0f, 0.0f};
-  DirectX::XMFLOAT2 InvRenderTargetSize = {0.0f, 0.0f};
+  My::valf2 RenderTargetSize = {0.0f, 0.0f};
+  My::valf2 InvRenderTargetSize = {0.0f, 0.0f};
   float NearZ = 0.0f;
   float FarZ = 0.0f;
   float TotalTime = 0.0f;
   float DeltaTime = 0.0f;
 
-  DirectX::XMFLOAT4 AmbientLight = {0.0f, 0.0f, 0.0f, 1.0f};
+  My::vecf4 AmbientLight = {0.0f, 0.0f, 0.0f, 1.0f};
 
   // Indices [0, NUM_DIR_LIGHTS) are directional lights;
   // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
@@ -61,9 +63,9 @@ struct PassConstants {
 };
 
 struct Vertex {
-  DirectX::XMFLOAT3 Pos;
-  DirectX::XMFLOAT3 Normal;
-  DirectX::XMFLOAT2 TexC;
+  My::pointf3 Pos;
+  My::normalf Normal;
+  My::pointf2 TexC;
 };
 
 // Lightweight structure stores parameters to draw a shape.  This will
@@ -74,9 +76,9 @@ struct RenderItem {
   // World matrix of the shape that describes the object's local space
   // relative to the world space, which defines the position, orientation,
   // and scale of the object in the world.
-  XMFLOAT4X4 World = MathHelper::Identity4x4();
+  My::transformf World = My::transformf::eye();
 
-  XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
+  My::transformf TexTransform = My::transformf::eye();
 
   // Dirty flag indicating the object data has changed and we need to update the
   // constant buffer. Because we have an object cbuffer for each FrameResource,
@@ -152,8 +154,8 @@ class DeferApp : public D3DApp {
   // ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
   My::MyDX12::DescriptorHeapAllocation mSrvDescriptorHeap;
 
-  // std::unordered_map<std::string,
-  // std::unique_ptr<My::MyDX12::MeshGeometry>> mGeometries;
+  // std::unordered_map<std::string, std::unique_ptr<My::MyDX12::MeshGeometry>>
+  // mGeometries;
   std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
   std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
   // std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
@@ -170,13 +172,13 @@ class DeferApp : public D3DApp {
 
   PassConstants mMainPassCB;
 
-  XMFLOAT3 mEyePos = {0.0f, 0.0f, 0.0f};
-  XMFLOAT4X4 mView = MathHelper::Identity4x4();
-  XMFLOAT4X4 mProj = MathHelper::Identity4x4();
+  My::pointf3 mEyePos = {0.0f, 0.0f, 0.0f};
+  My::transformf mView = My::transformf::eye();
+  My::transformf mProj = My::transformf::eye();
 
-  float mTheta = 1.3f * XM_PI;
-  float mPhi = 0.4f * XM_PI;
-  float mRadius = 4.0f;
+  float mTheta = 0.5f * XM_PI;  // 1.3f * XM_PI;
+  float mPhi = 0.f;             // 0.4f * XM_PI;
+  float mRadius = 10.0f;
 
   POINT mLastMousePos;
 
@@ -201,8 +203,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     DeferApp theApp(hInstance);
-    if (!theApp.Initialize())
-      return 0;
+    if (!theApp.Initialize()) return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -217,13 +218,11 @@ DeferApp::DeferApp(HINSTANCE hInstance)
     : D3DApp(hInstance), fg{"frame graph"} {}
 
 DeferApp::~DeferApp() {
-  if (!uDevice.IsNull())
-    FlushCommandQueue();
+  if (!uDevice.IsNull()) FlushCommandQueue();
 }
 
 bool DeferApp::Initialize() {
-  if (!D3DApp::Initialize())
-    return false;
+  if (!D3DApp::Initialize()) return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(uDevice.raw.Get());
 
@@ -266,10 +265,9 @@ void DeferApp::OnResize() {
   D3DApp::OnResize();
 
   // The window resized, so update the aspect ratio and recompute the projection
-  // matrix.
-  XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f * MathHelper::Pi, AspectRatio(),
-                                        1.0f, 1000.0f);
-  XMStoreFloat4x4(&mProj, P);
+  // matrix
+  mProj = My::transformf::perspective(0.25f * MathHelper::Pi, AspectRatio(),
+                                      1.0f, 1000.0f, 0.f);
 
   auto clearFGRsrcMngr =
       [](std::shared_ptr<My::MyDX12::FG::RsrcMngr> rsrcMngr) {
@@ -408,9 +406,7 @@ void DeferApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) {
-  ReleaseCapture();
-}
+void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
 
 void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -421,11 +417,11 @@ void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
         XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
 
     // Update angles based on input to orbit camera around box.
-    mTheta += dx;
-    mPhi += dy;
+    mTheta += dy;
+    mPhi += dx;
 
     // Restrict the angle mPhi.
-    mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
+    mTheta = MathHelper::Clamp(mTheta, 0.1f, MathHelper::Pi - 0.1f);
   } else if ((btnState & MK_RBUTTON) != 0) {
     // Make each pixel correspond to 0.2 unit in the scene.
     float dx = 0.05f * static_cast<float>(x - mLastMousePos.x);
@@ -435,7 +431,7 @@ void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
     mRadius += dx - dy;
 
     // Restrict the radius.
-    mRadius = MathHelper::Clamp(mRadius, 4.0f, 150.0f);
+    mRadius = MathHelper::Clamp(mRadius, 1.0f, 150.0f);
   }
 
   mLastMousePos.x = x;
@@ -446,17 +442,10 @@ void DeferApp::OnKeyboardInput(const GameTimer& gt) {}
 
 void DeferApp::UpdateCamera(const GameTimer& gt) {
   // Convert Spherical to Cartesian coordinates.
-  mEyePos.x = mRadius * sinf(mPhi) * cosf(mTheta);
-  mEyePos.z = mRadius * sinf(mPhi) * sinf(mTheta);
-  mEyePos.y = mRadius * cosf(mPhi);
-
-  // Build the view matrix.
-  XMVECTOR pos = XMVectorSet(mEyePos.x, mEyePos.y, mEyePos.z, 1.0f);
-  XMVECTOR target = XMVectorZero();
-  XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-  XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
-  XMStoreFloat4x4(&mView, view);
+  mEyePos[0] = mRadius * sinf(mTheta) * sinf(mPhi);
+  mEyePos[1] = mRadius * cosf(mTheta);
+  mEyePos[2] = mRadius * sinf(mTheta) * cosf(mPhi);
+  mView = My::transformf::look_at(mEyePos, {0.f});
 }
 
 void DeferApp::AnimateMaterials(const GameTimer& gt) {}
@@ -470,13 +459,15 @@ void DeferApp::UpdateObjectCBs(const GameTimer& gt) {
     // Only update the cbuffer data if the constants have changed.
     // This needs to be tracked per frame resource.
     if (e->NumFramesDirty > 0) {
-      XMMATRIX world = XMLoadFloat4x4(&e->World);
+      ObjectConstants objConstants;
+      /*XMMATRIX world = XMLoadFloat4x4(&e->World);
       XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
 
-      ObjectConstants objConstants;
       XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
       XMStoreFloat4x4(&objConstants.TexTransform,
-                      XMMatrixTranspose(texTransform));
+      XMMatrixTranspose(texTransform));*/
+      objConstants.World = e->World;
+      objConstants.TexTransform = e->TexTransform;
 
       currObjectCB.Set(e->ObjCBIndex, objConstants);
 
@@ -514,26 +505,16 @@ void DeferApp::UpdateMaterialCBs(const GameTimer& gt) {
 }
 
 void DeferApp::UpdateMainPassCB(const GameTimer& gt) {
-  XMMATRIX view = XMLoadFloat4x4(&mView);
-  XMMATRIX proj = XMLoadFloat4x4(&mProj);
-
-  XMMATRIX viewProj = XMMatrixMultiply(view, proj);
-  XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(view), view);
-  XMMATRIX invProj = XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
-  XMMATRIX invViewProj =
-      XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
-
-  XMStoreFloat4x4(&mMainPassCB.View, XMMatrixTranspose(view));
-  XMStoreFloat4x4(&mMainPassCB.InvView, XMMatrixTranspose(invView));
-  XMStoreFloat4x4(&mMainPassCB.Proj, XMMatrixTranspose(proj));
-  XMStoreFloat4x4(&mMainPassCB.InvProj, XMMatrixTranspose(invProj));
-  XMStoreFloat4x4(&mMainPassCB.ViewProj, XMMatrixTranspose(viewProj));
-  XMStoreFloat4x4(&mMainPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
+  mMainPassCB.View = mView;
+  mMainPassCB.InvView = mMainPassCB.View.inverse();
+  mMainPassCB.Proj = mProj;
+  mMainPassCB.InvProj = mMainPassCB.Proj.inverse();
+  mMainPassCB.ViewProj = mMainPassCB.Proj * mMainPassCB.View;
+  mMainPassCB.InvViewProj = mMainPassCB.InvView * mMainPassCB.InvProj;
   mMainPassCB.EyePosW = mEyePos;
-  mMainPassCB.RenderTargetSize =
-      XMFLOAT2((float)mClientWidth, (float)mClientHeight);
-  mMainPassCB.InvRenderTargetSize =
-      XMFLOAT2(1.0f / mClientWidth, 1.0f / mClientHeight);
+  mMainPassCB.RenderTargetSize = {mClientWidth, mClientHeight};
+  mMainPassCB.InvRenderTargetSize = {1.0f / mClientWidth, 1.0f / mClientHeight};
+
   mMainPassCB.NearZ = 1.0f;
   mMainPassCB.FarZ = 1000.0f;
   mMainPassCB.TotalTime = gt.TotalTime();
@@ -650,6 +631,7 @@ void DeferApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(shader),
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(shader),
       mBackBufferFormat, mDepthStencilFormat);
+  opaquePsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_opaque, &opaquePsoDesc);
 }
 
@@ -712,8 +694,7 @@ void DeferApp::BuildRenderItems() {
   mAllRitems.push_back(std::move(boxRitem));
 
   // All the render items are opaque.
-  for (auto& e : mAllRitems)
-    mOpaqueRitems.push_back(e.get());
+  for (auto& e : mAllRitems) mOpaqueRitems.push_back(e.get());
 }
 
 void DeferApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList,

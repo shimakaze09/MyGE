@@ -13,6 +13,7 @@
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
+#include <MyGM/MyGM.h>
 
 #include "../common/GeometryGenerator.h"
 #include "../common/MathHelper.h"
@@ -33,27 +34,27 @@ constexpr size_t ID_RootSignature_screen = 1;
 constexpr size_t ID_RootSignature_defer_light = 2;
 
 struct ObjectConstants {
-  DirectX::XMFLOAT4X4 World = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
+  My::transformf World = My::transformf::eye();
+  My::transformf TexTransform = My::transformf::eye();
 };
 
 struct PassConstants {
-  DirectX::XMFLOAT4X4 View = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 InvView = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 Proj = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 InvProj = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 ViewProj = MathHelper::Identity4x4();
-  DirectX::XMFLOAT4X4 InvViewProj = MathHelper::Identity4x4();
-  DirectX::XMFLOAT3 EyePosW = {0.0f, 0.0f, 0.0f};
+  My::transformf View = My::transformf::eye();
+  My::transformf InvView = My::transformf::eye();
+  My::transformf Proj = My::transformf::eye();
+  My::transformf InvProj = My::transformf::eye();
+  My::transformf ViewProj = My::transformf::eye();
+  My::transformf InvViewProj = My::transformf::eye();
+  My::pointf3 EyePosW = {0.0f, 0.0f, 0.0f};
   float cbPerObjectPad1 = 0.0f;
-  DirectX::XMFLOAT2 RenderTargetSize = {0.0f, 0.0f};
-  DirectX::XMFLOAT2 InvRenderTargetSize = {0.0f, 0.0f};
+  My::valf2 RenderTargetSize = {0.0f, 0.0f};
+  My::valf2 InvRenderTargetSize = {0.0f, 0.0f};
   float NearZ = 0.0f;
   float FarZ = 0.0f;
   float TotalTime = 0.0f;
   float DeltaTime = 0.0f;
 
-  DirectX::XMFLOAT4 AmbientLight = {0.0f, 0.0f, 0.0f, 1.0f};
+  My::vecf4 AmbientLight = {0.0f, 0.0f, 0.0f, 1.0f};
 
   // Indices [0, NUM_DIR_LIGHTS) are directional lights;
   // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
@@ -64,9 +65,9 @@ struct PassConstants {
 };
 
 struct Vertex {
-  DirectX::XMFLOAT3 Pos;
-  DirectX::XMFLOAT3 Normal;
-  DirectX::XMFLOAT2 TexC;
+  My::pointf3 Pos;
+  My::normalf Normal;
+  My::pointf2 TexC;
 };
 
 // Lightweight structure stores parameters to draw a shape.  This will
@@ -77,9 +78,9 @@ struct RenderItem {
   // World matrix of the shape that describes the object's local space
   // relative to the world space, which defines the position, orientation,
   // and scale of the object in the world.
-  XMFLOAT4X4 World = MathHelper::Identity4x4();
+  My::transformf World = My::transformf::eye();
 
-  XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
+  My::transformf TexTransform = My::transformf::eye();
 
   // Dirty flag indicating the object data has changed and we need to update the
   // constant buffer. Because we have an object cbuffer for each FrameResource,
@@ -160,12 +161,12 @@ class DeferApp : public D3DApp {
 
   PassConstants mMainPassCB;
 
-  XMFLOAT3 mEyePos = {0.0f, 0.0f, 0.0f};
-  XMFLOAT4X4 mView = MathHelper::Identity4x4();
-  XMFLOAT4X4 mProj = MathHelper::Identity4x4();
+  My::pointf3 mEyePos = {0.0f, 0.0f, 0.0f};
+  My::transformf mView = My::transformf::eye();
+  My::transformf mProj = My::transformf::eye();
 
-  float mTheta = 1.3f * XM_PI;
-  float mPhi = 0.4f * XM_PI;
+  float mTheta = 0.4f * XM_PI;
+  float mPhi = 1.3f * XM_PI;
   float mRadius = 5.0f;
 
   POINT mLastMousePos;
@@ -180,7 +181,6 @@ class DeferApp : public D3DApp {
   My::MyGE::Texture2D* roughnessTex2D;
   My::MyGE::Texture2D* metalnessTex2D;
 
-  My::MyGE::Shader* defaultShader;
   My::MyGE::Shader* screenShader;
   My::MyGE::Shader* geomrtryShader;
   My::MyGE::Shader* deferShader;
@@ -262,9 +262,8 @@ void DeferApp::OnResize() {
 
   // The window resized, so update the aspect ratio and recompute the projection
   // matrix.
-  XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f * MathHelper::Pi, AspectRatio(),
-                                        1.0f, 1000.0f);
-  XMStoreFloat4x4(&mProj, P);
+  mProj = My::transformf::perspective(0.25f * MathHelper::Pi, AspectRatio(),
+                                      1.0f, 1000.0f, 0.f);
 
   auto clearFGRsrcMngr =
       [](std::shared_ptr<My::MyDX12::FG::RsrcMngr> rsrcMngr) {
@@ -532,11 +531,11 @@ void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
         XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
 
     // Update angles based on input to orbit camera around box.
-    mTheta += dx;
-    mPhi += dy;
+    mTheta -= dy;
+    mPhi -= dx;
 
     // Restrict the angle mPhi.
-    mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
+    mTheta = MathHelper::Clamp(mTheta, 0.1f, MathHelper::Pi - 0.1f);
   } else if ((btnState & MK_RBUTTON) != 0) {
     // Make each pixel correspond to 0.2 unit in the scene.
     float dx = 0.05f * static_cast<float>(x - mLastMousePos.x);
@@ -557,17 +556,10 @@ void DeferApp::OnKeyboardInput(const GameTimer& gt) {}
 
 void DeferApp::UpdateCamera(const GameTimer& gt) {
   // Convert Spherical to Cartesian coordinates.
-  mEyePos.x = mRadius * sinf(mPhi) * cosf(mTheta);
-  mEyePos.z = mRadius * sinf(mPhi) * sinf(mTheta);
-  mEyePos.y = mRadius * cosf(mPhi);
-
-  // Build the view matrix.
-  XMVECTOR pos = XMVectorSet(mEyePos.x, mEyePos.y, mEyePos.z, 1.0f);
-  XMVECTOR target = XMVectorZero();
-  XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-  XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
-  XMStoreFloat4x4(&mView, view);
+  mEyePos[0] = mRadius * sinf(mTheta) * sinf(mPhi);
+  mEyePos[1] = mRadius * cosf(mTheta);
+  mEyePos[2] = mRadius * sinf(mTheta) * cosf(mPhi);
+  mView = My::transformf::look_at(mEyePos, {0.f});
 }
 
 void DeferApp::AnimateMaterials(const GameTimer& gt) {}
@@ -581,13 +573,9 @@ void DeferApp::UpdateObjectCBs(const GameTimer& gt) {
     // Only update the cbuffer data if the constants have changed.
     // This needs to be tracked per frame resource.
     if (e->NumFramesDirty > 0) {
-      XMMATRIX world = XMLoadFloat4x4(&e->World);
-      XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
-
       ObjectConstants objConstants;
-      XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
-      XMStoreFloat4x4(&objConstants.TexTransform,
-                      XMMatrixTranspose(texTransform));
+      objConstants.World = e->World;
+      objConstants.TexTransform = e->TexTransform;
 
       currObjectCB.Set(e->ObjCBIndex, objConstants);
 
@@ -625,26 +613,16 @@ void DeferApp::UpdateMaterialCBs(const GameTimer& gt) {
 }
 
 void DeferApp::UpdateMainPassCB(const GameTimer& gt) {
-  XMMATRIX view = XMLoadFloat4x4(&mView);
-  XMMATRIX proj = XMLoadFloat4x4(&mProj);
-
-  XMMATRIX viewProj = XMMatrixMultiply(view, proj);
-  XMMATRIX invView = XMMatrixInverse(&XMMatrixDeterminant(view), view);
-  XMMATRIX invProj = XMMatrixInverse(&XMMatrixDeterminant(proj), proj);
-  XMMATRIX invViewProj =
-      XMMatrixInverse(&XMMatrixDeterminant(viewProj), viewProj);
-
-  XMStoreFloat4x4(&mMainPassCB.View, XMMatrixTranspose(view));
-  XMStoreFloat4x4(&mMainPassCB.InvView, XMMatrixTranspose(invView));
-  XMStoreFloat4x4(&mMainPassCB.Proj, XMMatrixTranspose(proj));
-  XMStoreFloat4x4(&mMainPassCB.InvProj, XMMatrixTranspose(invProj));
-  XMStoreFloat4x4(&mMainPassCB.ViewProj, XMMatrixTranspose(viewProj));
-  XMStoreFloat4x4(&mMainPassCB.InvViewProj, XMMatrixTranspose(invViewProj));
+  mMainPassCB.View = mView;
+  mMainPassCB.InvView = mMainPassCB.View.inverse();
+  mMainPassCB.Proj = mProj;
+  mMainPassCB.InvProj = mMainPassCB.Proj.inverse();
+  mMainPassCB.ViewProj = mMainPassCB.Proj * mMainPassCB.View;
+  mMainPassCB.InvViewProj = mMainPassCB.InvView * mMainPassCB.InvProj;
   mMainPassCB.EyePosW = mEyePos;
-  mMainPassCB.RenderTargetSize =
-      XMFLOAT2((float)mClientWidth, (float)mClientHeight);
-  mMainPassCB.InvRenderTargetSize =
-      XMFLOAT2(1.0f / mClientWidth, 1.0f / mClientHeight);
+  mMainPassCB.RenderTargetSize = {mClientWidth, mClientHeight};
+  mMainPassCB.InvRenderTargetSize = {1.0f / mClientWidth, 1.0f / mClientHeight};
+
   mMainPassCB.NearZ = 1.0f;
   mMainPassCB.FarZ = 1000.0f;
   mMainPassCB.TotalTime = gt.TotalTime();
@@ -799,8 +777,6 @@ void DeferApp::BuildRootSignature() {
 void DeferApp::BuildDescriptorHeaps() {}
 
 void DeferApp::BuildShadersAndInputLayout() {
-  std::filesystem::path hlslDefaultPath = "../assets/shaders/Default.hlsl";
-  std::filesystem::path shaderDefaultPath = "../assets/shaders/Default.shader";
   std::filesystem::path hlslScreenPath = "../assets/shaders/Screen.hlsl";
   std::filesystem::path shaderScreenPath = "../assets/shaders/Screen.shader";
   std::filesystem::path hlslGeomrtryPath = "../assets/shaders/Geometry.hlsl";
@@ -814,45 +790,33 @@ void DeferApp::BuildShadersAndInputLayout() {
     std::filesystem::create_directories("../assets/shaders");
 
   auto& assetMngr = My::MyGE::AssetMngr::Instance();
-  auto hlslDefault = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslDefaultPath);
   auto hlslScreen = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslScreenPath);
   auto hlslGeomrtry = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslGeomrtryPath);
   auto hlslDefer = assetMngr.LoadAsset<My::MyGE::HLSLFile>(hlslDeferPath);
 
-  defaultShader = new My::MyGE::Shader;
   screenShader = new My::MyGE::Shader;
   geomrtryShader = new My::MyGE::Shader;
   deferShader = new My::MyGE::Shader;
 
-  defaultShader->hlslFile = hlslDefault;
   screenShader->hlslFile = hlslScreen;
   geomrtryShader->hlslFile = hlslGeomrtry;
   deferShader->hlslFile = hlslDefer;
 
-  defaultShader->vertexName = "VS";
   screenShader->vertexName = "VS";
   geomrtryShader->vertexName = "VS";
   deferShader->vertexName = "VS";
 
-  defaultShader->fragmentName = "PS";
   screenShader->fragmentName = "PS";
   geomrtryShader->fragmentName = "PS";
   deferShader->fragmentName = "PS";
 
-  defaultShader->targetName = "5_0";
   screenShader->targetName = "5_0";
   geomrtryShader->targetName = "5_0";
   deferShader->targetName = "5_0";
 
-  defaultShader->shaderName = "Default";
   screenShader->shaderName = "Screen";
   geomrtryShader->shaderName = "Geometry";
   deferShader->shaderName = "Defer";
-
-  if (!assetMngr.CreateAsset(defaultShader, shaderDefaultPath)) {
-    delete defaultShader;
-    defaultShader = assetMngr.LoadAsset<My::MyGE::Shader>(shaderDefaultPath);
-  }
 
   if (!assetMngr.CreateAsset(screenShader, shaderScreenPath)) {
     delete screenShader;
@@ -869,7 +833,6 @@ void DeferApp::BuildShadersAndInputLayout() {
     deferShader = assetMngr.LoadAsset<My::MyGE::Shader>(shaderDeferPath);
   }
 
-  My::MyGE::RsrcMngrDX12::Instance().RegisterShader(defaultShader);
   My::MyGE::RsrcMngrDX12::Instance().RegisterShader(screenShader);
   My::MyGE::RsrcMngrDX12::Instance().RegisterShader(geomrtryShader);
   My::MyGE::RsrcMngrDX12::Instance().RegisterShader(deferShader);
@@ -899,6 +862,7 @@ void DeferApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(screenShader),
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(screenShader),
       mBackBufferFormat, DXGI_FORMAT_UNKNOWN);
+  screenPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_screen, &screenPsoDesc);
 
   auto geometryPsoDesc = My::MyDX12::Desc::PSO::MRT(
@@ -908,6 +872,7 @@ void DeferApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader),
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader),
       3, DXGI_FORMAT_R32G32B32A32_FLOAT, mDepthStencilFormat);
+  geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_geometry,
                                                  &geometryPsoDesc);
 
@@ -918,6 +883,7 @@ void DeferApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(deferShader),
       My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferShader),
       mBackBufferFormat, DXGI_FORMAT_UNKNOWN);
+  deferLightingPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   My::MyGE::RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_defer_light,
                                                  &deferLightingPsoDesc);
 }
