@@ -216,27 +216,27 @@ DeferApp::DeferApp(HINSTANCE hInstance)
     : D3DApp(hInstance), fg{"frame graph"} {}
 
 DeferApp::~DeferApp() {
-  if (!uDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
 bool DeferApp::Initialize() {
   if (!D3DApp::Initialize()) return false;
 
   frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
-      gNumFrameResources, uDevice.raw.Get());
+      gNumFrameResources, myDevice.raw.Get());
 
-  My::MyGE::RsrcMngrDX12::Instance().Init(uDevice.raw.Get());
+  My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
-  My::MyDX12::DescriptorHeapMngr::Instance().Init(uDevice.raw.Get(), 1024, 1024,
-                                                  1024, 1024, 1024);
+  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
+                                                  1024, 1024, 1024, 1024);
 
   // Reset the command list to prep for initialization commands.
-  ThrowIfFailed(uGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+  ThrowIfFailed(myGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
   // Get the increment size of a descriptor in this heap type.  This is hardware
   // specific, so we have to query this information.
   // mCbvSrvDescriptorSize =
-  // uDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+  // myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
 
@@ -251,8 +251,8 @@ bool DeferApp::Initialize() {
   BuildPSOs();
 
   // Execute the initialization commands.
-  ThrowIfFailed(uGCmdList->Close());
-  uCmdQueue.Execute(uGCmdList.raw.Get());
+  ThrowIfFailed(myGCmdList->Close());
+  uCmdQueue.Execute(myGCmdList.raw.Get());
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(uCmdQueue.raw.Get());
 
@@ -309,12 +309,12 @@ void DeferApp::Draw() {
 
   // A command list can be reset after it has been added to the command queue
   // via ExecuteCommandList. Reusing the command list reuses memory.
-  // ThrowIfFailed(uGCmdList->Reset(cmdAlloc.Get(),
+  // ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(),
   // My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_opaque)));
 
-  /*uGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->GetDescriptorHeap());
-  uGCmdList->RSSetViewports(1, &mScreenViewport);
-  uGCmdList->RSSetScissorRects(1, &mScissorRect);*/
+  /*myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->GetDescriptorHeap());
+  myGCmdList->RSSetViewports(1, &mScreenViewport);
+  myGCmdList->RSSetScissorRects(1, &mScissorRect);*/
 
   fg.Clear();
   auto fgRsrcMngr =
@@ -373,7 +373,7 @@ void DeferApp::Draw() {
         cmdList->OMSetRenderTargets(rts.size(), rts.data(), false,
                                     &ds.cpuHandle);
 
-        // uGCmdList.SetDescriptorHeaps(mSrvDescriptorHeap.Get());
+        // myGCmdList.SetDescriptorHeaps(mSrvDescriptorHeap.Get());
 
         cmdList->SetGraphicsRootSignature(
             My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
@@ -391,14 +391,14 @@ void DeferApp::Draw() {
       });
 
   auto [success, crst] = fgCompiler.Compile(fg);
-  fgExecutor.Execute(uDevice.raw.Get(), uCmdQueue.raw.Get(), cmdAlloc.Get(),
+  fgExecutor.Execute(myDevice.raw.Get(), uCmdQueue.raw.Get(), cmdAlloc.Get(),
                      crst, *fgRsrcMngr);
 
   // Done recording commands.
-  //   ThrowIfFailed(uGCmdList->Close());
+  //   ThrowIfFailed(myGCmdList->Close());
 
   //   // Add the command list to the queue for execution.
-  // uCmdQueue.Execute(uGCmdList.raw.Get());
+  // uCmdQueue.Execute(myGCmdList.raw.Get());
 
   // Swap the back and front buffers
   ThrowIfFailed(mSwapChain->Present(0, 0));
@@ -632,8 +632,10 @@ void DeferApp::BuildShadersAndInputLayout() {
 void DeferApp::BuildShapeGeometry() {
   mesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
       "../assets/models/cube.obj");
-  My::MyGE::RsrcMngrDX12::Instance().RegisterStaticMesh(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), mesh);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
+      My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+      My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch(), myGCmdList.raw.Get(),
+      mesh);
 }
 
 void DeferApp::BuildPSOs() {
@@ -651,22 +653,22 @@ void DeferApp::BuildPSOs() {
 void DeferApp::BuildFrameResources() {
   for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-    ThrowIfFailed(uDevice->CreateCommandAllocator(
+    ThrowIfFailed(myDevice->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
 
     fr->RegisterResource("CommandAllocator", std::move(allocator));
 
     fr->RegisterResource("ArrayUploadBuffer<PassConstants>",
                          My::MyDX12::ArrayUploadBuffer<PassConstants>{
-                             uDevice.raw.Get(), 1, true});
+                             myDevice.raw.Get(), 1, true});
 
     fr->RegisterResource("ArrayUploadBuffer<MaterialConstants>",
                          My::MyDX12::ArrayUploadBuffer<MaterialConstants>{
-                             uDevice.raw.Get(), mMaterials.size(), true});
+                             myDevice.raw.Get(), mMaterials.size(), true});
 
     fr->RegisterResource("ArrayUploadBuffer<ObjectConstants>",
                          My::MyDX12::ArrayUploadBuffer<ObjectConstants>{
-                             uDevice.raw.Get(), mAllRitems.size(), true});
+                             myDevice.raw.Get(), mAllRitems.size(), true});
 
     auto fgRsrcMngr = std::make_shared<My::MyDX12::FG::RsrcMngr>();
     fr->RegisterResource("FrameGraphRsrcMngr", std::move(fgRsrcMngr));

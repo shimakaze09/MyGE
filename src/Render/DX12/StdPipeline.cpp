@@ -15,6 +15,7 @@
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
+#include <MyGE/Render/DX12/MeshLayoutMngr.h>
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
@@ -35,9 +36,8 @@ struct StdPipeline::Impl {
     BuildPSOs();
   }
 
-  static constexpr size_t ID_PSO_geometry = 0;
-  static constexpr size_t ID_PSO_defer_light = 1;
-  static constexpr size_t ID_PSO_screen = 2;
+  size_t ID_PSO_defer_light;
+  size_t ID_PSO_screen;
 
   static constexpr size_t ID_RootSignature_geometry = 0;
   static constexpr size_t ID_RootSignature_screen = 1;
@@ -47,7 +47,6 @@ struct StdPipeline::Impl {
     My::transformf World = My::transformf::eye();
     My::transformf TexTransform = My::transformf::eye();
   };
-
   struct PassConstants {
     My::transformf View = My::transformf::eye();
     My::transformf InvView = My::transformf::eye();
@@ -79,15 +78,12 @@ struct StdPipeline::Impl {
       My::pointf3 Position = {0.0f, 0.0f, 0.0f};  // point/spot light only
       float SpotPower = 64.0f;                    // spot light only
     };
-
     Light Lights[16];
   };
-
   struct MatConstants {
     My::rgbf albedoFactor;
     float roughnessFactor;
   };
-
   struct RenderContext {
     Camera cam;
     valf<16> view;
@@ -99,7 +95,6 @@ struct StdPipeline::Impl {
 
       valf<16> l2w;
     };
-
     std::unordered_map<const Shader*,
                        std::unordered_map<const Material*, std::vector<Object>>>
         objectMap;
@@ -125,6 +120,9 @@ struct StdPipeline::Impl {
   void BuildShadersAndInputLayout();
   void BuildRootSignature();
   void BuildPSOs();
+
+  size_t GetGeometryPSO_ID(const Mesh* mesh);
+  std::unordered_map<size_t, size_t> PSOIDMap;
 
   void UpdateRenderContext(const MyECS::World& world);
   void UpdateShaderCBs(const ResizeData& resizeData);
@@ -214,6 +212,8 @@ void StdPipeline::Impl::BuildShadersAndInputLayout() {
       {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12,
        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
       {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20,
+       D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+      {"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32,
        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
   };
 }
@@ -308,16 +308,19 @@ void StdPipeline::Impl::BuildPSOs() {
   screenPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   screenPsoDesc.DepthStencilState.DepthEnable = false;
   screenPsoDesc.DepthStencilState.StencilEnable = false;
-  RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_screen, &screenPsoDesc);
+  ID_PSO_screen = RsrcMngrDX12::Instance().RegisterPSO(&screenPsoDesc);
 
-  auto geometryPsoDesc = My::MyDX12::Desc::PSO::MRT(
-      RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_geometry),
-      mInputLayout.data(), (UINT)mInputLayout.size(),
-      RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader),
-      RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader), 3,
-      DXGI_FORMAT_R32G32B32A32_FLOAT, initDesc.depthStencilFormat);
+  /*auto geometryPsoDesc = My::MyDX12::Desc::PSO::MRT(
+          RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_geometry),
+          mInputLayout.data(), (UINT)mInputLayout.size(),
+          RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader),
+          RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader),
+          3,
+          DXGI_FORMAT_R32G32B32A32_FLOAT,
+          initDesc.depthStencilFormat
+  );
   geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
-  RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_geometry, &geometryPsoDesc);
+  ID_PSO_geometry = RsrcMngrDX12::Instance().RegisterPSO(&geometryPsoDesc);*/
 
   auto deferLightingPsoDesc = My::MyDX12::Desc::PSO::Basic(
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_defer_light),
@@ -327,8 +330,33 @@ void StdPipeline::Impl::BuildPSOs() {
   deferLightingPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   deferLightingPsoDesc.DepthStencilState.DepthEnable = false;
   deferLightingPsoDesc.DepthStencilState.StencilEnable = false;
-  RsrcMngrDX12::Instance().RegisterPSO(ID_PSO_defer_light,
-                                       &deferLightingPsoDesc);
+  ID_PSO_defer_light =
+      RsrcMngrDX12::Instance().RegisterPSO(&deferLightingPsoDesc);
+}
+
+size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
+  size_t layoutID = MeshLayoutMngr::Instance().GetMeshLayoutID(mesh);
+  auto target = PSOIDMap.find(layoutID);
+  if (target == PSOIDMap.end()) {
+    auto [uv, normal, tangent, color] =
+        MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
+    if (!uv || !normal) return static_cast<size_t>(-1);  // not support
+
+    const auto& layout =
+        MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
+    auto geometryPsoDesc = My::MyDX12::Desc::PSO::MRT(
+        RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_geometry),
+        layout.data(), (UINT)layout.size(),
+        RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader),
+        RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader), 3,
+        DXGI_FORMAT_R32G32B32A32_FLOAT, initDesc.depthStencilFormat);
+    geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
+    size_t ID_PSO_geometry =
+        RsrcMngrDX12::Instance().RegisterPSO(&geometryPsoDesc);
+    target =
+        PSOIDMap.emplace_hint(target, std::pair{layoutID, ID_PSO_geometry});
+  }
+  return target->second;
 }
 
 void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
@@ -397,8 +425,7 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
 
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects)
-      objectNum += objects.size();
+    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
     if (shader->shaderName == "Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
       buffer->Reserve(
@@ -522,8 +549,6 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->RSSetViewports(1, &resizeData.screenViewport);
         cmdList->RSSetScissorRects(1, &resizeData.scissorRect);
 
-        cmdList->SetPipelineState(
-            RsrcMngrDX12::Instance().GetPSO(Impl::ID_PSO_geometry));
         auto gb0 = rsrcs.find(gbuffer0)->second;
         auto gb1 = rsrcs.find(gbuffer1)->second;
         auto gb2 = rsrcs.find(gbuffer2)->second;
@@ -570,7 +595,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->RSSetScissorRects(1, &resizeData.scissorRect);
 
         cmdList->SetPipelineState(
-            RsrcMngrDX12::Instance().GetPSO(Impl::ID_PSO_defer_light));
+            RsrcMngrDX12::Instance().GetPSO(ID_PSO_defer_light));
         auto gb0 = rsrcs.find(gbuffer0)->second;
         auto gb1 = rsrcs.find(gbuffer1)->second;
         auto gb2 = rsrcs.find(gbuffer2)->second;
@@ -610,11 +635,11 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
 }
 
 void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
-  UINT passCBByteSize =
+  constexpr UINT passCBByteSize =
       My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(PassConstants));
-  UINT matCBByteSize =
+  constexpr UINT matCBByteSize =
       My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(MatConstants));
-  UINT objCBByteSize =
+  constexpr UINT objCBByteSize =
       My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(ObjectConstants));
 
   auto& shaderCBMngr =
@@ -663,6 +688,8 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
       cmdList->SetGraphicsRootConstantBufferView(3, objCBAddress);
       cmdList->SetGraphicsRootConstantBufferView(5, matCBAddress);
 
+      cmdList->SetPipelineState(
+          RsrcMngrDX12::Instance().GetPSO(GetGeometryPSO_ID(object.mesh)));
       cmdList->DrawIndexedInstanced(submesh.indexCount, 1, submesh.indexStart,
                                     submesh.baseVertex, 0);
       objIdx++;
@@ -674,9 +701,7 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() {
-  delete pImpl;
-}
+StdPipeline::~StdPipeline() { delete pImpl; }
 
 void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->UpdateRenderContext(world);
@@ -687,14 +712,9 @@ void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->frameRsrcMngr.BeginFrame();
 
   pImpl->UpdateShaderCBs(GetResizeData());
-
-  // TODO
-  // register mesh, shader, texture
 }
 
-void StdPipeline::Render() {
-  pImpl->Render(GetResizeData(), GetFrameData());
-}
+void StdPipeline::Render() { pImpl->Render(GetResizeData(), GetFrameData()); }
 
 void StdPipeline::EndFrame() {
   pImpl->frameRsrcMngr.EndFrame(initDesc.cmdQueue);

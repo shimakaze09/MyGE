@@ -2,10 +2,6 @@
 // Created by Admin on 16/03/2025.
 //
 
-//***************************************************************************************
-// DynamicMeshApp.cpp by Frank Luna (C) 2015 All Rights Reserved.
-//***************************************************************************************
-
 #include <MyDX12/UploadBuffer.h>
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Core/Components/Camera.h>
@@ -17,10 +13,11 @@
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
+#include <MyGE/Render/DX12/MeshLayoutMngr.h>
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
 #include <MyGE/Transform/Transform.h>
-#include <MyGM/MyGM.h>
+#include <UGM/UGM.h>
 
 #include "../common/GeometryGenerator.h"
 #include "../common/MathHelper.h"
@@ -128,7 +125,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 DynamicMeshApp::DynamicMeshApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 DynamicMeshApp::~DynamicMeshApp() {
-  if (!uDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
 bool DynamicMeshApp::Initialize() {
@@ -136,13 +133,13 @@ bool DynamicMeshApp::Initialize() {
 
   if (!InitDirect3D()) return false;
 
-  My::MyGE::RsrcMngrDX12::Instance().Init(uDevice.raw.Get());
+  My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
-  My::MyDX12::DescriptorHeapMngr::Instance().Init(uDevice.raw.Get(), 1024, 1024,
-                                                  1024, 1024, 1024);
+  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
+                                                  1024, 1024, 1024, 1024);
 
   My::MyGE::IPipeline::InitDesc initDesc;
-  initDesc.device = uDevice.raw.Get();
+  initDesc.device = myDevice.raw.Get();
   initDesc.backBufferFormat = mBackBufferFormat;
   initDesc.depthStencilFormat = mDepthStencilFormat;
   initDesc.cmdQueue = uCmdQueue.raw.Get();
@@ -150,13 +147,15 @@ bool DynamicMeshApp::Initialize() {
   pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
 
   frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
-      gNumFrameResources, uDevice.raw.Get());
+      gNumFrameResources, myDevice.raw.Get());
   for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
     ThrowIfFailed(initDesc.device->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
     fr->RegisterResource("CommandAllocator", allocator);
   }
+
+  My::MyGE::MeshLayoutMngr::Instance().Init();
 
   // Do the initial resize code.
   OnResize();
@@ -198,7 +197,7 @@ void DynamicMeshApp::Update() {
               "CommandAllocator");
   cmdAlloc->Reset();
 
-  ThrowIfFailed(uGCmdList->Reset(cmdAlloc.Get(), nullptr));
+  ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
   auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
 
@@ -210,14 +209,14 @@ void DynamicMeshApp::Update() {
   upload.Begin();
   for (auto meshFilter : meshFilters) {
     My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-        upload, deleteBatch, uGCmdList.raw.Get(), meshFilter->mesh);
+        upload, deleteBatch, myGCmdList.raw.Get(), meshFilter->mesh);
   }
 
   // commit upload, delete ...
   upload.End(uCmdQueue.raw.Get());
-  deleteBatch.Commit(uDevice.raw.Get(), uCmdQueue.raw.Get());
-  uGCmdList->Close();
-  uCmdQueue.Execute(uGCmdList.raw.Get());
+  deleteBatch.Commit(myDevice.raw.Get(), uCmdQueue.raw.Get());
+  myGCmdList->Close();
+  uCmdQueue.Execute(myGCmdList.raw.Get());
   frameRsrcMngr->EndFrame(uCmdQueue.raw.Get());
 
   pipeline->UpdateRenderContext(world);

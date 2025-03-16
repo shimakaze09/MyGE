@@ -42,7 +42,7 @@ struct RsrcMngrDX12::Impl {
 
   unordered_map<size_t, MyDX12::MeshGPUBuffer> meshMap;
   unordered_map<size_t, ID3D12RootSignature*> rootSignatureMap;
-  unordered_map<size_t, ID3D12PipelineState*> PSOMap;
+  vector<ID3D12PipelineState*> PSOs;
 
   const CD3DX12_STATIC_SAMPLER_DESC pointWrap{
       0,                                // shaderRegister
@@ -133,7 +133,7 @@ void RsrcMngrDX12::Clear() {
 
   for (auto& [name, rootSig] : pImpl->rootSignatureMap) rootSig->Release();
 
-  for (auto& [name, PSO] : pImpl->PSOMap) PSO->Release();
+  for (auto PSO : pImpl->PSOs) PSO->Release();
 
   pImpl->device = nullptr;
   delete pImpl->upload;
@@ -142,7 +142,7 @@ void RsrcMngrDX12::Clear() {
   pImpl->renderTargetMap.clear();
   pImpl->meshMap.clear();
   pImpl->rootSignatureMap.clear();
-  pImpl->PSOMap.clear();
+  pImpl->PSOs.clear();
   pImpl->shaderMap.clear();
 
   pImpl->isInit = false;
@@ -545,16 +545,16 @@ ID3D12RootSignature* RsrcMngrDX12::GetRootSignature(size_t id) const {
   return pImpl->rootSignatureMap.find(id)->second;
 }
 
-RsrcMngrDX12& RsrcMngrDX12::RegisterPSO(
-    size_t id, const D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc) {
+size_t RsrcMngrDX12::RegisterPSO(const D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc) {
   ID3D12PipelineState* pso;
   pImpl->device->CreateGraphicsPipelineState(desc, IID_PPV_ARGS(&pso));
-  pImpl->PSOMap.emplace(id, pso);
-  return *this;
+  size_t ID = pImpl->PSOs.size();
+  pImpl->PSOs.push_back(pso);
+  return ID;
 }
 
 ID3D12PipelineState* RsrcMngrDX12::GetPSO(size_t id) const {
-  return pImpl->PSOMap.find(id)->second;
+  return pImpl->PSOs[id];
 }
 
 std::array<CD3DX12_STATIC_SAMPLER_DESC, 6> RsrcMngrDX12::GetStaticSamplers()

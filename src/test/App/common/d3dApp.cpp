@@ -27,7 +27,7 @@ D3DApp::D3DApp(HINSTANCE hInstance) : mhAppInst(hInstance) {
 }
 
 D3DApp::~D3DApp() {
-  if (!uDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
 HINSTANCE D3DApp::AppInst() const { return mhAppInst; }
@@ -95,7 +95,7 @@ void D3DApp::CreateRtvAndDsvDescriptorHeaps() {
   rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
   rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
   rtvHeapDesc.NodeMask = 0;
-  ThrowIfFailed(uDevice->CreateDescriptorHeap(
+  ThrowIfFailed(myDevice->CreateDescriptorHeap(
       &rtvHeapDesc, IID_PPV_ARGS(mRtvHeap.GetAddressOf())));
 
   D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
@@ -103,19 +103,19 @@ void D3DApp::CreateRtvAndDsvDescriptorHeaps() {
   dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
   dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
   dsvHeapDesc.NodeMask = 0;
-  ThrowIfFailed(uDevice->CreateDescriptorHeap(
+  ThrowIfFailed(myDevice->CreateDescriptorHeap(
       &dsvHeapDesc, IID_PPV_ARGS(mDsvHeap.GetAddressOf())));
 }
 
 void D3DApp::OnResize() {
-  assert(!uDevice.IsNull());
+  assert(!myDevice.IsNull());
   assert(mSwapChain);
   assert(mDirectCmdListAlloc);
 
   // Flush before changing any resources.
   FlushCommandQueue();
 
-  ThrowIfFailed(uGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+  ThrowIfFailed(myGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
   // Release the previous resources we will be recreating.
   for (int i = 0; i < SwapChainBufferCount; ++i) mSwapChainBuffer[i].Reset();
@@ -132,8 +132,8 @@ void D3DApp::OnResize() {
       mRtvHeap->GetCPUDescriptorHandleForHeapStart());
   for (UINT i = 0; i < SwapChainBufferCount; i++) {
     ThrowIfFailed(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&mSwapChainBuffer[i])));
-    uDevice->CreateRenderTargetView(mSwapChainBuffer[i].Get(), nullptr,
-                                    rtvHeapHandle);
+    myDevice->CreateRenderTargetView(mSwapChainBuffer[i].Get(), nullptr,
+                                     rtvHeapHandle);
     rtvHeapHandle.Offset(1, mRtvDescriptorSize);
   }
 
@@ -163,7 +163,7 @@ void D3DApp::OnResize() {
   optClear.Format = mDepthStencilFormat;
   optClear.DepthStencil.Depth = 1.0f;
   optClear.DepthStencil.Stencil = 0;
-  ThrowIfFailed(uDevice->CreateCommittedResource(
+  ThrowIfFailed(myDevice->CreateCommittedResource(
       &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
       &depthStencilDesc, D3D12_RESOURCE_STATE_COMMON, &optClear,
       IID_PPV_ARGS(mDepthStencilBuffer.GetAddressOf())));
@@ -175,19 +175,19 @@ void D3DApp::OnResize() {
   dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
   dsvDesc.Format = mDepthStencilFormat;
   dsvDesc.Texture2D.MipSlice = 0;
-  uDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), &dsvDesc,
-                                  DepthStencilView());
+  myDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), &dsvDesc,
+                                   DepthStencilView());
 
   // Transition the resource from its initial state to be used as a depth
   // buffer.
-  uGCmdList->ResourceBarrier(
+  myGCmdList->ResourceBarrier(
       1, &CD3DX12_RESOURCE_BARRIER::Transition(
              mDepthStencilBuffer.Get(), D3D12_RESOURCE_STATE_COMMON,
              D3D12_RESOURCE_STATE_DEPTH_WRITE));
 
   // Execute the resize commands.
-  ThrowIfFailed(uGCmdList->Close());
-  uCmdQueue.Execute(uGCmdList.raw.Get());
+  ThrowIfFailed(myGCmdList->Close());
+  uCmdQueue.Execute(myGCmdList.raw.Get());
 
   // Wait until resize is complete.
   FlushCommandQueue();
@@ -223,7 +223,7 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       // Save the new client area dimensions.
       mClientWidth = LOWORD(lParam);
       mClientHeight = HIWORD(lParam);
-      if (!uDevice.IsNull()) {
+      if (!myDevice.IsNull()) {
         if (wParam == SIZE_MINIMIZED) {
           mAppPaused = true;
           mMinimized = true;
@@ -377,7 +377,7 @@ bool D3DApp::InitDirect3D() {
   // Try to create hardware device.
   HRESULT hardwareResult =
       D3D12CreateDevice(nullptr,  // default adapter
-                        D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&uDevice.raw));
+                        D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&myDevice.raw));
 
   // Fallback to WARP device.
   if (FAILED(hardwareResult)) {
@@ -385,17 +385,17 @@ bool D3DApp::InitDirect3D() {
     ThrowIfFailed(mdxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));
 
     ThrowIfFailed(D3D12CreateDevice(pWarpAdapter.Get(), D3D_FEATURE_LEVEL_11_0,
-                                    IID_PPV_ARGS(&uDevice.raw)));
+                                    IID_PPV_ARGS(&myDevice.raw)));
   }
 
-  ThrowIfFailed(uDevice->CreateFence(mCurrentFence, D3D12_FENCE_FLAG_NONE,
-                                     IID_PPV_ARGS(&mFence)));
+  ThrowIfFailed(myDevice->CreateFence(mCurrentFence, D3D12_FENCE_FLAG_NONE,
+                                      IID_PPV_ARGS(&mFence)));
 
-  mRtvDescriptorSize =
-      uDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-  mDsvDescriptorSize =
-      uDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-  mCbvSrvUavDescriptorSize = uDevice->GetDescriptorHandleIncrementSize(
+  mRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(
+      D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+  mDsvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(
+      D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+  mCbvSrvUavDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
   // Check 4X MSAA quality support for our back buffer format.
@@ -408,8 +408,8 @@ bool D3DApp::InitDirect3D() {
   msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
   msQualityLevels.NumQualityLevels = 0;
   ThrowIfFailed(
-      uDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
-                                   &msQualityLevels, sizeof(msQualityLevels)));
+      myDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+                                    &msQualityLevels, sizeof(msQualityLevels)));
 
   m4xMsaaQuality = msQualityLevels.NumQualityLevels;
   assert(m4xMsaaQuality > 0 && "Unexpected MSAA quality level.");
@@ -430,22 +430,22 @@ void D3DApp::CreateCommandObjects() {
   queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
   queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
   ThrowIfFailed(
-      uDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&uCmdQueue.raw)));
+      myDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&uCmdQueue.raw)));
 
-  ThrowIfFailed(uDevice->CreateCommandAllocator(
+  ThrowIfFailed(myDevice->CreateCommandAllocator(
       D3D12_COMMAND_LIST_TYPE_DIRECT,
       IID_PPV_ARGS(mDirectCmdListAlloc.GetAddressOf())));
 
-  ThrowIfFailed(uDevice->CreateCommandList(
+  ThrowIfFailed(myDevice->CreateCommandList(
       0, D3D12_COMMAND_LIST_TYPE_DIRECT,
       mDirectCmdListAlloc.Get(),  // Associated command allocator
       nullptr,                    // Initial PipelineStateObject
-      IID_PPV_ARGS(uGCmdList.raw.GetAddressOf())));
+      IID_PPV_ARGS(myGCmdList.raw.GetAddressOf())));
 
   // Start off in a closed state.  This is because the first time we refer
   // to the command list we will Reset it, and it needs to be closed before
   // calling Reset.
-  uGCmdList->Close();
+  myGCmdList->Close();
 }
 
 void D3DApp::CreateSwapChain() {

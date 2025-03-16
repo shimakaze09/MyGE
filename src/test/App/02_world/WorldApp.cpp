@@ -2,10 +2,6 @@
 // Created by Admin on 16/03/2025.
 //
 
-//***************************************************************************************
-// WorldApp.cpp by Frank Luna (C) 2015 All Rights Reserved.
-//***************************************************************************************
-
 #include <MyDX12/UploadBuffer.h>
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Core/Components/Camera.h>
@@ -17,10 +13,11 @@
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
+#include <MyGE/Render/DX12/MeshLayoutMngr.h>
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
 #include <MyGE/Transform/Transform.h>
-#include <MyGM/MyGM.h>
+#include <UGM/UGM.h>
 
 #include "../common/GeometryGenerator.h"
 #include "../common/MathHelper.h"
@@ -113,7 +110,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 WorldApp::WorldApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 WorldApp::~WorldApp() {
-  if (!uDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
 bool WorldApp::Initialize() {
@@ -121,18 +118,20 @@ bool WorldApp::Initialize() {
 
   if (!InitDirect3D()) return false;
 
-  My::MyGE::RsrcMngrDX12::Instance().Init(uDevice.raw.Get());
+  My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
-  My::MyDX12::DescriptorHeapMngr::Instance().Init(uDevice.raw.Get(), 1024, 1024,
-                                                  1024, 1024, 1024);
+  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
+                                                  1024, 1024, 1024, 1024);
 
   My::MyGE::IPipeline::InitDesc initDesc;
-  initDesc.device = uDevice.raw.Get();
+  initDesc.device = myDevice.raw.Get();
   initDesc.backBufferFormat = mBackBufferFormat;
   initDesc.depthStencilFormat = mDepthStencilFormat;
   initDesc.cmdQueue = uCmdQueue.raw.Get();
   initDesc.numFrame = gNumFrameResources;
   pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
+
+  My::MyGE::MeshLayoutMngr::Instance().Init();
 
   // Do the initial resize code.
   OnResize();
@@ -312,8 +311,10 @@ void WorldApp::LoadTextures() {
 void WorldApp::BuildShapeGeometry() {
   auto mesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
       "../assets/models/cube.obj");
-  My::MyGE::RsrcMngrDX12::Instance().RegisterStaticMesh(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), mesh);
+  My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
+      My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+      My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch(), myGCmdList.raw.Get(),
+      mesh);
   My::MyECS::ArchetypeFilter filter;
   filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshFilter>};
   auto meshFilters =
