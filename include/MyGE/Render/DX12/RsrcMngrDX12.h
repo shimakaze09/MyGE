@@ -12,7 +12,12 @@
 namespace My::MyGE {
 struct Texture2D;
 struct Shader;
+class Mesh;
 
+// TODO
+// 1. IsRegistered
+// 2. DynamicMesh
+// 3. Shader multi-compile
 class RsrcMngrDX12 {
  public:
   static RsrcMngrDX12& Instance() noexcept {
@@ -27,24 +32,24 @@ class RsrcMngrDX12 {
 
   // support tex2d and tex cube
   /*
-		RsrcMngrDX12& RegisterTexture2D(DirectX::ResourceUploadBatch& upload,
-			size_t id, std::wstring_view filename);
-		RsrcMngrDX12& RegisterDDSTextureArrayFromFile(DirectX::ResourceUploadBatch& upload,
-			size_t id, const std::wstring_view* filenameArr, UINT num);
-		*/
+  RsrcMngrDX12& RegisterTexture2D(DirectX::ResourceUploadBatch& upload,
+          size_t id, std::wstring_view filename);
+  RsrcMngrDX12& RegisterDDSTextureArrayFromFile(DirectX::ResourceUploadBatch&
+  upload, size_t id, const std::wstring_view* filenameArr, UINT num);
+  */
   RsrcMngrDX12& RegisterTexture2D(DirectX::ResourceUploadBatch& upload,
                                   const Texture2D* tex2D);
   /*RsrcMngrDX12& RegisterTexture2DArray(DirectX::ResourceUploadBatch& upload,
-			size_t id, const Texture2D** tex2Ds, size_t num);*/
+          size_t id, const Texture2D** tex2Ds, size_t num);*/
 
-  MyDX12::MeshGPUBuffer& RegisterStaticMeshGPUBuffer(
-      DirectX::ResourceUploadBatch& upload, size_t id, const void* vb_data,
-      UINT vb_count, UINT vb_stride, const void* ib_data, UINT ib_count,
-      DXGI_FORMAT ib_format);
+  // non-const mesh -> update
+  MyDX12::MeshGPUBuffer& RegisterStaticMesh(
+      DirectX::ResourceUploadBatch& upload, Mesh* mesh);
 
-  MyDX12::MeshGPUBuffer& RegisterDynamicMeshGPUBuffer(
-      size_t id, const void* vb_data, UINT vb_count, UINT vb_stride,
-      const void* ib_data, UINT ib_count, DXGI_FORMAT ib_format);
+  /*MyDX12::MeshGPUBuffer& RegisterDynamicMesh(
+          size_t id,
+          const void* vb_data, UINT vb_count, UINT vb_stride,
+          const void* ib_data, UINT ib_count, DXGI_FORMAT ib_format);*/
 
   RsrcMngrDX12& RegisterShader(const Shader* shader);
 
@@ -54,17 +59,19 @@ class RsrcMngrDX12 {
   RsrcMngrDX12& RegisterPSO(size_t id,
                             const D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc);
 
-  /*RsrcMngrDX12& RegisterRenderTexture2D(size_t id, UINT width, UINT height, DXGI_FORMAT format);
-		RsrcMngrDX12& RegisterRenderTextureCube(size_t id, UINT size, DXGI_FORMAT format);*/
+  /*RsrcMngrDX12& RegisterRenderTexture2D(size_t id, UINT width, UINT height,
+  DXGI_FORMAT format); RsrcMngrDX12& RegisterRenderTextureCube(size_t id, UINT
+  size, DXGI_FORMAT format);*/
 
   D3D12_CPU_DESCRIPTOR_HANDLE GetTexture2DSrvCpuHandle(
       const Texture2D* tex2D) const;
   D3D12_GPU_DESCRIPTOR_HANDLE GetTexture2DSrvGpuHandle(
       const Texture2D* tex2D) const;
 
-  // MyDX12::DescriptorHeapAllocation& GetTextureRtvs(const Texture2D* tex2D) const;
+  // MyDX12::DescriptorHeapAllocation& GetTextureRtvs(const Texture2D* tex2D)
+  // const;
 
-  MyDX12::MeshGPUBuffer& GetMeshGPUBuffer(size_t id) const;
+  MyDX12::MeshGPUBuffer& GetMeshGPUBuffer(const Mesh* mesh) const;
 
   const ID3DBlob* GetShaderByteCode_vs(const Shader* shader) const;
   const ID3DBlob* GetShaderByteCode_ps(const Shader* shader) const;

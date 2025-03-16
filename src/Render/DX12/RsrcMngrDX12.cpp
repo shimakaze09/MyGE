@@ -4,6 +4,7 @@
 
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
+#include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
@@ -38,7 +39,7 @@ struct RsrcMngrDX12::Impl {
   unordered_map<size_t, RenderTargetGPUData> renderTargetMap;
   unordered_map<size_t, ShaderCompileData> shaderMap;
 
-  unordered_map<size_t, MyDX12::MeshGPUBuffer> meshGeoMap;
+  unordered_map<size_t, MyDX12::MeshGPUBuffer> meshMap;
   unordered_map<size_t, ID3D12RootSignature*> rootSignatureMap;
   unordered_map<size_t, ID3D12PipelineState*> PSOMap;
 
@@ -138,7 +139,7 @@ void RsrcMngrDX12::Clear() {
 
   pImpl->texture2DMap.clear();
   pImpl->renderTargetMap.clear();
-  pImpl->meshGeoMap.clear();
+  pImpl->meshMap.clear();
   pImpl->rootSignatureMap.clear();
   pImpl->PSOMap.clear();
   pImpl->shaderMap.clear();
@@ -291,27 +292,31 @@ D3D12_GPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTexture2DSrvGpuHandle(
 // pImpl->textureMap.find(tex2D->GetInstanceID())->second.allocationRTV;
 // }
 
-MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterStaticMeshGPUBuffer(
-    DirectX::ResourceUploadBatch& upload, size_t id, const void* vb_data,
-    UINT vb_count, UINT vb_stride, const void* ib_data, UINT ib_count,
-    DXGI_FORMAT ib_format) {
-  auto& meshGeo = pImpl->meshGeoMap[id];
-  meshGeo.InitBuffer(pImpl->device, upload, vb_data, vb_count, vb_stride,
-                     ib_data, ib_count, ib_format);
-  return meshGeo;
+MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterStaticMesh(
+    DirectX::ResourceUploadBatch& upload, Mesh* mesh) {
+  auto& meshGPUBuffer = pImpl->meshMap[mesh->GetInstanceID()];
+  meshGPUBuffer.InitBuffer(
+      pImpl->device, upload, mesh->GetVertexBufferData(),
+      (UINT)mesh->GetVertexBufferVertexCount(),
+      (UINT)mesh->GetVertexBufferVertexStride(), mesh->GetIndices().data(),
+      (UINT)mesh->GetIndices().size(), DXGI_FORMAT_R32_UINT);
+  return meshGPUBuffer;
 }
 
-MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterDynamicMeshGPUBuffer(
-    size_t id, const void* vb_data, UINT vb_count, UINT vb_stride,
-    const void* ib_data, UINT ib_count, DXGI_FORMAT ib_format) {
-  auto& meshGeo = pImpl->meshGeoMap[id];
-  meshGeo.InitBuffer(pImpl->device, vb_data, vb_count, vb_stride, ib_data,
-                     ib_count, ib_format);
-  return meshGeo;
-}
+// MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterDynamicMesh(
+//	size_t id,
+//	const void* vb_data, UINT vb_count, UINT vb_stride,
+//	const void* ib_data, UINT ib_count, DXGI_FORMAT ib_format)
+//{
+//	auto& meshGeo = pImpl->meshMap[id];
+//	meshGeo.InitBuffer(pImpl->device,
+//		vb_data, vb_count, vb_stride,
+//		ib_data, ib_count, ib_format);
+//	return meshGeo;
+// }
 
-MyDX12::MeshGPUBuffer& RsrcMngrDX12::GetMeshGPUBuffer(size_t id) const {
-  return pImpl->meshGeoMap.find(id)->second;
+MyDX12::MeshGPUBuffer& RsrcMngrDX12::GetMeshGPUBuffer(const Mesh* mesh) const {
+  return pImpl->meshMap.find(mesh->GetInstanceID())->second;
 }
 
 RsrcMngrDX12& RsrcMngrDX12::RegisterShader(const Shader* shader) {

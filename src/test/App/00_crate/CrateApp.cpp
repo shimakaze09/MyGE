@@ -10,6 +10,7 @@
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
+#include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
 
@@ -180,7 +181,7 @@ class DeferApp : public D3DApp {
 
   float mTheta = 1.3f * XM_PI;
   float mPhi = 0.4f * XM_PI;
-  float mRadius = 2.5f;
+  float mRadius = 4.0f;
 
   POINT mLastMousePos;
 
@@ -193,6 +194,7 @@ class DeferApp : public D3DApp {
   // resources
   My::MyGE::Texture2D* chessboardTex2D;
   My::MyGE::Shader* shader;
+  My::MyGE::Mesh* mesh;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
@@ -433,7 +435,7 @@ void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
     mRadius += dx - dy;
 
     // Restrict the radius.
-    mRadius = MathHelper::Clamp(mRadius, 5.0f, 150.0f);
+    mRadius = MathHelper::Clamp(mRadius, 4.0f, 150.0f);
   }
 
   mLastMousePos.x = x;
@@ -633,34 +635,18 @@ void DeferApp::BuildShadersAndInputLayout() {
   mInputLayout = {
       {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
+      {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12,
        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-      {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24,
+      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20,
        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
   };
 }
 
 void DeferApp::BuildShapeGeometry() {
-  GeometryGenerator geoGen;
-  GeometryGenerator::MeshData box = geoGen.CreateBox(1.0f, 1.0f, 1.0f, 3);
-
-  std::vector<Vertex> vertices(box.Vertices.size());
-
-  for (size_t i = 0; i < box.Vertices.size(); ++i) {
-    vertices[i].Pos = box.Vertices[i].Position;
-    vertices[i].Normal = box.Vertices[i].Normal;
-    vertices[i].TexC = box.Vertices[i].TexC;
-  }
-
-  std::vector<std::uint16_t> indices = box.GetIndices16();
-
-  const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-  const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
-
-  My::MyGE::RsrcMngrDX12::Instance().RegisterStaticMeshGPUBuffer(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), ID_MeshGPUBuffer_box,
-      vertices.data(), (UINT)vertices.size(), sizeof(Vertex), indices.data(),
-      (UINT)indices.size(), DXGI_FORMAT_R16_UINT);
+  mesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
+      "../assets/models/cube.obj");
+  My::MyGE::RsrcMngrDX12::Instance().RegisterStaticMesh(
+      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), mesh);
 }
 
 void DeferApp::BuildPSOs() {
@@ -723,8 +709,7 @@ void DeferApp::BuildRenderItems() {
   auto boxRitem = std::make_unique<RenderItem>();
   boxRitem->ObjCBIndex = 0;
   boxRitem->Mat = mMaterials["woodCrate"].get();
-  boxRitem->Geo = &My::MyGE::RsrcMngrDX12::Instance().GetMeshGPUBuffer(
-      ID_MeshGPUBuffer_box);
+  boxRitem->Geo = &My::MyGE::RsrcMngrDX12::Instance().GetMeshGPUBuffer(mesh);
   boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
   boxRitem->IndexCount =
       boxRitem->Geo->IndexBufferByteSize /
