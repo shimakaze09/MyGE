@@ -703,3 +703,7 @@ _deps/
 
 *.mp4
 *.pdf
+
+*.shader
+*.tex2d
+*.mat
