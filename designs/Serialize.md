@@ -1,10 +1,11 @@
 # Serialization
 
-The engine core uses [MySRefl](https://github.com/shimakaze09/MySRefl) for serialization. Users can also customize serialization methods for specific components.
+The engine core uses [MySRefl](https://github.com/shimakaze09/MySRefl) for serialization. Users can also customize
+serialization methods for specific components.
 
 ## 1. Serialize
 
-First, we support basic types:
+First, support for basic types:
 
 - `float`, `double`
 - `bool`
@@ -13,22 +14,35 @@ First, we support basic types:
 
 Special simple types include:
 
-- Entity: Only records index (non-stable), used only for deserialization
-- Asset: If a non-`nullptr` pointer, checks if it's an asset, and if so, records its GUID
+- Entity: only records the index (non-stable), only used for deserialization
+- asset: checks if a non-`nullptr` pointer is an asset, if so, records its GUID
 
-Containers that will be supported:
+Supported containers:
 
-- vector, array
-- set, unordered_set
-- tuple, pair
-- map, unordered_map
+- Ordered fixed-length: `array`
+- Ordered variable-length: `vector`, `list`, `forward_list`, `deque`, `set`, `unordered_set`, `multiset`,
+  `unordered_multiset`
+- Tuples: `tuple`, `pair`
+- Associative: `map`, `unordered_map`, `multimap`, `unordered_multimap`
 
-Custom containers will be supported (through specialized macros)
+Support for custom containers (via specialization macros), such as:
 
-For unsupported types, users can define custom functions
+- Ordered fixed-length: UGM's `vec`, `val`, etc.
+
+### TODO
+
+- [ ] For unsupported types, users can define custom functions
+- [ ] reserve
 
 ## 2. Deserialize
 
-The world needs to register traits
+First, iterate once to create an entity index mapping table (used for entity index remapping)
 
-The rest is implemented following the reverse process
+Implement according to the reverse process
+
+### TODO
+
+- [ ] Users provide their own world (with registered cmpt traits, no entity)
+- [ ] Add multiple components at once
+- [ ] reserve
+- [ ] Support for append mode (index mapping table includes version)

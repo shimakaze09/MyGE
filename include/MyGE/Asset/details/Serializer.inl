@@ -91,6 +91,8 @@ template <typename Vector>
 void VectorTraits_Add(Vector& vec, VectorTraits_ValueType<Vector>&& value) {
   vec.push_back(std::move(value));
 }
+template <typename Vector>
+void VectorTraits_PostProcess(const Vector& vec) noexcept {}
 template <typename T, typename Alloc>
 struct VectorTraits<std::vector<T, Alloc>> : VectorTraitsBase {};
 template <typename T, typename Alloc>
@@ -113,6 +115,11 @@ struct VectorTraits<std::unordered_multiset<T, Hasher, KeyEq, Alloc>>
 template <typename T, typename Alloc>
 void VectorTraits_Add(std::forward_list<T, Alloc>& container, T&& value) {
   container.push_front(std::move(value));
+}
+
+template <typename T, typename Alloc>
+void VectorTraits_PostProcess(std::forward_list<T, Alloc>& container) {
+  container.reverse();
 }
 
 template <typename T, typename Pr, typename Alloc>
@@ -288,7 +295,8 @@ void WriteVar(const Value& var, Serializer::JSONWriter& writer) {
 }
 
 template <typename Value, typename JSONValue>
-Value GetVar(const JSONValue& val_var) {
+Value GetVar(const JSONValue& val_var,
+             const Serializer::EntityIndexMap& entityIndexMap) {
   if constexpr (std::is_floating_point_v<Value>)
     return static_cast<Value>(val_var.GetDouble());
   else if constexpr (std::is_integral_v<Value>) {
@@ -319,33 +327,38 @@ Value GetVar(const JSONValue& val_var) {
       const auto& path = AssetMngr::Instance().GUIDToAssetPath(xg::Guid{guid});
       return AssetMngr::Instance().LoadAsset<Asset>(path);
     }
-  } else if constexpr (std::is_same_v<Value, MyECS::Entity>)
-    return MyECS::Entity::Invalid();
-  else if constexpr (ArrayTraits<Value>::isArray) {
+  } else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
+    auto index = val_var.GetUint64();
+    return {entityIndexMap.find(index)->second, 0};
+  } else if constexpr (ArrayTraits<Value>::isArray) {
     const auto& arr = val_var.GetArray();
     assert(ArrayTraits<Value>::size == arr.Size());
     Value rst;
     for (size_t i = 0; i < ArrayTraits<Value>::size; i++) {
-      ArrayTraits_Set(rst, i,
-                      GetVar<ArrayTraits_ValueType<Value>>(
-                          arr[static_cast<rapidjson::SizeType>(i)]));
+      ArrayTraits_Set(
+          rst, i,
+          GetVar<ArrayTraits_ValueType<Value>>(
+              arr[static_cast<rapidjson::SizeType>(i)], entityIndexMap));
     }
     return rst;
   } else if constexpr (VectorTraits<Value>::isVector) {
     const auto& arr = val_var.GetArray();
     Value rst;
     for (size_t i = 0; i < arr.Size(); i++) {
-      VectorTraits_Add(rst, GetVar<VectorTraits_ValueType<Value>>(
-                                arr[static_cast<rapidjson::SizeType>(i)]));
+      VectorTraits_Add(
+          rst, GetVar<VectorTraits_ValueType<Value>>(
+                   arr[static_cast<rapidjson::SizeType>(i)], entityIndexMap));
     }
+    VectorTraits_PostProcess(rst);
     return rst;
   } else if constexpr (MapTraits<Value>::isMap) {
     if constexpr (std::is_same_v<MapTraits_KeyType<Value>, std::string>) {
       const auto& m = val_var.GetObject();
       Value rst;
       for (const auto& [val_key, val_mapped] : m) {
-        MapTraits_Emplace(rst, MapTraits_KeyType<Value>{val_key.GetString()},
-                          GetVar<MapTraits_MappedType<Value>>(val_mapped));
+        MapTraits_Emplace(
+            rst, MapTraits_KeyType<Value>{val_key.GetString()},
+            GetVar<MapTraits_MappedType<Value>>(val_mapped, entityIndexMap));
       }
       return rst;
     } else {
@@ -353,8 +366,10 @@ Value GetVar(const JSONValue& val_var) {
       Value rst;
       for (const auto& val_pair : m) {
         const auto& pair = val_pair.GetObject();
-        MapTraits_Emplace(rst, GetVar<MapTraits_KeyType<Value>>(pair["key"]),
-                          GetVar<MapTraits_MappedType<Value>>(pair["mapped"]));
+        MapTraits_Emplace(
+            rst, GetVar<MapTraits_KeyType<Value>>(pair["key"], entityIndexMap),
+            GetVar<MapTraits_MappedType<Value>>(pair["mapped"],
+                                                entityIndexMap));
       }
       return rst;
     }
@@ -364,8 +379,8 @@ Value GetVar(const JSONValue& val_var) {
         [&](auto&... elements) {
           const auto& arr = val_var.GetArray();
           rapidjson::SizeType i = 0;
-          ((elements =
-                GetVar<std::remove_reference_t<decltype(elements)>>(arr[i++])),
+          ((elements = GetVar<std::remove_reference_t<decltype(elements)>>(
+                arr[i++], entityIndexMap)),
            ...);
         },
         rst);
@@ -408,13 +423,15 @@ template <typename Cmpt>
 void Serializer::RegisterComponentDeserializeFunction() {
   RegisterComponentDeserializeFunction(
       MyECS::CmptType::Of<Cmpt>,
-      [](MyECS::World* world, MyECS::Entity e, const JSONCmpt& cmptJSON) {
+      [](MyECS::World* world, MyECS::Entity e, const JSONCmpt& cmptJSON,
+         const EntityIndexMap& entityIndexMap) {
         auto [cmpt] = world->entityMngr.Attach<Cmpt>(e);
-        MySRefl::TypeInfo<Cmpt>::ForEachVarOf(*cmpt, [&cmptJSON](auto field,
-                                                                 auto& var) {
-          const auto& val_var = cmptJSON[field.name.data()];
-          var = detail::GetVar<std::remove_reference_t<decltype(var)>>(val_var);
-        });
+        MySRefl::TypeInfo<Cmpt>::ForEachVarOf(
+            *cmpt, [&](auto field, auto& var) {
+              const auto& val_var = cmptJSON[field.name.data()];
+              var = detail::GetVar<std::remove_reference_t<decltype(var)>>(
+                  val_var, entityIndexMap);
+            });
       });
 }
 }  // namespace My::MyGE
