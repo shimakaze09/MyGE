@@ -13,6 +13,14 @@ using namespace My::MyECS;
 using namespace My;
 using namespace std;
 
+struct UserType0 {
+  float data;
+};
+
+struct UserType1 {
+  UserType0 usertype0;
+};
+
 struct A {
   bool v_bool;
   uint8_t v_uint8;
@@ -48,6 +56,8 @@ struct A {
   std::tuple<size_t, bool, float> v_tuple;
   std::pair<size_t, bool> v_pair;
   std::vector<Entity> v_vector_entity;
+  UserType0 v_usertype0;
+  UserType1 v_usertype1;
 };
 
 template <>
@@ -88,7 +98,18 @@ struct My::MySRefl::TypeInfo<A> : My::MySRefl::TypeInfoBase<A> {
       Field{"v_unordered_multimap", &A::v_unordered_multimap},
       Field{"v_tuple", &A::v_tuple},
       Field{"v_pair", &A::v_pair},
-    Field{"v_vector_entity", &A::v_vector_entity},
+      Field{"v_vector_entity", &A::v_vector_entity},
+      Field{"v_usertype0", &A::v_usertype0},
+      Field{"v_usertype1", &A::v_usertype1},
+  };
+};
+
+template <>
+struct My::MySRefl::TypeInfo<UserType1> : My::MySRefl::TypeInfoBase<UserType1> {
+  static constexpr AttrList attrs = {};
+
+  static constexpr FieldList fields = {
+      Field{"usertype0", &UserType1::usertype0},
   };
 };
 
@@ -98,11 +119,20 @@ int main() {
   });*/
   Serializer::Instance().RegisterComponentSerializeFunction<A>();
   Serializer::Instance().RegisterComponentDeserializeFunction<A>();
+  Serializer::Instance().RegisterUserTypeSerializeFunction(
+      [](const UserType0* t, Serializer::SerializeContext ctx) {
+        ctx.writer->Double(static_cast<double>(t->data));
+      });
+  Serializer::Instance().RegisterUserTypeDeserializeFunction(
+      [](UserType0* t, const rapidjson::Value& jsonValue,
+         Serializer::DeserializeContext ctx) {
+        t->data = static_cast<float>(jsonValue.GetDouble());
+      });
 
   World w;
 
   auto [e0] = w.entityMngr.Create();
- 
+
   auto [e1, a] = w.entityMngr.Create<A>();
   a->v_bool = true;
   a->v_uint8 = {8};
@@ -141,13 +171,19 @@ int main() {
 
   auto [e2] = w.entityMngr.Create();
   auto [e3] = w.entityMngr.Create();
- 
-  a->v_vector_entity = { e0,e3 };
- 
+
+  a->v_vector_entity = {e0, e1, e2, e3};
+
   auto json = Serializer::Instance().ToJSON(&w);
   cout << json << endl;
-  auto new_w = Serializer::Instance().ToWorld(json);
-  auto new_json = Serializer::Instance().ToJSON(new_w);
+  auto new_w = std::make_unique<World>();
+  auto [new_e0] = new_w->entityMngr.Create();
+  auto [new_e1] = new_w->entityMngr.Create();
+  new_w->entityMngr.Destroy(new_e0);
+  new_w->entityMngr.cmptTraits.Register<A>();
+  Serializer::Instance().ToWorld(new_w.get(), json);
+  new_w->entityMngr.Destroy(new_e1);
+  auto new_json = Serializer::Instance().ToJSON(new_w.get());
   cout << new_json << endl;
   std::pair p{1, 2};
   std::apply([](auto...) {}, p);

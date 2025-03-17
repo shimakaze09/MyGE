@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <MyDP/Visitor/cVisitor.h>
+#include <MyDP/Visitor/ncVisitor.h>
 #include <MyECS/World.h>
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -19,25 +21,45 @@ class Serializer {
   }
 
   using JSONWriter = rapidjson::Writer<rapidjson::StringBuffer>;
-  using CmptSerializeFunc = std::function<void(const void*, JSONWriter&)>;
-  using JSONCmpt = rapidjson::GenericObject<true, rapidjson::Value>;
-  using EntityIndexMap = std::unordered_map<size_t, size_t>;
-  using CmptDeserializeFunc = std::function<void(MyECS::World*, MyECS::Entity, const JSONCmpt&, const EntityIndexMap&)>;
+  struct SerializeContext {
+    JSONWriter* const writer;
+    const Visitor<void(const void*, SerializeContext)>* const fieldSerializer;
+  };
+  using SerializeFunc = std::function<void(const void*, SerializeContext)>;
+  using EntityIdxMap = std::unordered_map<size_t, MyECS::Entity>;
+  struct DeserializeContext {
+    const EntityIdxMap* entityIdxMap;
+    const Visitor<void(void*, const rapidjson::Value&,
+                       DeserializeContext)>* const fieldDeserializer;
+  };
+  using DeserializeFunc =
+      std::function<void(void*, const rapidjson::Value&, DeserializeContext)>;
 
-  void RegisterComponentSerializeFunction(MyECS::CmptType, CmptSerializeFunc);
-  void RegisterComponentDeserializeFunction(MyECS::CmptType,
-                                            CmptDeserializeFunc);
+  void RegisterComponentSerializeFunction(MyECS::CmptType, SerializeFunc);
+  void RegisterComponentDeserializeFunction(MyECS::CmptType, DeserializeFunc);
+
   template <typename Func>
   void RegisterComponentSerializeFunction(Func&& func);
   template <typename Cmpt>
   void RegisterComponentSerializeFunction();
+
+  template <typename Func>
+  void RegisterComponentDeserializeFunction(Func&& func);
   template <typename Cmpt>
   void RegisterComponentDeserializeFunction();
 
+  template <typename Func>
+  void RegisterUserTypeSerializeFunction(Func&& func);
+  template <typename Func>
+  void RegisterUserTypeDeserializeFunction(Func&& func);
+
   std::string ToJSON(const MyECS::World*);
-  MyECS::World* ToWorld(std::string_view json);
+  void ToWorld(MyECS::World*, std::string_view json);
 
  private:
+  void RegisterUserTypeSerializeFunction(size_t id, SerializeFunc func);
+  void RegisterUserTypeDeserializeFunction(size_t id, DeserializeFunc func);
+
   Serializer();
   ~Serializer();
 

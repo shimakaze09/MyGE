@@ -27,11 +27,11 @@ Supported containers:
 
 Support for custom containers (via specialization macros), such as:
 
-- Ordered fixed-length: UGM's `vec`, `val`, etc.
+- Ordered fixed-length: MyGM's `vec`, `val`, etc.
 
 ### TODO
 
-- [ ] For unsupported types, users can define custom functions
+- [x] For unsupported types, users can define custom functions
 - [ ] reserve
 
 ## 2. Deserialize
@@ -42,7 +42,7 @@ Implement according to the reverse process
 
 ### TODO
 
-- [ ] Users provide their own world (with registered cmpt traits, no entity)
-- [ ] Add multiple components at once
+- [x] Users provide their own world (with registered cmpt traits, no entity)
+- [x] Add multiple components at once
 - [ ] reserve
-- [ ] Support for append mode (index mapping table includes version)
+- [x] Support for append mode (index mapping table includes version)
