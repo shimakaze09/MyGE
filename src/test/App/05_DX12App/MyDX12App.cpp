@@ -2,8 +2,7 @@
 // Created by Admin on 17/03/2025.
 //
 
-#include <MyDX12/UploadBuffer.h>
-#include <MyGE/App/D3DApp/D3DApp.h>
+#include <MyGE/App/DX12App/DX12App.h>
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
@@ -23,14 +22,8 @@
 #include <MyGE/_deps/imgui/imgui.h>
 #include <MyGE/_deps/imgui/imgui_impl_dx12.h>
 #include <MyGE/_deps/imgui/imgui_impl_win32.h>
-#include <MyGM/MyGM.h>
-#include <windowsx.h>
 
 using Microsoft::WRL::ComPtr;
-using namespace DirectX;
-using namespace DirectX::PackedVector;
-
-const int gNumFrameResources = 3;
 
 struct AnimateMeshSystem : My::MyECS::System {
   using My::MyECS::System::System;
@@ -58,10 +51,10 @@ struct AnimateMeshSystem : My::MyECS::System {
   }
 };
 
-class MyD3DApp : public My::MyGE::D3DApp {
+class MyDX12App : public My::MyGE::DX12App {
  public:
-  MyD3DApp(HINSTANCE hInstance);
-  ~MyD3DApp();
+  MyDX12App(HINSTANCE hInstance);
+  ~MyDX12App();
 
   bool Initialize();
 
@@ -77,7 +70,6 @@ class MyD3DApp : public My::MyGE::D3DApp {
   virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam,
                           LPARAM lParam) override;
 
-  void OnKeyboardInput();
   void UpdateCamera();
 
   void BuildWorld();
@@ -85,8 +77,8 @@ class MyD3DApp : public My::MyGE::D3DApp {
   void BuildMaterials();
 
  private:
-  float mTheta = 0.4f * XM_PI;
-  float mPhi = 1.3f * XM_PI;
+  float mTheta = 0.4f * My::PI<float>;
+  float mPhi = 1.3f * My::PI<float>;
   float mRadius = 5.0f;
 
   POINT mLastMousePos;
@@ -101,8 +93,7 @@ class MyD3DApp : public My::MyGE::D3DApp {
   std::unique_ptr<My::MyGE::IPipeline> pipeline;
   std::unique_ptr<My::MyGE::Mesh> dynamicMesh;
 
-  std::unique_ptr<My::MyDX12::FrameResourceMngr> frameRsrcMngr;
-
+  // size : 1
   My::MyDX12::DescriptorHeapAllocation imguiAlloc;
 
   bool show_demo_window = true;
@@ -115,7 +106,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
                                                              WPARAM wParam,
                                                              LPARAM lParam);
 
-LRESULT MyD3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) return true;
   // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
   // your main application.
@@ -252,58 +243,43 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 #endif
 
   try {
-    MyD3DApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    MyDX12App theApp(hInstance);
+    if (!theApp.Initialize()) return 1;
 
     int rst = theApp.Run();
-    My::MyGE::RsrcMngrDX12::Instance().Clear();
     return rst;
   } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
-    My::MyGE::RsrcMngrDX12::Instance().Clear();
-    return 0;
+    return 1;
   }
 }
 
-MyD3DApp::MyD3DApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
+MyDX12App::MyDX12App(HINSTANCE hInstance) : DX12App(hInstance) {}
 
-MyD3DApp::~MyD3DApp() {
+MyDX12App::~MyDX12App() {
   if (!myDevice.IsNull()) FlushCommandQueue();
 
   ImGui_ImplDX12_Shutdown();
   ImGui_ImplWin32_Shutdown();
   ImGui::DestroyContext();
 
-  My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
-      std::move(imguiAlloc));
+  if (!imguiAlloc.IsNull())
+    My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
+        std::move(imguiAlloc));
 }
 
-bool MyD3DApp::Initialize() {
+bool MyDX12App::Initialize() {
   if (!InitMainWindow()) return false;
 
   if (!InitDirect3D()) return false;
 
-  My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
-
-  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
-                                                  1024, 1024, 1024, 1024);
-
   My::MyGE::IPipeline::InitDesc initDesc;
-  initDesc.device = myDevice.raw.Get();
+  initDesc.device = myDevice.Get();
   initDesc.backBufferFormat = GetBackBufferFormat();
   initDesc.depthStencilFormat = GetDepthStencilBufferFormat();
-  initDesc.cmdQueue = myCmdQueue.raw.Get();
-  initDesc.numFrame = gNumFrameResources;
+  initDesc.cmdQueue = myCmdQueue.Get();
+  initDesc.numFrame = NumFrameResources;
   pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
-
-  frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
-      gNumFrameResources, myDevice.raw.Get());
-  for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-    ThrowIfFailed(initDesc.device->CreateCommandAllocator(
-        D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
-    fr->RegisterResource("CommandAllocator", allocator);
-  }
 
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
@@ -324,7 +300,7 @@ bool MyD3DApp::Initialize() {
   ImGui_ImplWin32_Init(MainWnd());
   imguiAlloc =
       My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
-  ImGui_ImplDX12_Init(myDevice.raw.Get(), gNumFrameResources,
+  ImGui_ImplDX12_Init(myDevice.Get(), NumFrameResources,
                       DXGI_FORMAT_R8G8B8A8_UNORM,
                       My::MyDX12::DescriptorHeapMngr::Instance()
                           .GetCSUGpuDH()
@@ -339,7 +315,7 @@ bool MyD3DApp::Initialize() {
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
   BuildMaterials();
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.raw.Get());
+  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
   // Wait until initialization is complete.
   FlushCommandQueue();
@@ -347,30 +323,26 @@ bool MyD3DApp::Initialize() {
   return true;
 }
 
-void MyD3DApp::OnResize() {
-  D3DApp::OnResize();
+void MyDX12App::OnResize() {
+  DX12App::OnResize();
 
   if (pipeline)
     pipeline->Resize(mClientWidth, mClientHeight, GetScreenViewport(),
                      GetScissorRect(), GetDepthStencilBuffer());
 }
 
-void MyD3DApp::Update() {
-  OnKeyboardInput();
+void MyDX12App::Update() {
   UpdateCamera();
 
   world.Update();
 
   // update mesh, texture ...
-  frameRsrcMngr->BeginFrame();
+  GetFrameResourceMngr()->BeginFrame();
 
-  auto cmdAlloc =
-      frameRsrcMngr->GetCurrentFrameResource()
-          ->GetResource<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>>(
-              "CommandAllocator");
+  auto cmdAlloc = GetCurFrameCommandAllocator();
   cmdAlloc->Reset();
 
-  ThrowIfFailed(uGCmdList->Reset(cmdAlloc.Get(), nullptr));
+  ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
   auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
 
@@ -382,20 +354,20 @@ void MyD3DApp::Update() {
   upload.Begin();
   for (auto meshFilter : meshFilters) {
     My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-        upload, deleteBatch, uGCmdList.raw.Get(), meshFilter->mesh);
+        upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
   }
 
   // commit upload, delete ...
-  upload.End(myCmdQueue.raw.Get());
-  deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
-  uGCmdList->Close();
-  myCmdQueue.Execute(uGCmdList.raw.Get());
-  frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
+  upload.End(myCmdQueue.Get());
+  deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
+  myGCmdList->Close();
+  myCmdQueue.Execute(myGCmdList.Get());
+  GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
 
   pipeline->UpdateRenderContext(world);
 }
 
-void MyD3DApp::Draw() {
+void MyDX12App::Draw() {
   // Start the Dear ImGui frame
   ImGui_ImplDX12_NewFrame();
   ImGui_ImplWin32_NewFrame();
@@ -459,22 +431,20 @@ void MyD3DApp::Draw() {
   pipeline->EndFrame();
 }
 
-void MyD3DApp::OnMouseDown(WPARAM btnState, int x, int y) {
+void MyDX12App::OnMouseDown(WPARAM btnState, int x, int y) {
   mLastMousePos.x = x;
   mLastMousePos.y = y;
 
   SetCapture(MainWnd());
 }
 
-void MyD3DApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void MyDX12App::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
 
-void MyD3DApp::OnMouseMove(WPARAM btnState, int x, int y) {
+void MyDX12App::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
     // Make each pixel correspond to a quarter of a degree.
-    float dx =
-        XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
-    float dy =
-        XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
+    float dx = My::to_radian(0.25f * static_cast<float>(x - mLastMousePos.x));
+    float dy = My::to_radian(0.25f * static_cast<float>(y - mLastMousePos.y));
 
     // Update angles based on input to orbit camera around box.
     mTheta -= dy;
@@ -498,9 +468,7 @@ void MyD3DApp::OnMouseMove(WPARAM btnState, int x, int y) {
   mLastMousePos.y = y;
 }
 
-void MyD3DApp::OnKeyboardInput() {}
-
-void MyD3DApp::UpdateCamera() {
+void MyDX12App::UpdateCamera() {
   My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
                    mRadius * sinf(mTheta) * cosf(mPhi)};
   auto camera = world.entityMngr.Get<My::MyGE::Camera>(cam);
@@ -516,7 +484,7 @@ void MyD3DApp::UpdateCamera() {
       c2w.decompose_quatenion();
 }
 
-void MyD3DApp::BuildWorld() {
+void MyDX12App::BuildWorld() {
   world.systemMngr.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
@@ -546,7 +514,7 @@ void MyD3DApp::BuildWorld() {
   std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = dynamicMesh.get();
 }
 
-void MyD3DApp::LoadTextures() {
+void MyDX12App::LoadTextures() {
   auto albedoImg = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
       "../assets/textures/iron/albedo.png");
   auto roughnessImg =
@@ -594,7 +562,7 @@ void MyD3DApp::LoadTextures() {
       My::MyGE::RsrcMngrDX12::Instance().GetUpload(), metalnessTex2D);
 }
 
-void MyD3DApp::BuildMaterials() {
+void MyDX12App::BuildMaterials() {
   std::filesystem::path matPath = "../assets/materials/iron.mat";
   auto material = new My::MyGE::Material;
   material->shader =

@@ -2,7 +2,7 @@ ADD_TARGET(
         TEST
         MODE STATIC
         SOURCE
-        "${PROJECT_SOURCE_DIR}/include/MyGE/App/D3DApp"
+        "${PROJECT_SOURCE_DIR}/include/MyGE/App/DX12App"
         LIB
         My::MyGE_Render_DX12
         My::MyGE_Asset

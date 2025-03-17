@@ -9,9 +9,9 @@
 #include <dxgi1_4.h>
 
 namespace My::MyGE {
-class D3DApp {
+class DX12App {
  public:
-  static D3DApp* GetApp() noexcept { return mApp; }
+  static DX12App* GetApp() noexcept { return mApp; }
 
   HINSTANCE AppInst() const { return mhAppInst; }
   HWND MainWnd() const { return mhMainWnd; }
@@ -23,6 +23,9 @@ class D3DApp {
   // - then CalculateFrameStats, Update, Draw
   // - else sleep
   int Run();
+
+  static constexpr uint8_t NumFrameResources = 3;
+  static constexpr uint8_t NumSwapChainBuffer = 2;
 
  protected:
   virtual void Update() = 0;
@@ -60,23 +63,31 @@ class D3DApp {
   void SwapBackBuffer();
 
   ID3D12Resource* CurrentBackBuffer() const noexcept {
-    return mSwapChainBuffer[mCurrBackBuffer].Get();
+    return mSwapChainBuffer[curBackBuffer].Get();
   }
   ID3D12Resource* GetDepthStencilBuffer() const noexcept {
     return mDepthStencilBuffer.Get();
   }
-  D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const noexcept;
+  D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const noexcept {
+    return swapchainRTVCpuDH.GetCpuHandle(curBackBuffer);
+  }
   D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const noexcept {
-    return mDsvHeap->GetCPUDescriptorHandleForHeapStart();
+    return swapchainDSVCpuDH.GetCpuHandle();
   }
   DXGI_FORMAT GetBackBufferFormat() const noexcept { return mBackBufferFormat; }
   DXGI_FORMAT GetDepthStencilBufferFormat() const noexcept {
     return mDepthStencilFormat;
   }
 
+  static constexpr char FR_CommandAllocator[] = "__CommandAllocator";
+  MyDX12::FrameResourceMngr* GetFrameResourceMngr() const noexcept {
+    return frameRsrcMngr.get();
+  }
+  ID3D12CommandAllocator* GetCurFrameCommandAllocator() noexcept;
+
  protected:
-  D3DApp(HINSTANCE hInstance);
-  virtual ~D3DApp();
+  DX12App(HINSTANCE hInstance);
+  virtual ~DX12App();
 
   Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
   Microsoft::WRL::ComPtr<IDXGISwapChain> mSwapChain;
@@ -87,21 +98,24 @@ class D3DApp {
 
   My::MyDX12::Device myDevice;
   My::MyDX12::CmdQueue myCmdQueue;
-  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mDirectCmdListAlloc;
-  My::MyDX12::GCmdList uGCmdList;
+  My::MyDX12::GCmdList myGCmdList;
+
+  // for init, resize, run in "main frame"
+  Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mainCmdAlloc;
 
  private:
-  inline static D3DApp* mApp{nullptr};
+  inline static DX12App* mApp{nullptr};
 
+  // command queue, alloc, list
+  void CreateCommandObjects();
   // create rtv and dsv for backbuffer(double buffer rtv x 2 + depth stencil
   // buffer)
-  void CreateRtvAndDsvDescriptorHeaps();
+  void CreateSwapChain();
+  void CreateSwapChainDH();
+
   void LogAdapters();
   void LogAdapterOutputs(IDXGIAdapter* adapter);
   void LogOutputDisplayModes(IDXGIOutput* output, DXGI_FORMAT format);
-  void CreateSwapChain();
-  // command queue, alloc, list
-  void CreateCommandObjects();
 
   int frameCnt{0};
   float timeElapsed{0.0f};
@@ -110,17 +124,12 @@ class D3DApp {
   HINSTANCE mhAppInst = nullptr;  // application instance handle
   HWND mhMainWnd = nullptr;       // main window handle
 
-  UINT mRtvDescriptorSize = 0;
-  UINT mDsvDescriptorSize = 0;
-  UINT mCbvSrvUavDescriptorSize = 0;
-
-  static constexpr int SwapChainBufferCount = 2;
-  int mCurrBackBuffer = 0;
-  Microsoft::WRL::ComPtr<ID3D12Resource> mSwapChainBuffer[SwapChainBufferCount];
+  int curBackBuffer = 0;
+  Microsoft::WRL::ComPtr<ID3D12Resource> mSwapChainBuffer[NumSwapChainBuffer];
   Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;
 
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
-  Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDsvHeap;
+  MyDX12::DescriptorHeapAllocation swapchainRTVCpuDH;
+  MyDX12::DescriptorHeapAllocation swapchainDSVCpuDH;
 
   Microsoft::WRL::ComPtr<ID3D12Fence> mFence;
   UINT64 mCurrentFence = 0;
@@ -128,8 +137,10 @@ class D3DApp {
   DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
   DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-  D3DApp(const D3DApp& rhs) = delete;
-  D3DApp& operator=(const D3DApp& rhs) = delete;
+  std::unique_ptr<MyDX12::FrameResourceMngr> frameRsrcMngr;
+
+  DX12App(const DX12App& rhs) = delete;
+  DX12App& operator=(const DX12App& rhs) = delete;
 
   static LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM);
 };
