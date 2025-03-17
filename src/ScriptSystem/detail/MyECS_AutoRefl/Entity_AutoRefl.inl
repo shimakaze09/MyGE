@@ -10,6 +10,9 @@ struct My::MySRefl::TypeInfo<My::MyECS::Entity>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
+      Field{Name::constructor,
+            WrapConstructor<My::MyECS::Entity(size_t, size_t)>()},
+      Field{Name::constructor, WrapConstructor<My::MyECS::Entity()>()},
       Field{"Idx", &My::MyECS::Entity::Idx},
       Field{"Version", &My::MyECS::Entity::Version},
       Field{"Invalid", &My::MyECS::Entity::Invalid},

@@ -348,7 +348,8 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
   if (target == PSOIDMap.end()) {
     auto [uv, normal, tangent, color] =
         MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
-    if (!uv || !normal) return static_cast<size_t>(-1);  // not support
+    if (!uv || !normal)
+      return static_cast<size_t>(-1);  // not support
 
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
@@ -371,8 +372,8 @@ void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
   renderContext.objectMap.clear();
 
   My::MyECS::ArchetypeFilter objectFilter;
-  objectFilter.all = {My::MyECS::CmptType::Of<MeshFilter>,
-                      My::MyECS::CmptType::Of<MeshRenderer>};
+  objectFilter.all = {My::MyECS::CmptAccessType::Of<MeshFilter>,
+                      My::MyECS::CmptAccessType::Of<MeshRenderer>};
   auto objectEntities = world.entityMngr.GetEntityArray(objectFilter);
   for (auto e : objectEntities) {
     auto meshFilter = world.entityMngr.Get<MeshFilter>(e);
@@ -392,7 +393,7 @@ void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
   }
 
   My::MyECS::ArchetypeFilter cameraFilter;
-  cameraFilter.all = {My::MyECS::CmptType::Of<Camera>};
+  cameraFilter.all = {My::MyECS::CmptAccessType::Of<Camera>};
   auto cameras = world.entityMngr.GetEntityArray(cameraFilter);
   assert(cameras.size() == 1);
   renderContext.cam = *world.entityMngr.Get<Camera>(cameras.front());
@@ -433,7 +434,8 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
 
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
+    for (const auto& [mat, objects] : mat2objects)
+      objectNum += objects.size();
     if (shader->shaderName == "Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
       buffer->Reserve(
@@ -716,7 +718,9 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() { delete pImpl; }
+StdPipeline::~StdPipeline() {
+  delete pImpl;
+}
 
 void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->UpdateRenderContext(world);
@@ -729,7 +733,9 @@ void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->UpdateShaderCBs(GetResizeData());
 }
 
-void StdPipeline::Render() { pImpl->Render(GetResizeData(), GetFrameData()); }
+void StdPipeline::Render() {
+  pImpl->Render(GetResizeData(), GetFrameData());
+}
 
 void StdPipeline::EndFrame() {
   pImpl->frameRsrcMngr.EndFrame(initDesc.cmdQueue);

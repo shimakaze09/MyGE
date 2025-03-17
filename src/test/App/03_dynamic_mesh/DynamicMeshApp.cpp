@@ -203,7 +203,7 @@ void DynamicMeshApp::Update() {
 
   // update mesh
   My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshFilter>};
+  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
   auto meshFilters =
       world.entityMngr.GetCmptArray<My::MyGE::MeshFilter>(filter);
   upload.Begin();
@@ -394,7 +394,7 @@ void DynamicMeshApp::BuildMaterials() {
         My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(matPath);
   }
   My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshRenderer>};
+  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshRenderer>};
   auto meshRenderers =
       world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
   for (auto meshRenderer : meshRenderers)

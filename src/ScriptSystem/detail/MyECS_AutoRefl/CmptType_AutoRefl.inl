@@ -43,22 +43,47 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptAccessType>
                 My::MyECS::CmptType, My::MyECS::AccessMode)>()},
       Field{Name::constructor,
             WrapConstructor<My::MyECS::CmptAccessType(My::MyECS::CmptType)>()},
+      Field{Name::constructor, WrapConstructor<My::MyECS::CmptAccessType()>()},
       Field{"HashCode", &My::MyECS::CmptAccessType::HashCode},
       Field{"GetCmptType", &My::MyECS::CmptAccessType::GetCmptType},
       Field{"GetAccessMode", &My::MyECS::CmptAccessType::GetAccessMode},
       Field{"Invalid", &My::MyECS::CmptAccessType::Invalid},
       Field{"Valid", &My::MyECS::CmptAccessType::Valid},
-      Field{
-          "operator<", &My::MyECS::CmptAccessType::operator<},
-          Field{
-              "operator<=", &My::MyECS::CmptAccessType::operator<= },
-              Field{
-                  "operator>", &My::MyECS::CmptAccessType::operator> },
-                  Field{"operator>=", &My::MyECS::CmptAccessType::operator>= },
-                        Field{"operator==",
-                              &My::MyECS::CmptAccessType::operator== },
-                              Field{
-                                  "operator!=",
-                                  &My::MyECS::CmptAccessType::operator!= },
-                        };
+      Field{"operator<", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                             const My::MyECS::CmptAccessType&) const noexcept>(
+                             &My::MyECS::CmptAccessType::operator<)},
+      Field{"operator<=", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                              const My::MyECS::CmptAccessType&) const noexcept>(
+                              &My::MyECS::CmptAccessType::operator<=)},
+      Field{"operator>", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                             const My::MyECS::CmptAccessType&) const noexcept>(
+                             &My::MyECS::CmptAccessType::operator>)},
+      Field{"operator>=", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                              const My::MyECS::CmptAccessType&) const noexcept>(
+                              &My::MyECS::CmptAccessType::operator>=)},
+      Field{"operator==", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                              const My::MyECS::CmptAccessType&) const noexcept>(
+                              &My::MyECS::CmptAccessType::operator==)},
+      Field{"operator!=", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                              const My::MyECS::CmptAccessType&) const noexcept>(
+                              &My::MyECS::CmptAccessType::operator!=)},
+      Field{"operator<", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                             const My::MyECS::CmptType&) const noexcept>(
+                             &My::MyECS::CmptAccessType::operator<)},
+      Field{"operator<=", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                              const My::MyECS::CmptType&) const noexcept>(
+                              &My::MyECS::CmptAccessType::operator<=)},
+      Field{"operator>", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                             const My::MyECS::CmptType&) const noexcept>(
+                             &My::MyECS::CmptAccessType::operator>)},
+      Field{"operator>=", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                              const My::MyECS::CmptType&) const noexcept>(
+                              &My::MyECS::CmptAccessType::operator>=)},
+      Field{"operator==", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                              const My::MyECS::CmptType&) const noexcept>(
+                              &My::MyECS::CmptAccessType::operator==)},
+      Field{"operator!=", static_cast<bool (My::MyECS::CmptAccessType::*)(
+                              const My::MyECS::CmptType&) const noexcept>(
+                              &My::MyECS::CmptAccessType::operator!=)},
+  };
 };

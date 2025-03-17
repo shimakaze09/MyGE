@@ -34,7 +34,7 @@ struct RotateSystem : My::MyECS::System {
 
   virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
     My::MyECS::ArchetypeFilter filter;
-    filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshFilter>};
+    filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
     schedule.RegisterEntityJob(
         [](My::MyGE::Rotation* rot) {
           rot->value =
@@ -317,7 +317,7 @@ void WorldApp::BuildShapeGeometry() {
       My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch(), myGCmdList.raw.Get(),
       mesh);
   My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshFilter>};
+  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
   auto meshFilters =
       world.entityMngr.GetCmptArray<My::MyGE::MeshFilter>(filter);
   for (auto meshFilter : meshFilters) meshFilter->mesh = mesh;
@@ -339,7 +339,7 @@ void WorldApp::BuildMaterials() {
         My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(matPath);
   }
   My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptType::Of<My::MyGE::MeshRenderer>};
+  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshRenderer>};
   auto meshRenderers =
       world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
   for (auto meshRenderer : meshRenderers)

@@ -30,11 +30,13 @@ struct My::MySRefl::TypeInfo<My::MyECS::CmptAccessPtr>
                                                      My::MyECS::AccessMode)>()},
       Field{Name::constructor, WrapConstructor<My::MyECS::CmptAccessPtr(
                                    My::MyECS::CmptAccessType, void*)>()},
+      Field{Name::constructor, WrapConstructor<My::MyECS::CmptPtr()>()},
       Field{Name::constructor,
             WrapConstructor<My::MyECS::CmptAccessPtr(My::MyECS::CmptPtr,
                                                      My::MyECS::AccessMode)>()},
       Field{Name::constructor,
             WrapConstructor<My::MyECS::CmptAccessPtr(My::MyECS::CmptPtr)>()},
+      Field{Name::constructor, WrapConstructor<My::MyECS::CmptAccessPtr()>()},
       Field{"Ptr", &My::MyECS::CmptAccessPtr::Ptr},
       Field{"AccessType", &My::MyECS::CmptAccessPtr::AccessType},
       Field{"Invalid", &My::MyECS::CmptAccessPtr::Invalid},

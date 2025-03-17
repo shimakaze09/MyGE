@@ -114,9 +114,6 @@ struct My::MySRefl::TypeInfo<UserType1> : My::MySRefl::TypeInfoBase<UserType1> {
 };
 
 int main() {
-  /*Serializer::Instance().RegisterComponentSerializeFunction([](const A* a,
-  Serializer::JSONWriter& writer) { writer.Key("data"); writer.Double(a->data);
-  });*/
   Serializer::Instance().RegisterComponentSerializeFunction<A>();
   Serializer::Instance().RegisterComponentDeserializeFunction<A>();
   Serializer::Instance().RegisterUserTypeSerializeFunction(
