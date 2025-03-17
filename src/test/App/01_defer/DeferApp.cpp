@@ -11,8 +11,6 @@
 #include <MyGE/Core/Texture2D.h>
 #include <MyGM/MyGM.h>
 
-#include "../common/GeometryGenerator.h"
-#include "../common/MathHelper.h"
 #include "../common/d3dApp.h"
 
 using Microsoft::WRL::ComPtr;
@@ -244,9 +242,9 @@ bool DeferApp::Initialize() {
 
   // Execute the initialization commands.
   ThrowIfFailed(myGCmdList->Close());
-  uCmdQueue.Execute(myGCmdList.raw.Get());
+  myCmdQueue.Execute(myGCmdList.raw.Get());
 
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(uCmdQueue.raw.Get());
+  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.raw.Get());
 
   // Wait until initialization is complete.
   FlushCommandQueue();
@@ -259,7 +257,7 @@ void DeferApp::OnResize() {
 
   // The window resized, so update the aspect ratio and recompute the projection
   // matrix.
-  mProj = My::transformf::perspective(0.25f * MathHelper::Pi, AspectRatio(),
+  mProj = My::transformf::perspective(0.25f * My::PI<float>, AspectRatio(),
                                       1.0f, 1000.0f, 0.f);
 
   auto clearFGRsrcMngr =
@@ -511,20 +509,20 @@ void DeferApp::Draw() {
   }
 
   auto [success, crst] = fgCompiler.Compile(fg);
-  fgExecutor.Execute(myDevice.raw.Get(), uCmdQueue.raw.Get(), cmdAlloc.Get(),
+  fgExecutor.Execute(myDevice.raw.Get(), myCmdQueue.raw.Get(), cmdAlloc.Get(),
                      crst, *fgRsrcMngr);
 
   //   // Done recording commands.
   //   ThrowIfFailed(myGCmdList->Close());
 
   //   // Add the command list to the queue for execution.
-  // uCmdQueue.Execute(myGCmdList.raw.Get());
+  // myCmdQueue.Execute(myGCmdList.raw.Get());
 
   // Swap the back and front buffers
   ThrowIfFailed(mSwapChain->Present(0, 0));
   mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 
-  frameRsrcMngr->EndFrame(uCmdQueue.raw.Get());
+  frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
 }
 
 void DeferApp::OnMouseDown(WPARAM btnState, int x, int y) {
@@ -549,7 +547,7 @@ void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
     mPhi -= dx;
 
     // Restrict the angle mPhi.
-    mTheta = MathHelper::Clamp(mTheta, 0.1f, MathHelper::Pi - 0.1f);
+    mTheta = std::clamp(mTheta, 0.1f, My::PI<float> - 0.1f);
   } else if ((btnState & MK_RBUTTON) != 0) {
     // Make each pixel correspond to 0.2 unit in the scene.
     float dx = 0.05f * static_cast<float>(x - mLastMousePos.x);
@@ -559,7 +557,7 @@ void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
     mRadius += dx - dy;
 
     // Restrict the radius.
-    mRadius = MathHelper::Clamp(mRadius, 5.0f, 150.0f);
+    mRadius = std::clamp(mRadius, 5.0f, 150.0f);
   }
 
   mLastMousePos.x = x;

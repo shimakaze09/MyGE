@@ -19,8 +19,6 @@
 #include <MyGE/Transform/Transform.h>
 #include <MyGM/MyGM.h>
 
-#include "../common/GeometryGenerator.h"
-#include "../common/MathHelper.h"
 #include "../common/d3dApp.h"
 
 using Microsoft::WRL::ComPtr;
@@ -128,7 +126,7 @@ bool WorldApp::Initialize() {
   initDesc.device = myDevice.raw.Get();
   initDesc.backBufferFormat = mBackBufferFormat;
   initDesc.depthStencilFormat = mDepthStencilFormat;
-  initDesc.cmdQueue = uCmdQueue.raw.Get();
+  initDesc.cmdQueue = myCmdQueue.raw.Get();
   initDesc.numFrame = gNumFrameResources;
   pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
 
@@ -143,7 +141,7 @@ bool WorldApp::Initialize() {
   LoadTextures();
   BuildShapeGeometry();
   BuildMaterials();
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(uCmdQueue.raw.Get());
+  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.raw.Get());
 
   // Wait until initialization is complete.
   FlushCommandQueue();
@@ -198,7 +196,7 @@ void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
     mPhi -= dx;
 
     // Restrict the angle mPhi.
-    mTheta = MathHelper::Clamp(mTheta, 0.1f, MathHelper::Pi - 0.1f);
+    mTheta = std::clamp(mTheta, 0.1f, My::PI<float> - 0.1f);
   } else if ((btnState & MK_RBUTTON) != 0) {
     // Make each pixel correspond to 0.2 unit in the scene.
     float dx = 0.05f * static_cast<float>(x - mLastMousePos.x);
@@ -208,7 +206,7 @@ void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
     mRadius += dx - dy;
 
     // Restrict the radius.
-    mRadius = MathHelper::Clamp(mRadius, 5.0f, 150.0f);
+    mRadius = std::clamp(mRadius, 5.0f, 150.0f);
   }
 
   mLastMousePos.x = x;

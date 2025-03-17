@@ -122,6 +122,6 @@ class D3DApp {
 
   // My::MyDX12
   My::MyDX12::Device myDevice;
-  My::MyDX12::CmdQueue uCmdQueue;
+  My::MyDX12::CmdQueue myCmdQueue;
   My::MyDX12::GCmdList myGCmdList;
 };

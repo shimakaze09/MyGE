@@ -1,24 +1,14 @@
-//***************************************************************************************
-// d3dApp.cpp by Frank Luna (C) 2015 All Rights Reserved.
-//***************************************************************************************
+//
+// Created by Admin on 17/03/2025.
+//
 
-#include "d3dApp.h"
-
-#include <WindowsX.h>
+#include <MyGE/App/D3DApp/D3DApp.h>
+#include <MyGE/Core/GameTimer.h>
 
 using Microsoft::WRL::ComPtr;
-using namespace std;
+using namespace My::MyGE;
 using namespace DirectX;
-
-LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam,
-                             LPARAM lParam) {
-  // Forward hwnd on because we can get messages (e.g., WM_CREATE)
-  // before CreateWindow returns, and thus before mhMainWnd is valid.
-  return D3DApp::GetApp()->MsgProc(hwnd, msg, wParam, lParam);
-}
-
-D3DApp* D3DApp::mApp = nullptr;
-D3DApp* D3DApp::GetApp() { return mApp; }
+using namespace std;
 
 D3DApp::D3DApp(HINSTANCE hInstance) : mhAppInst(hInstance) {
   // Only one D3DApp can be constructed.
@@ -30,24 +20,11 @@ D3DApp::~D3DApp() {
   if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
-HINSTANCE D3DApp::AppInst() const { return mhAppInst; }
-
-HWND D3DApp::MainWnd() const { return mhMainWnd; }
-
-float D3DApp::AspectRatio() const {
-  return static_cast<float>(mClientWidth) / mClientHeight;
-}
-
-bool D3DApp::Get4xMsaaState() const { return m4xMsaaState; }
-
-void D3DApp::Set4xMsaaState(bool value) {
-  if (m4xMsaaState != value) {
-    m4xMsaaState = value;
-
-    // Recreate the swapchain and buffers with new multisample settings.
-    CreateSwapChain();
-    OnResize();
-  }
+LRESULT CALLBACK D3DApp::MainWndProc(HWND hwnd, UINT msg, WPARAM wParam,
+                                     LPARAM lParam) {
+  // Forward hwnd on because we can get messages (e.g., WM_CREATE)
+  // before CreateWindow returns, and thus before mhMainWnd is valid.
+  return D3DApp::GetApp()->MsgProc(hwnd, msg, wParam, lParam);
 }
 
 int D3DApp::Run() {
@@ -60,33 +37,19 @@ int D3DApp::Run() {
     if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
-    }
-    // Otherwise, do animation/game stuff.
-    else {
+    } else {  // Otherwise, do animation/game stuff.
       My::MyGE::GameTimer::Instance().Tick();
 
       if (!mAppPaused) {
         CalculateFrameStats();
         Update();
         Draw();
-      } else {
+      } else
         Sleep(100);
-      }
     }
   }
 
   return (int)msg.wParam;
-}
-
-bool D3DApp::Initialize() {
-  if (!InitMainWindow()) return false;
-
-  if (!InitDirect3D()) return false;
-
-  // Do the initial resize code.
-  OnResize();
-
-  return true;
 }
 
 void D3DApp::CreateRtvAndDsvDescriptorHeaps() {
@@ -115,7 +78,7 @@ void D3DApp::OnResize() {
   // Flush before changing any resources.
   FlushCommandQueue();
 
-  ThrowIfFailed(myGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+  ThrowIfFailed(uGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
   // Release the previous resources we will be recreating.
   for (int i = 0; i < SwapChainBufferCount; ++i) mSwapChainBuffer[i].Reset();
@@ -154,8 +117,8 @@ void D3DApp::OnResize() {
   // we need to create the depth buffer resource with a typeless format.
   depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 
-  depthStencilDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
-  depthStencilDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+  depthStencilDesc.SampleDesc.Count = 1;
+  depthStencilDesc.SampleDesc.Quality = 0;
   depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
   depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
@@ -180,147 +143,17 @@ void D3DApp::OnResize() {
 
   // Transition the resource from its initial state to be used as a depth
   // buffer.
-  myGCmdList->ResourceBarrier(
+  uGCmdList->ResourceBarrier(
       1, &CD3DX12_RESOURCE_BARRIER::Transition(
              mDepthStencilBuffer.Get(), D3D12_RESOURCE_STATE_COMMON,
              D3D12_RESOURCE_STATE_DEPTH_WRITE));
 
   // Execute the resize commands.
-  ThrowIfFailed(myGCmdList->Close());
-  myCmdQueue.Execute(myGCmdList.raw.Get());
+  ThrowIfFailed(uGCmdList->Close());
+  myCmdQueue.Execute(uGCmdList.raw.Get());
 
   // Wait until resize is complete.
   FlushCommandQueue();
-
-  // Update the viewport transform to cover the client area.
-  mScreenViewport.TopLeftX = 0;
-  mScreenViewport.TopLeftY = 0;
-  mScreenViewport.Width = static_cast<float>(mClientWidth);
-  mScreenViewport.Height = static_cast<float>(mClientHeight);
-  mScreenViewport.MinDepth = 0.0f;
-  mScreenViewport.MaxDepth = 1.0f;
-
-  mScissorRect = {0, 0, mClientWidth, mClientHeight};
-}
-
-LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  switch (msg) {
-    // WM_ACTIVATE is sent when the window is activated or deactivated.
-    // We pause the game when the window is deactivated and unpause it
-    // when it becomes active.
-    case WM_ACTIVATE:
-      if (LOWORD(wParam) == WA_INACTIVE) {
-        mAppPaused = true;
-        My::MyGE::GameTimer::Instance().Stop();
-      } else {
-        mAppPaused = false;
-        My::MyGE::GameTimer::Instance().Start();
-      }
-      return 0;
-
-    // WM_SIZE is sent when the user resizes the window.
-    case WM_SIZE:
-      // Save the new client area dimensions.
-      mClientWidth = LOWORD(lParam);
-      mClientHeight = HIWORD(lParam);
-      if (!myDevice.IsNull()) {
-        if (wParam == SIZE_MINIMIZED) {
-          mAppPaused = true;
-          mMinimized = true;
-          mMaximized = false;
-        } else if (wParam == SIZE_MAXIMIZED) {
-          mAppPaused = false;
-          mMinimized = false;
-          mMaximized = true;
-          OnResize();
-        } else if (wParam == SIZE_RESTORED) {
-          // Restoring from minimized state?
-          if (mMinimized) {
-            mAppPaused = false;
-            mMinimized = false;
-            OnResize();
-          }
-
-          // Restoring from maximized state?
-          else if (mMaximized) {
-            mAppPaused = false;
-            mMaximized = false;
-            OnResize();
-          } else if (mResizing) {
-            // If user is dragging the resize bars, we do not resize
-            // the buffers here because as the user continuously
-            // drags the resize bars, a stream of WM_SIZE messages are
-            // sent to the window, and it would be pointless (and slow)
-            // to resize for each WM_SIZE message received from dragging
-            // the resize bars.  So instead, we reset after the user is
-            // done resizing the window and releases the resize bars, which
-            // sends a WM_EXITSIZEMOVE message.
-          } else  // API call such as SetWindowPos or
-                  // mSwapChain->SetFullscreenState.
-          {
-            OnResize();
-          }
-        }
-      }
-      return 0;
-
-    // WM_EXITSIZEMOVE is sent when the user grabs the resize bars.
-    case WM_ENTERSIZEMOVE:
-      mAppPaused = true;
-      mResizing = true;
-      My::MyGE::GameTimer::Instance().Stop();
-      return 0;
-
-    // WM_EXITSIZEMOVE is sent when the user releases the resize bars.
-    // Here we reset everything based on the new window dimensions.
-    case WM_EXITSIZEMOVE:
-      mAppPaused = false;
-      mResizing = false;
-      My::MyGE::GameTimer::Instance().Start();
-      OnResize();
-      return 0;
-
-    // WM_DESTROY is sent when the window is being destroyed.
-    case WM_DESTROY:
-      PostQuitMessage(0);
-      return 0;
-
-    // The WM_MENUCHAR message is sent when a menu is active and the user
-    // presses a key that does not correspond to any mnemonic or accelerator
-    // key.
-    case WM_MENUCHAR:
-      // Don't beep when we alt-enter.
-      return MAKELRESULT(0, MNC_CLOSE);
-
-    // Catch this message so to prevent the window from becoming too small.
-    case WM_GETMINMAXINFO:
-      ((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
-      ((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
-      return 0;
-
-    case WM_LBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-      OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-      return 0;
-    case WM_LBUTTONUP:
-    case WM_MBUTTONUP:
-    case WM_RBUTTONUP:
-      OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-      return 0;
-    case WM_MOUSEMOVE:
-      OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-      return 0;
-    case WM_KEYUP:
-      if (wParam == VK_ESCAPE) {
-        PostQuitMessage(0);
-      } else if ((int)wParam == VK_F2)
-        Set4xMsaaState(!m4xMsaaState);
-
-      return 0;
-  }
-
-  return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 bool D3DApp::InitMainWindow() {
@@ -398,10 +231,6 @@ bool D3DApp::InitDirect3D() {
   mCbvSrvUavDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(
       D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-  // Check 4X MSAA quality support for our back buffer format.
-  // All Direct3D 11 capable devices support 4X MSAA for all render
-  // target formats, so we only need to check quality support.
-
   D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
   msQualityLevels.Format = mBackBufferFormat;
   msQualityLevels.SampleCount = 4;
@@ -410,9 +239,6 @@ bool D3DApp::InitDirect3D() {
   ThrowIfFailed(
       myDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
                                     &msQualityLevels, sizeof(msQualityLevels)));
-
-  m4xMsaaQuality = msQualityLevels.NumQualityLevels;
-  assert(m4xMsaaQuality > 0 && "Unexpected MSAA quality level.");
 
 #ifdef _DEBUG
   LogAdapters();
@@ -440,12 +266,12 @@ void D3DApp::CreateCommandObjects() {
       0, D3D12_COMMAND_LIST_TYPE_DIRECT,
       mDirectCmdListAlloc.Get(),  // Associated command allocator
       nullptr,                    // Initial PipelineStateObject
-      IID_PPV_ARGS(myGCmdList.raw.GetAddressOf())));
+      IID_PPV_ARGS(uGCmdList.raw.GetAddressOf())));
 
   // Start off in a closed state.  This is because the first time we refer
   // to the command list we will Reset it, and it needs to be closed before
   // calling Reset.
-  myGCmdList->Close();
+  uGCmdList->Close();
 }
 
 void D3DApp::CreateSwapChain() {
@@ -460,8 +286,8 @@ void D3DApp::CreateSwapChain() {
   sd.BufferDesc.Format = mBackBufferFormat;
   sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
   sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-  sd.SampleDesc.Count = m4xMsaaState ? 4 : 1;
-  sd.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
+  sd.SampleDesc.Count = 1;
+  sd.SampleDesc.Quality = 0;
   sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
   sd.BufferCount = SwapChainBufferCount;
   sd.OutputWindow = mhMainWnd;
@@ -472,6 +298,17 @@ void D3DApp::CreateSwapChain() {
   // Note: Swap chain uses queue to perform flush.
   ThrowIfFailed(mdxgiFactory->CreateSwapChain(myCmdQueue.raw.Get(), &sd,
                                               mSwapChain.GetAddressOf()));
+}
+
+D3D12_VIEWPORT D3DApp::GetScreenViewport() const noexcept {
+  D3D12_VIEWPORT viewport;
+  viewport.TopLeftX = 0;
+  viewport.TopLeftY = 0;
+  viewport.Width = static_cast<float>(mClientWidth);
+  viewport.Height = static_cast<float>(mClientHeight);
+  viewport.MinDepth = 0.0f;
+  viewport.MaxDepth = 1.0f;
+  return viewport;
 }
 
 void D3DApp::FlushCommandQueue() {
@@ -497,27 +334,21 @@ void D3DApp::FlushCommandQueue() {
   }
 }
 
-ID3D12Resource* D3DApp::CurrentBackBuffer() const {
-  return mSwapChainBuffer[mCurrBackBuffer].Get();
+void D3DApp::SwapBackBuffer() {
+  ThrowIfFailed(mSwapChain->Present(0, 0));
+  mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::CurrentBackBufferView() const {
+D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::CurrentBackBufferView() const noexcept {
   return CD3DX12_CPU_DESCRIPTOR_HANDLE(
       mRtvHeap->GetCPUDescriptorHandleForHeapStart(), mCurrBackBuffer,
       mRtvDescriptorSize);
-}
-
-D3D12_CPU_DESCRIPTOR_HANDLE D3DApp::DepthStencilView() const {
-  return mDsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
 void D3DApp::CalculateFrameStats() {
   // Code computes the average frames per second, and also the
   // average time it takes to render one frame.  These stats
   // are appended to the window caption bar.
-
-  static int frameCnt = 0;
-  static float timeElapsed = 0.0f;
 
   frameCnt++;
 
@@ -561,7 +392,7 @@ void D3DApp::LogAdapters() {
 
   for (size_t i = 0; i < adapterList.size(); ++i) {
     LogAdapterOutputs(adapterList[i]);
-    ReleaseCom(adapterList[i]);
+    MyDX12::Util::ReleaseCom(adapterList[i]);
   }
 }
 
@@ -579,7 +410,7 @@ void D3DApp::LogAdapterOutputs(IDXGIAdapter* adapter) {
 
     LogOutputDisplayModes(output, mBackBufferFormat);
 
-    ReleaseCom(output);
+    MyDX12::Util::ReleaseCom(output);
 
     ++i;
   }
