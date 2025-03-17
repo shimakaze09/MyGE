@@ -704,8 +704,8 @@ _deps/
 *.mp4
 *.pdf
 
-*.shader
-*.tex2d
-*.mat
+assets/materials/
+assets/models/
+assets/textures/
 
 imgui.ini

@@ -62,12 +62,12 @@ cbuffer cbPass : register(b1)
 
 cbuffer cbMaterial : register(b2)
 {
-  // float4 gDiffuseAlbedo;
-  // float3 gFresnelR0;
-  // float  gRoughness;
-  // float4x4 gMatTransform;
-  float3 gAlbedoFactor;
-  float  gRoughnessFactor;
+	// float4 gDiffuseAlbedo;
+    // float3 gFresnelR0;
+    // float  gRoughness;
+    // float4x4 gMatTransform;
+	float3 gAlbedoFactor;
+    float  gRoughnessFactor;
 };
 
 struct VertexIn
