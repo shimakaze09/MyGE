@@ -3,6 +3,10 @@
 The engine core uses [MySRefl](https://github.com/shimakaze09/MySRefl) for serialization. Users can also customize
 serialization methods for specific components.
 
+## TODO
+
+- [ ] Custom pointer operations
+
 ## 1. Serialize
 
 First, support for basic types:

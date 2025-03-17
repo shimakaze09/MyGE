@@ -22,6 +22,11 @@ struct HasDefinition : HasDefinitionHelper<void, T> {};
 template <typename T>
 struct HasTypeInfo : HasDefinition<My::MySRefl::TypeInfo<T>> {};
 
+template <typename T>
+constexpr size_t GetID() noexcept {
+  return TypeID<T>;
+}
+
 // =========================================================================================
 
 template <typename T>
@@ -223,6 +228,29 @@ struct TupleTraits<std::pair<T, U>> : TupleTraitsBase {};
 // =========================================================================================
 
 template <typename Value>
+void WriteVar(const Value& var, Serializer::SerializeContext ctx);
+
+template <typename UserType>
+void WriteUserType(const UserType* obj, Serializer::SerializeContext ctx) {
+  if constexpr (HasTypeInfo<UserType>::value) {
+    ctx.writer->StartObject();
+    My::MySRefl::TypeInfo<UserType>::ForEachVarOf(
+        *obj, [&ctx](auto field, const auto& var) {
+          ctx.writer->Key(field.name.data());
+          detail::WriteVar(var, ctx);
+        });
+    ctx.writer->EndObject();
+  } else {
+    if (ctx.serializer->IsRegistered(GetID<UserType>()))
+      ctx.serializer->Visit(GetID<UserType>(), obj, ctx);
+    else {
+      assert("not support" && false);
+      ctx.writer->String(Serializer::Key::NOT_SUPPORT);
+    }
+  }
+}
+
+template <typename Value>
 void WriteVar(const Value& var, Serializer::SerializeContext ctx) {
   if constexpr (std::is_floating_point_v<Value>)
     ctx.writer->Double(static_cast<double>(var));
@@ -288,9 +316,9 @@ void WriteVar(const Value& var, Serializer::SerializeContext ctx) {
         const auto& key = MapTraits_Iterator_Key(iter);
         const auto& mapped = MapTraits_Iterator_Mapped(iter);
         ctx.writer->StartObject();
-        ctx.writer->Key("key");
+        ctx.writer->Key(Serializer::Key::KEY);
         WriteVar(key, ctx);
-        ctx.writer->Key("mapped");
+        ctx.writer->Key(Serializer::Key::MAPPED);
         WriteVar(mapped, ctx);
         ctx.writer->EndObject();
       }
@@ -301,26 +329,34 @@ void WriteVar(const Value& var, Serializer::SerializeContext ctx) {
     std::apply([&](const auto&... elements) { (WriteVar(elements, ctx), ...); },
                var);
     ctx.writer->EndArray();
-  } else if constexpr (HasTypeInfo<Value>::value) {
-    ctx.writer->StartObject();
-    My::MySRefl::TypeInfo<Value>::ForEachVarOf(
-        var, [&ctx](auto field, const auto& var) {
-          ctx.writer->Key(field.name.data());
-          detail::WriteVar(var, ctx);
-        });
-    ctx.writer->EndObject();
+  } else
+    WriteUserType(&var, ctx);
+}
+
+template <typename Value>
+Value ReadVar(const rapidjson::Value& jsonValueField,
+              Serializer::DeserializeContext ctx);
+
+template <typename UserType>
+void ReadUserType(UserType* obj, const rapidjson::Value& jsonValueField,
+                  Serializer::DeserializeContext ctx) {
+  if constexpr (HasTypeInfo<UserType>::value) {
+    const auto& jsonObject = jsonValueField.GetObject();
+    MySRefl::TypeInfo<UserType>::ForEachVarOf(*obj, [&](auto field, auto& var) {
+      const auto& jsonValueField = jsonObject[field.name.data()];
+      var =
+          ReadVar<std::remove_reference_t<decltype(var)>>(jsonValueField, ctx);
+    });
   } else {
-    if (ctx.fieldSerializer->IsRegistered(TypeID<Value>))
-      ctx.fieldSerializer->Visit(TypeID<Value>, &var, ctx);
-    else {
+    if (ctx.deserializer->IsRegistered(GetID<UserType>()))
+      ctx.deserializer->Visit(GetID<UserType>(), obj, jsonValueField, ctx);
+    else
       assert("not support" && false);
-      ctx.writer->String("__NOT_SUPPORT");
-    }
   }
 }
 
-template <typename Value, typename JSONValue>
-Value ReadVar(const JSONValue& jsonValueField,
+template <typename Value>
+Value ReadVar(const rapidjson::Value& jsonValueField,
               Serializer::DeserializeContext ctx) {
   if constexpr (std::is_floating_point_v<Value>)
     return static_cast<Value>(jsonValueField.GetDouble());
@@ -355,76 +391,60 @@ Value ReadVar(const JSONValue& jsonValueField,
   } else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
     auto index = jsonValueField.GetUint64();
     return ctx.entityIdxMap->find(index)->second;
-  } else if constexpr (ArrayTraits<Value>::isArray) {
-    const auto& arr = jsonValueField.GetArray();
-    assert(ArrayTraits<Value>::size == arr.Size());
-    Value rst;
-    for (size_t i = 0; i < ArrayTraits<Value>::size; i++) {
-      ArrayTraits_Set(rst, i,
-                      ReadVar<ArrayTraits_ValueType<Value>>(
-                          arr[static_cast<rapidjson::SizeType>(i)], ctx));
-    }
-    return rst;
-  } else if constexpr (VectorTraits<Value>::isVector) {
-    const auto& arr = jsonValueField.GetArray();
-    Value rst;
-    for (size_t i = 0; i < arr.Size(); i++) {
-      VectorTraits_Add(rst, ReadVar<VectorTraits_ValueType<Value>>(
-                                arr[static_cast<rapidjson::SizeType>(i)], ctx));
-    }
-    VectorTraits_PostProcess(rst);
-    return rst;
-  } else if constexpr (MapTraits<Value>::isMap) {
-    if constexpr (std::is_same_v<MapTraits_KeyType<Value>, std::string>) {
-      const auto& m = jsonValueField.GetObject();
-      Value rst;
-      for (const auto& [val_key, val_mapped] : m) {
-        MapTraits_Emplace(
-            rst, MapTraits_KeyType<Value>{val_key.GetString()},
-            ReadVar<MapTraits_MappedType<Value>>(val_mapped, ctx));
-      }
-      return rst;
-    } else {
-      const auto& m = jsonValueField.GetArray();
-      Value rst;
-      for (const auto& val_pair : m) {
-        const auto& pair = val_pair.GetObject();
-        MapTraits_Emplace(
-            rst, ReadVar<MapTraits_KeyType<Value>>(pair["key"], ctx),
-            ReadVar<MapTraits_MappedType<Value>>(pair["mapped"], ctx));
-      }
-      return rst;
-    }
-  } else if constexpr (TupleTraits<Value>::isTuple) {
-    Value rst;
-    std::apply(
-        [&](auto&... elements) {
-          const auto& arr = jsonValueField.GetArray();
-          rapidjson::SizeType i = 0;
-          ((elements = ReadVar<std::remove_reference_t<decltype(elements)>>(
-                arr[i++], ctx)),
-           ...);
-        },
-        rst);
-    return rst;
-  } else if constexpr (HasTypeInfo<Value>::value) {
-    const auto& jsonObject = jsonValueField.GetObject();
-    Value rst;
-    MySRefl::TypeInfo<Value>::ForEachVarOf(rst, [&](auto field, auto& var) {
-      const auto& jsonValueField = jsonObject[field.name.data()];
-      var = detail::ReadVar<std::remove_reference_t<decltype(var)>>(
-          jsonValueField, ctx);
-    });
-    return rst;
   } else {
-    if (ctx.fieldDeserializer->IsRegistered(TypeID<Value>)) {
-      Value rst;
-      ctx.fieldDeserializer->Visit(TypeID<Value>, &rst, jsonValueField, ctx);
-      return rst;
-    } else {
-      assert("not support" && false);
-      return {};  // not support
-    }
+    // compound type
+    static_assert(std::is_default_constructible_v<Value>);
+    Value rst;
+
+    if constexpr (ArrayTraits<Value>::isArray) {
+      const auto& arr = jsonValueField.GetArray();
+      assert(ArrayTraits<Value>::size == arr.Size());
+      for (size_t i = 0; i < ArrayTraits<Value>::size; i++) {
+        ArrayTraits_Set(rst, i,
+                        ReadVar<ArrayTraits_ValueType<Value>>(
+                            arr[static_cast<rapidjson::SizeType>(i)], ctx));
+      }
+    } else if constexpr (VectorTraits<Value>::isVector) {
+      const auto& arr = jsonValueField.GetArray();
+      for (size_t i = 0; i < arr.Size(); i++) {
+        VectorTraits_Add(rst,
+                         ReadVar<VectorTraits_ValueType<Value>>(
+                             arr[static_cast<rapidjson::SizeType>(i)], ctx));
+      }
+      VectorTraits_PostProcess(rst);
+    } else if constexpr (MapTraits<Value>::isMap) {
+      if constexpr (std::is_same_v<MapTraits_KeyType<Value>, std::string>) {
+        const auto& m = jsonValueField.GetObject();
+        for (const auto& [val_key, val_mapped] : m) {
+          MapTraits_Emplace(
+              rst, MapTraits_KeyType<Value>{val_key.GetString()},
+              ReadVar<MapTraits_MappedType<Value>>(val_mapped, ctx));
+        }
+      } else {
+        const auto& m = jsonValueField.GetArray();
+        for (const auto& val_pair : m) {
+          const auto& pair = val_pair.GetObject();
+          MapTraits_Emplace(rst,
+                            ReadVar<MapTraits_KeyType<Value>>(
+                                pair[Serializer::Key::KEY], ctx),
+                            ReadVar<MapTraits_MappedType<Value>>(
+                                pair[Serializer::Key::MAPPED], ctx));
+        }
+      }
+    } else if constexpr (TupleTraits<Value>::isTuple) {
+      std::apply(
+          [&](auto&... elements) {
+            const auto& arr = jsonValueField.GetArray();
+            rapidjson::SizeType i = 0;
+            ((elements = ReadVar<std::remove_reference_t<decltype(elements)>>(
+                  arr[i++], ctx)),
+             ...);
+          },
+          rst);
+    } else
+      ReadUserType(&rst, jsonValueField, ctx);
+
+    return rst;
   }
 };
 }  // namespace My::MyGE::detail
@@ -477,7 +497,7 @@ void Serializer::RegisterUserTypeSerializeFunction(Func&& func) {
   static_assert(std::is_const_v<ConstUserType>);
   using UserType = std::remove_const_t<ConstUserType>;
   RegisterUserTypeSerializeFunction(
-      TypeID<UserType>,
+      detail::GetID<UserType>(),
       [f = std::forward<Func>(func)](const void* p, SerializeContext ctx) {
         f(reinterpret_cast<const UserType*>(p), ctx);
       });
@@ -494,36 +514,21 @@ void Serializer::RegisterUserTypeDeserializeFunction(Func&& func) {
   using UserType = std::remove_pointer_t<UserTypePtr>;
   static_assert(!std::is_const_v<UserType>);
   RegisterUserTypeDeserializeFunction(
-      TypeID<UserType>, [f = std::forward<Func>(func)](
-                            void* p, const rapidjson::Value& jsonValueCmpt,
-                            DeserializeContext ctx) {
+      detail::GetID<UserType>(),
+      [f = std::forward<Func>(func)](void* p,
+                                     const rapidjson::Value& jsonValueCmpt,
+                                     DeserializeContext ctx) {
         f(reinterpret_cast<UserType*>(p), jsonValueCmpt, ctx);
       });
 }
 
 template <typename Cmpt>
 void Serializer::RegisterComponentSerializeFunction() {
-  RegisterComponentSerializeFunction(
-      [](const Cmpt* cmpt, SerializeContext ctx) {
-        MySRefl::TypeInfo<Cmpt>::ForEachVarOf(
-            *cmpt, [&ctx](auto field, const auto& var) {
-              ctx.writer->Key(field.name.data());
-              detail::WriteVar(var, ctx);
-            });
-      });
+  RegisterComponentSerializeFunction(&detail::WriteUserType<Cmpt>);
 }
 
 template <typename Cmpt>
 void Serializer::RegisterComponentDeserializeFunction() {
-  RegisterComponentDeserializeFunction([](Cmpt* cmpt,
-                                          const rapidjson::Value& jsonValueCmpt,
-                                          DeserializeContext ctx) {
-    const auto& jsonObjectCmpt = jsonValueCmpt.GetObject();
-    MySRefl::TypeInfo<Cmpt>::ForEachVarOf(*cmpt, [&](auto field, auto& var) {
-      const auto& jsonValueCmptField = jsonObjectCmpt[field.name.data()];
-      var = detail::ReadVar<std::remove_reference_t<decltype(var)>>(
-          jsonValueCmptField, ctx);
-    });
-  });
+  RegisterComponentDeserializeFunction(&detail::ReadUserType<Cmpt>);
 }
 }  // namespace My::MyGE
