@@ -466,7 +466,7 @@ void ImGUIApp::Draw() {
     ImGui::End();
   }
 
-  pipeline->BeginFrame(CurrentBackBuffer());
+  pipeline->UpdateBackBuffer(CurrentBackBuffer());
   pipeline->Render();
 
   // Swap the back and front buffers

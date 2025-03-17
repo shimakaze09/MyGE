@@ -40,4 +40,6 @@ ADD_TARGET(
         My::MyDP_core
         My::MyGE_Transform
         My::MyGE__deps_imgui
+        DEFINE
+        NOMINMAX
 )
