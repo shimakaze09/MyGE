@@ -18,25 +18,23 @@ class IPipeline {
     ID3D12Device* device;
     ID3D12CommandQueue* cmdQueue;
     DXGI_FORMAT rtFormat;
-    DXGI_FORMAT depthStencilFormat;
   };
 
   IPipeline(InitDesc initDesc) : initDesc{initDesc} {}
 
   virtual ~IPipeline() = default;
 
-  virtual void UpdateRenderContext(const MyECS::World& world) = 0;
+  virtual void UpdateRenderContext(const  MyECS::World& world) = 0;
 
   virtual void Render(ID3D12Resource* rt) = 0;
   virtual void EndFrame() = 0;
 
   void Resize(size_t width, size_t height, D3D12_VIEWPORT screenViewport,
-              D3D12_RECT scissorRect, ID3D12Resource* depthStencilBuffer) {
+              D3D12_RECT scissorRect) {
     resizeData.width = width;
     resizeData.height = height;
     resizeData.screenViewport = screenViewport;
     resizeData.scissorRect = scissorRect;
-    resizeData.depthStencilBuffer = depthStencilBuffer;
     Impl_Resize();
   }
 
@@ -48,7 +46,6 @@ class IPipeline {
     size_t height{0};
     D3D12_VIEWPORT screenViewport;
     D3D12_RECT scissorRect;
-    ID3D12Resource* depthStencilBuffer{nullptr};
   };
 
   const InitDesc initDesc;

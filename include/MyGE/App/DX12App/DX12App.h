@@ -14,6 +14,7 @@ class DX12App {
   static DX12App* GetApp() noexcept { return mApp; }
 
   HINSTANCE AppInst() const { return mhAppInst; }
+
   HWND MainWnd() const { return mhMainWnd; }
 
   // 1. process message
@@ -44,6 +45,7 @@ class DX12App {
   }
 
   D3D12_VIEWPORT GetScreenViewport() const noexcept;
+
   D3D12_RECT GetScissorRect() const noexcept {
     return {0, 0, mClientWidth, mClientHeight};
   }
@@ -65,24 +67,19 @@ class DX12App {
   ID3D12Resource* CurrentBackBuffer() const noexcept {
     return mSwapChainBuffer[curBackBuffer].Get();
   }
-  ID3D12Resource* GetDepthStencilBuffer() const noexcept {
-    return mDepthStencilBuffer.Get();
-  }
+
   D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const noexcept {
     return swapchainRTVCpuDH.GetCpuHandle(curBackBuffer);
   }
-  D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView() const noexcept {
-    return swapchainDSVCpuDH.GetCpuHandle();
-  }
+
   DXGI_FORMAT GetBackBufferFormat() const noexcept { return mBackBufferFormat; }
-  DXGI_FORMAT GetDepthStencilBufferFormat() const noexcept {
-    return mDepthStencilFormat;
-  }
 
   static constexpr char FR_CommandAllocator[] = "__CommandAllocator";
+
   MyDX12::FrameResourceMngr* GetFrameResourceMngr() const noexcept {
     return frameRsrcMngr.get();
   }
+
   ID3D12CommandAllocator* GetCurFrameCommandAllocator() noexcept;
 
  protected:
@@ -126,16 +123,13 @@ class DX12App {
 
   int curBackBuffer = 0;
   Microsoft::WRL::ComPtr<ID3D12Resource> mSwapChainBuffer[NumSwapChainBuffer];
-  Microsoft::WRL::ComPtr<ID3D12Resource> mDepthStencilBuffer;
 
   MyDX12::DescriptorHeapAllocation swapchainRTVCpuDH;
-  MyDX12::DescriptorHeapAllocation swapchainDSVCpuDH;
 
   Microsoft::WRL::ComPtr<ID3D12Fence> mFence;
   UINT64 mCurrentFence = 0;
 
   DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-  DXGI_FORMAT mDepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
   std::unique_ptr<MyDX12::FrameResourceMngr> frameRsrcMngr;
 

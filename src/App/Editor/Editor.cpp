@@ -68,8 +68,8 @@ class Editor : public My::MyGE::DX12App {
 
   POINT mLastMousePos;
 
-  My::UECS::World world;
-  My::UECS::Entity cam{My::UECS::Entity::Invalid()};
+  My::MyECS::World world;
+  My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
 
   std::unique_ptr<My::MyGE::IPipeline> pipeline;
 
@@ -77,10 +77,7 @@ class Editor : public My::MyGE::DX12App {
   size_t gameWidth, gameHeight;
   ComPtr<ID3D12Resource> gameRT;
   const DXGI_FORMAT gameRTFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-  const DXGI_FORMAT gameDSFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-  ComPtr<ID3D12Resource> gameDS;
-  My::UDX12::DescriptorHeapAllocation gameRT_SRV;
-  My::UDX12::DescriptorHeapAllocation gameDS_DSV;
+  My::MyDX12::DescriptorHeapAllocation gameRT_SRV;
 
   bool show_demo_window = true;
   bool show_another_window = false;
@@ -118,7 +115,7 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       // Save the new client area dimensions.
       mClientWidth = LOWORD(lParam);
       mClientHeight = HIWORD(lParam);
-      if (!uDevice.IsNull()) {
+      if (!myDevice.IsNull()) {
         if (wParam == SIZE_MINIMIZED) {
           mAppPaused = true;
           mMinimized = true;
@@ -234,7 +231,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
     int rst = theApp.Run();
     return rst;
-  } catch (My::UDX12::Util::Exception& e) {
+  } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     return 1;
   }
@@ -243,15 +240,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 Editor::Editor(HINSTANCE hInstance) : DX12App(hInstance) {}
 
 Editor::~Editor() {
-  if (!uDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 
   My::MyGE::ImGUIMngr::Instance().Clear();
   if (!gameRT_SRV.IsNull())
-    My::UDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
+    My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
         std::move(gameRT_SRV));
-  if (!gameDS_DSV.IsNull())
-    My::UDX12::DescriptorHeapMngr::Instance().GetDSVCpuDH()->Free(
-        std::move(gameDS_DSV));
 }
 
 bool Editor::Initialize() {
@@ -260,13 +254,11 @@ bool Editor::Initialize() {
   if (!InitDirect3D()) return false;
 
   gameRT_SRV =
-      My::UDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
-  gameDS_DSV =
-      My::UDX12::DescriptorHeapMngr::Instance().GetDSVCpuDH()->Allocate(1);
+      My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
 
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
-  My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), uDevice.Get(),
+  My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
                                        NumFrameResources);
 
   My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
@@ -277,15 +269,14 @@ bool Editor::Initialize() {
   LoadTextures();
   BuildShaders();
   BuildMaterials();
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(uCmdQueue.Get());
+  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
   // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
 
   My::MyGE::IPipeline::InitDesc initDesc;
-  initDesc.device = uDevice.Get();
+  initDesc.device = myDevice.Get();
   initDesc.rtFormat = gameRTFormat;
-  initDesc.depthStencilFormat = gameDSFormat;
-  initDesc.cmdQueue = uCmdQueue.Get();
+  initDesc.cmdQueue = myCmdQueue.Get();
   initDesc.numFrame = NumFrameResources;
   pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
 
@@ -305,49 +296,15 @@ void Editor::OnGameResize() {
   FlushCommandQueue();
 
   My::rgbaf background = {0.f, 0.f, 0.f, 1.f};
-  auto rtType = My::UDX12::FG::RsrcType::RT2D(gameRTFormat, gameWidth,
-                                              gameHeight, background.data());
-  ThrowIfFailed(uDevice->CreateCommittedResource(
+  auto rtType = My::MyDX12::FG::RsrcType::RT2D(gameRTFormat, gameWidth,
+                                               gameHeight, background.data());
+  ThrowIfFailed(myDevice->CreateCommittedResource(
       &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
       &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(gameRT.ReleaseAndGetAddressOf())));
-  // auto rtvDesc = My::UDX12::Desc::SRV::Tex2D(gameRTFormat);
-  uDevice->CreateShaderResourceView(gameRT.Get(), nullptr,
-                                    gameRT_SRV.GetCpuHandle());
-
-  // Create the depth/stencil buffer and view.
-  D3D12_RESOURCE_DESC depthStencilDesc;
-  depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-  depthStencilDesc.Alignment = 0;
-  depthStencilDesc.Width = mClientWidth;
-  depthStencilDesc.Height = mClientHeight;
-  depthStencilDesc.DepthOrArraySize = 1;
-  depthStencilDesc.MipLevels = 1;
-
-  // Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer to
-  // read from the depth buffer.  Therefore, because we need to create two views
-  // to the same resource:
-  //   1. SRV format: DXGI_FORMAT_R24_UNORM_X8_TYPELESS
-  //   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
-  // we need to create the depth buffer resource with a typeless format.
-  depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-
-  depthStencilDesc.SampleDesc.Count = 1;
-  depthStencilDesc.SampleDesc.Quality = 0;
-  depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-  depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-  D3D12_CLEAR_VALUE optClear;
-  optClear.Format = gameDSFormat;
-  optClear.DepthStencil.Depth = 1.0f;
-  optClear.DepthStencil.Stencil = 0;
-  ThrowIfFailed(uDevice->CreateCommittedResource(
-      &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
-      &depthStencilDesc, D3D12_RESOURCE_STATE_PRESENT, &optClear,
-      IID_PPV_ARGS(gameDS.ReleaseAndGetAddressOf())));
-  auto dsvDesc = My::UDX12::Desc::DSV::Basic(gameDSFormat);
-  uDevice->CreateDepthStencilView(gameDS.Get(), &dsvDesc,
-                                  gameDS_DSV.GetCpuHandle());
+  // auto rtvDesc = My::MyDX12::Desc::SRV::Tex2D(gameRTFormat);
+  myDevice->CreateShaderResourceView(gameRT.Get(), nullptr,
+                                     gameRT_SRV.GetCpuHandle());
 
   assert(pipeline);
   D3D12_VIEWPORT viewport;
@@ -358,7 +315,7 @@ void Editor::OnGameResize() {
   viewport.MinDepth = 0.0f;
   viewport.MaxDepth = 1.0f;
   pipeline->Resize(gameWidth, gameHeight, viewport,
-                   {0, 0, (LONG)gameWidth, (LONG)gameHeight}, gameDS.Get());
+                   {0, 0, (LONG)gameWidth, (LONG)gameHeight});
 
   // Flush before changing any resources.
   FlushCommandQueue();
@@ -375,7 +332,7 @@ void Editor::Update() {
   auto cmdAlloc = GetCurFrameCommandAllocator();
   cmdAlloc->Reset();
 
-  ThrowIfFailed(uGCmdList->Reset(cmdAlloc, nullptr));
+  ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
   auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
   upload.Begin();
@@ -384,16 +341,15 @@ void Editor::Update() {
   world.RunEntityJob(
       [&](const My::MyGE::MeshFilter* meshFilter) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-            upload, deleteBatch, uGCmdList.Get(), meshFilter->mesh);
+            upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
       },
       false);
 
   // commit upload, delete ...
-  upload.End(uCmdQueue.Get());
-  deleteBatch.Commit(uDevice.Get(), uCmdQueue.Get());
-  uGCmdList->Close();
-  uCmdQueue.Execute(uGCmdList.Get());
-  GetFrameResourceMngr()->EndFrame(uCmdQueue.Get());
+  upload.End(myCmdQueue.Get());
+  myGCmdList->Close();
+  myCmdQueue.Execute(myGCmdList.Get());
+  deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
 
   pipeline->UpdateRenderContext(world);
 }
@@ -476,35 +432,28 @@ void Editor::Draw() {
   pipeline->Render(gameRT.Get());
 
   auto cmdAlloc = GetCurFrameCommandAllocator();
-  ThrowIfFailed(uGCmdList->Reset(cmdAlloc, nullptr));
-
-  D3D12_RESOURCE_BARRIER barrier = {};
-  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-  barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  barrier.Transition.pResource = CurrentBackBuffer();
-  barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-  uGCmdList->ResourceBarrier(1, &barrier);
-  uGCmdList->ClearRenderTargetView(CurrentBackBufferView(),
-                                   DirectX::Colors::LightSteelBlue, 0, NULL);
-  uGCmdList->OMSetRenderTargets(1, &CurrentBackBufferView(), FALSE, NULL);
-  auto heap = My::UDX12::DescriptorHeapMngr::Instance()
-                  .GetCSUGpuDH()
-                  ->GetDescriptorHeap();
-  uGCmdList->SetDescriptorHeaps(1, &heap);
+  ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
+  myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
+                                       D3D12_RESOURCE_STATE_PRESENT,
+                                       D3D12_RESOURCE_STATE_RENDER_TARGET);
+  myGCmdList->ClearRenderTargetView(CurrentBackBufferView(),
+                                    DirectX::Colors::Black, 0, NULL);
+  myGCmdList->OMSetRenderTargets(1, &CurrentBackBufferView(), FALSE, NULL);
+  myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
+                                    .GetCSUGpuDH()
+                                    ->GetDescriptorHeap());
   ImGui::Render();
-  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), uGCmdList.Get());
-  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-  uGCmdList->ResourceBarrier(1, &barrier);
-  uGCmdList->Close();
-  uCmdQueue.Execute(uGCmdList.Get());
+  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), myGCmdList.Get());
+  myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
+                                       D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                       D3D12_RESOURCE_STATE_PRESENT);
+  myGCmdList->Close();
+  myCmdQueue.Execute(myGCmdList.Get());
 
   SwapBackBuffer();
 
   pipeline->EndFrame();
+  GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
 }
 
 void Editor::OnMouseDown(WPARAM btnState, int x, int y) {
@@ -582,7 +531,7 @@ void Editor::BuildWorld() {
           My::MyGE::Translation,
           My::MyGE::Rotation
   >();
-  cam = std::get<My::UECS::Entity>(e0);
+  cam = std::get<My::MyECS::Entity>(e0);
 
   auto quadMesh =
   My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>("../assets/models/quad.obj");
@@ -611,7 +560,7 @@ void Editor::BuildWorld() {
       L"..\\assets\\scenes\\Game.scene");
   My::MyGE::Serializer::Instance().ToWorld(&world, scene->GetText());
   cam = world.entityMngr
-            .GetEntityArray({{My::UECS::CmptAccessType::Of<My::MyGE::Camera>}})
+            .GetEntityArray({{My::MyECS::CmptAccessType::Of<My::MyGE::Camera>}})
             .front();
   OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
 
