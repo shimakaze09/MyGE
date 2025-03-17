@@ -277,7 +277,7 @@ void DynamicMeshApp::UpdateCamera() {
   My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
                    mRadius * sinf(mTheta) * cosf(mPhi)};
   auto camera = world.entityMngr.Get<My::MyGE::Camera>(cam);
-  camera->fov = 0.33f * My::PI<float>;
+  camera->fov = 60.f;
   camera->aspect = AspectRatio();
   camera->clippingPlaneMin = 1.0f;
   camera->clippingPlaneMax = 1000.0f;

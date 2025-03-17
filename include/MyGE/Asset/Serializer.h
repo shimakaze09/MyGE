@@ -33,17 +33,21 @@ class Serializer {
   };
 
   using JSONWriter = rapidjson::Writer<rapidjson::StringBuffer>;
+
   struct SerializeContext {
     JSONWriter* const writer;
     const Visitor<void(const void*, SerializeContext)>* const serializer;
   };
+
   using SerializeFunc = std::function<void(const void*, SerializeContext)>;
   using EntityIdxMap = std::unordered_map<size_t, MyECS::Entity>;
+
   struct DeserializeContext {
     const EntityIdxMap* entityIdxMap;
     const Visitor<void(void*, const rapidjson::Value&,
                        DeserializeContext)>* const deserializer;
   };
+
   using DeserializeFunc =
       std::function<void(void*, const rapidjson::Value&, DeserializeContext)>;
 
@@ -52,13 +56,17 @@ class Serializer {
 
   template <typename Func>
   void RegisterComponentSerializeFunction(Func&& func);
-  template <typename Cmpt>
+  template <typename... Cmpts>
   void RegisterComponentSerializeFunction();
 
   template <typename Func>
   void RegisterComponentDeserializeFunction(Func&& func);
-  template <typename Cmpt>
+  template <typename... Cmpts>
   void RegisterComponentDeserializeFunction();
+
+  // register Cmpts' serialize and deserialize function
+  template <typename... Cmpts>
+  void Register();
 
   void RegisterUserTypeSerializeFunction(size_t id, SerializeFunc);
   void RegisterUserTypeDeserializeFunction(size_t id, DeserializeFunc);

@@ -4,6 +4,7 @@
 
 #include <MyGE/App/DX12App/DX12App.h>
 #include <MyGE/Asset/AssetMngr.h>
+#include <MyGE/Asset/Serializer.h>
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
@@ -13,6 +14,7 @@
 #include <MyGE/Core/ImGUIMngr.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
+#include <MyGE/Core/Scene.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
@@ -258,6 +260,8 @@ bool GameStarter::Initialize() {
   BuildMaterials();
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
+  // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
+
   My::MyGE::IPipeline::InitDesc initDesc;
   initDesc.device = myDevice.Get();
   initDesc.backBufferFormat = GetBackBufferFormat();
@@ -420,10 +424,7 @@ void GameStarter::UpdateCamera() {
   My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
                    mRadius * sinf(mTheta) * cosf(mPhi)};
   auto camera = world.entityMngr.Get<My::MyGE::Camera>(cam);
-  camera->fov = 0.33f * My::PI<float>;
   camera->aspect = AspectRatio();
-  camera->clippingPlaneMin = 1.0f;
-  camera->clippingPlaneMax = 1000.0f;
   auto view =
       My::transformf::look_at(eye.as<My::pointf3>(), {0.f});  // world to camera
   auto c2w = view.inverse();
@@ -439,27 +440,56 @@ void GameStarter::BuildWorld() {
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem>();
   world.entityMngr.cmptTraits.Register<
+      // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-      My::MyGE::WorldTime, My::MyGE::Children, My::MyGE::LocalToParent,
-      My::MyGE::LocalToWorld, My::MyGE::Parent, My::MyGE::Rotation,
-      My::MyGE::RotationEuler, My::MyGE::Scale, My::MyGE::Translation,
-      My::MyGE::WorldToLocal>();
+      My::MyGE::WorldTime,
 
-  world.entityMngr.Create<My::MyGE::WorldTime>();
+      // transform
+      My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
+      My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
+      My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
 
-  auto e0 =
-      world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::WorldToLocal,
-                              My::MyGE::Camera, My::MyGE::Translation,
-                              My::MyGE::Rotation>();
+  /*world.entityMngr.Create<My::MyGE::WorldTime>();
+
+  auto e0 = world.entityMngr.Create<
+          My::MyGE::LocalToWorld,
+          My::MyGE::WorldToLocal,
+          My::MyGE::Camera,
+          My::MyGE::Translation,
+          My::MyGE::Rotation
+  >();
   cam = std::get<My::MyECS::Entity>(e0);
 
-  auto quadMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
-      "../assets/models/quad.obj");
-  auto dynamicCube =
-      world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::MeshFilter,
-                              My::MyGE::MeshRenderer, My::MyGE::Translation,
-                              My::MyGE::Rotation, My::MyGE::Scale>();
-  std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;
+  auto quadMesh =
+  My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>("../assets/models/quad.obj");
+  auto dynamicCube = world.entityMngr.Create<
+          My::MyGE::LocalToWorld,
+          My::MyGE::MeshFilter,
+          My::MyGE::MeshRenderer,
+          My::MyGE::Translation,
+          My::MyGE::Rotation,
+          My::MyGE::Scale
+  >();
+  std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;*/
+
+  My::MyGE::Serializer::Instance()
+      .Register<
+          // core
+          My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
+          My::MyGE::WorldTime,
+
+          // transform
+          My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
+          My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
+          My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
+  // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
+  auto scene = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Scene>(
+      L"..\\assets\\scenes\\Game.scene");
+  My::MyGE::Serializer::Instance().ToWorld(&world, scene->GetText());
+  cam = world.entityMngr
+            .GetEntityArray({{My::MyECS::CmptAccessType::Of<My::MyGE::Camera>}})
+            .front();
+  OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
 
   auto mainLua = My::MyGE::LuaCtxMngr::Instance().Register(&world)->Main();
   sol::state_view solLua(mainLua);
@@ -493,9 +523,9 @@ void GameStarter::BuildShaders() {
 }
 
 void GameStarter::BuildMaterials() {
-  auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
-      L"..\\assets\\materials\\iron.mat");
+  /*auto material = My::MyGE::AssetMngr::Instance()
+          .LoadAsset<My::MyGE::Material>(L"..\\assets\\materials\\iron.mat");
   world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
-    meshRenderer->materials.push_back(material);
-  });
+          meshRenderer->materials.push_back(material);
+  });*/
 }

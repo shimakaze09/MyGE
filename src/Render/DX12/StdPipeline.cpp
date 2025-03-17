@@ -114,8 +114,8 @@ struct StdPipeline::Impl {
   MyDX12::FrameResourceMngr frameRsrcMngr;
 
   My::MyDX12::FG::Executor fgExecutor;
-  My::UFG::Compiler fgCompiler;
-  My::UFG::FrameGraph fg;
+  My::MyFG::Compiler fgCompiler;
+  My::MyFG::FrameGraph fg;
 
   My::MyGE::Shader* screenShader;
   My::MyGE::Shader* geomrtryShader;
@@ -293,8 +293,7 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
   if (target == PSOIDMap.end()) {
     auto [uv, normal, tangent, color] =
         MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
-    if (!uv || !normal)
-      return static_cast<size_t>(-1);  // not support
+    if (!uv || !normal) return static_cast<size_t>(-1);  // not support
 
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
@@ -378,8 +377,7 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
 
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects)
-      objectNum += objects.size();
+    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
     if (shader->shaderName == "StdPipeline/Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
       buffer->Reserve(
@@ -662,9 +660,7 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() {
-  delete pImpl;
-}
+StdPipeline::~StdPipeline() { delete pImpl; }
 
 void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->UpdateRenderContext(world);

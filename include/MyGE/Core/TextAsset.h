@@ -9,7 +9,7 @@
 #include "Object.h"
 
 namespace My::MyGE {
-// txt
+// txt, json
 class TextAsset : public Object {
  public:
   TextAsset(std::string text) : text{std::move(text)} {}
