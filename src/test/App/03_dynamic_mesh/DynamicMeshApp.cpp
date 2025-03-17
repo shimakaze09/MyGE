@@ -139,7 +139,7 @@ bool DynamicMeshApp::Initialize() {
 
   My::MyGE::IPipeline::InitDesc initDesc;
   initDesc.device = myDevice.raw.Get();
-  initDesc.backBufferFormat = mBackBufferFormat;
+  initDesc.rtFormat = mBackBufferFormat;
   initDesc.depthStencilFormat = mDepthStencilFormat;
   initDesc.cmdQueue = myCmdQueue.raw.Get();
   initDesc.numFrame = gNumFrameResources;

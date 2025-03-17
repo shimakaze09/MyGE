@@ -264,7 +264,7 @@ bool GameStarter::Initialize() {
 
   My::MyGE::IPipeline::InitDesc initDesc;
   initDesc.device = myDevice.Get();
-  initDesc.backBufferFormat = GetBackBufferFormat();
+  initDesc.rtFormat = GetBackBufferFormat();
   initDesc.depthStencilFormat = GetDepthStencilBufferFormat();
   initDesc.cmdQueue = myCmdQueue.Get();
   initDesc.numFrame = NumFrameResources;

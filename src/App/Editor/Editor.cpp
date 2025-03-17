@@ -4,59 +4,41 @@
 
 #include <MyGE/App/DX12App/DX12App.h>
 #include <MyGE/Asset/AssetMngr.h>
+#include <MyGE/Asset/Serializer.h>
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
+#include <MyGE/Core/Components/WorldTime.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/ImGUIMngr.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
+#include <MyGE/Core/Scene.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
+#include <MyGE/Core/Systems/WorldTimeSystem.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
+#include <MyGE/ScriptSystem/LuaContext.h>
+#include <MyGE/ScriptSystem/LuaCtxMngr.h>
+#include <MyGE/ScriptSystem/LuaScript.h>
 #include <MyGE/Transform/Transform.h>
 #include <MyGE/_deps/imgui/imgui.h>
 #include <MyGE/_deps/imgui/imgui_impl_dx12.h>
 #include <MyGE/_deps/imgui/imgui_impl_win32.h>
+#include <MyLuaPP/MyLuaPP.h>
 
 using Microsoft::WRL::ComPtr;
 
-struct AnimateMeshSystem : My::MyECS::System {
-  using My::MyECS::System::System;
-  size_t cnt = 0;
-  virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
-    if (cnt < 600) {
-      schedule.RegisterEntityJob(
-          [](My::MyGE::MeshFilter* meshFilter) {
-            if (meshFilter->mesh->IsEditable()) {
-              auto positions = meshFilter->mesh->GetPositions();
-              for (auto& pos : positions)
-                pos[1] = 0.2f * (My::rand01<float>() - 0.5f);
-              meshFilter->mesh->SetPositions(positions);
-            }
-          },
-          "AnimateMesh");
-    } else if (cnt == 600) {
-      schedule.RegisterEntityJob(
-          [](My::MyGE::MeshFilter* meshFilter) {
-            meshFilter->mesh->SetToNonEditable();
-          },
-          "set mesh static");
-    }
-    cnt++;
-  }
-};
-
-class MyDX12App : public My::MyGE::DX12App {
+class Editor : public My::MyGE::DX12App {
  public:
-  MyDX12App(HINSTANCE hInstance);
-  ~MyDX12App();
+  Editor(HINSTANCE hInstance);
+  ~Editor();
 
   bool Initialize();
 
@@ -86,11 +68,19 @@ class MyDX12App : public My::MyGE::DX12App {
 
   POINT mLastMousePos;
 
-  My::MyECS::World world;
-  My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
+  My::UECS::World world;
+  My::UECS::Entity cam{My::UECS::Entity::Invalid()};
 
   std::unique_ptr<My::MyGE::IPipeline> pipeline;
-  std::unique_ptr<My::MyGE::Mesh> dynamicMesh;
+
+  void OnGameResize();
+  size_t gameWidth, gameHeight;
+  ComPtr<ID3D12Resource> gameRT;
+  const DXGI_FORMAT gameRTFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+  const DXGI_FORMAT gameDSFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+  ComPtr<ID3D12Resource> gameDS;
+  My::UDX12::DescriptorHeapAllocation gameRT_SRV;
+  My::UDX12::DescriptorHeapAllocation gameDS_DSV;
 
   bool show_demo_window = true;
   bool show_another_window = false;
@@ -102,7 +92,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
                                                              WPARAM wParam,
                                                              LPARAM lParam);
 
-LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) return true;
   // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
   // your main application.
@@ -128,7 +118,7 @@ LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       // Save the new client area dimensions.
       mClientWidth = LOWORD(lParam);
       mClientHeight = HIWORD(lParam);
-      if (!myDevice.IsNull()) {
+      if (!uDevice.IsNull()) {
         if (wParam == SIZE_MINIMIZED) {
           mAppPaused = true;
           mMinimized = true;
@@ -239,50 +229,63 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 #endif
 
   try {
-    MyDX12App theApp(hInstance);
+    Editor theApp(hInstance);
     if (!theApp.Initialize()) return 1;
 
     int rst = theApp.Run();
     return rst;
-  } catch (My::MyDX12::Util::Exception& e) {
+  } catch (My::UDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     return 1;
   }
 }
 
-MyDX12App::MyDX12App(HINSTANCE hInstance) : DX12App(hInstance) {}
+Editor::Editor(HINSTANCE hInstance) : DX12App(hInstance) {}
 
-MyDX12App::~MyDX12App() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+Editor::~Editor() {
+  if (!uDevice.IsNull()) FlushCommandQueue();
 
   My::MyGE::ImGUIMngr::Instance().Clear();
+  if (!gameRT_SRV.IsNull())
+    My::UDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
+        std::move(gameRT_SRV));
+  if (!gameDS_DSV.IsNull())
+    My::UDX12::DescriptorHeapMngr::Instance().GetDSVCpuDH()->Free(
+        std::move(gameDS_DSV));
 }
 
-bool MyDX12App::Initialize() {
+bool Editor::Initialize() {
   if (!InitMainWindow()) return false;
 
   if (!InitDirect3D()) return false;
 
+  gameRT_SRV =
+      My::UDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+  gameDS_DSV =
+      My::UDX12::DescriptorHeapMngr::Instance().GetDSVCpuDH()->Allocate(1);
+
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
-  My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
+  My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), uDevice.Get(),
                                        NumFrameResources);
 
-  BuildWorld();
-
   My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
+
+  BuildWorld();
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
   BuildShaders();
   BuildMaterials();
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
+  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(uCmdQueue.Get());
+
+  // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
 
   My::MyGE::IPipeline::InitDesc initDesc;
-  initDesc.device = myDevice.Get();
-  initDesc.rtFormat = GetBackBufferFormat();
-  initDesc.depthStencilFormat = GetDepthStencilBufferFormat();
-  initDesc.cmdQueue = myCmdQueue.Get();
+  initDesc.device = uDevice.Get();
+  initDesc.rtFormat = gameRTFormat;
+  initDesc.depthStencilFormat = gameDSFormat;
+  initDesc.cmdQueue = uCmdQueue.Get();
   initDesc.numFrame = NumFrameResources;
   pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
 
@@ -295,15 +298,73 @@ bool MyDX12App::Initialize() {
   return true;
 }
 
-void MyDX12App::OnResize() {
-  DX12App::OnResize();
+void Editor::OnResize() { DX12App::OnResize(); }
+
+void Editor::OnGameResize() {
+  // Flush before changing any resources.
+  FlushCommandQueue();
+
+  My::rgbaf background = {0.f, 0.f, 0.f, 1.f};
+  auto rtType = My::UDX12::FG::RsrcType::RT2D(gameRTFormat, gameWidth,
+                                              gameHeight, background.data());
+  ThrowIfFailed(uDevice->CreateCommittedResource(
+      &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
+      &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
+      IID_PPV_ARGS(gameRT.ReleaseAndGetAddressOf())));
+  // auto rtvDesc = My::UDX12::Desc::SRV::Tex2D(gameRTFormat);
+  uDevice->CreateShaderResourceView(gameRT.Get(), nullptr,
+                                    gameRT_SRV.GetCpuHandle());
+
+  // Create the depth/stencil buffer and view.
+  D3D12_RESOURCE_DESC depthStencilDesc;
+  depthStencilDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+  depthStencilDesc.Alignment = 0;
+  depthStencilDesc.Width = mClientWidth;
+  depthStencilDesc.Height = mClientHeight;
+  depthStencilDesc.DepthOrArraySize = 1;
+  depthStencilDesc.MipLevels = 1;
+
+  // Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer to
+  // read from the depth buffer.  Therefore, because we need to create two views
+  // to the same resource:
+  //   1. SRV format: DXGI_FORMAT_R24_UNORM_X8_TYPELESS
+  //   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
+  // we need to create the depth buffer resource with a typeless format.
+  depthStencilDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+
+  depthStencilDesc.SampleDesc.Count = 1;
+  depthStencilDesc.SampleDesc.Quality = 0;
+  depthStencilDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+  depthStencilDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+  D3D12_CLEAR_VALUE optClear;
+  optClear.Format = gameDSFormat;
+  optClear.DepthStencil.Depth = 1.0f;
+  optClear.DepthStencil.Stencil = 0;
+  ThrowIfFailed(uDevice->CreateCommittedResource(
+      &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
+      &depthStencilDesc, D3D12_RESOURCE_STATE_PRESENT, &optClear,
+      IID_PPV_ARGS(gameDS.ReleaseAndGetAddressOf())));
+  auto dsvDesc = My::UDX12::Desc::DSV::Basic(gameDSFormat);
+  uDevice->CreateDepthStencilView(gameDS.Get(), &dsvDesc,
+                                  gameDS_DSV.GetCpuHandle());
 
   assert(pipeline);
-  pipeline->Resize(mClientWidth, mClientHeight, GetScreenViewport(),
-                   GetScissorRect(), GetDepthStencilBuffer());
+  D3D12_VIEWPORT viewport;
+  viewport.TopLeftX = 0;
+  viewport.TopLeftY = 0;
+  viewport.Width = static_cast<float>(gameWidth);
+  viewport.Height = static_cast<float>(gameHeight);
+  viewport.MinDepth = 0.0f;
+  viewport.MaxDepth = 1.0f;
+  pipeline->Resize(gameWidth, gameHeight, viewport,
+                   {0, 0, (LONG)gameWidth, (LONG)gameHeight}, gameDS.Get());
+
+  // Flush before changing any resources.
+  FlushCommandQueue();
 }
 
-void MyDX12App::Update() {
+void Editor::Update() {
   UpdateCamera();
 
   world.Update();
@@ -314,7 +375,7 @@ void MyDX12App::Update() {
   auto cmdAlloc = GetCurFrameCommandAllocator();
   cmdAlloc->Reset();
 
-  ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
+  ThrowIfFailed(uGCmdList->Reset(cmdAlloc, nullptr));
   auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
   upload.Begin();
@@ -323,21 +384,21 @@ void MyDX12App::Update() {
   world.RunEntityJob(
       [&](const My::MyGE::MeshFilter* meshFilter) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-            upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+            upload, deleteBatch, uGCmdList.Get(), meshFilter->mesh);
       },
       false);
 
   // commit upload, delete ...
-  upload.End(myCmdQueue.Get());
-  deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
-  myGCmdList->Close();
-  myCmdQueue.Execute(myGCmdList.Get());
-  GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
+  upload.End(uCmdQueue.Get());
+  deleteBatch.Commit(uDevice.Get(), uCmdQueue.Get());
+  uGCmdList->Close();
+  uCmdQueue.Execute(uGCmdList.Get());
+  GetFrameResourceMngr()->EndFrame(uCmdQueue.Get());
 
   pipeline->UpdateRenderContext(world);
 }
 
-void MyDX12App::Draw() {
+void Editor::Draw() {
   // Start the Dear ImGui frame
   ImGui_ImplDX12_NewFrame();
   ImGui_ImplWin32_NewFrame();
@@ -392,23 +453,70 @@ void MyDX12App::Draw() {
     ImGui::End();
   }
 
-  pipeline->Render(CurrentBackBuffer());
+  // 4. game window
+  if (ImGui::Begin("output", nullptr, ImGuiWindowFlags_NoScrollbar)) {
+    auto tex = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
+        L"..\\assets\\textures\\chessboard.tex2d");
+    auto gameSize = ImGui::GetContentRegionAvail();
+    auto w = (size_t)gameSize.x;
+    auto h = (size_t)gameSize.y;
+    if (w != gameWidth || h != gameHeight) {
+      gameWidth = w;
+      gameHeight = h;
+      OnGameResize();
+    }
+
+    ImGui::Image(
+        ImTextureID(gameRT_SRV.GetGpuHandle().ptr),
+        //{ float(tex->image->width.get()), float(tex->image->height.get()) }
+        ImGui::GetContentRegionAvail());
+  }
+  ImGui::End();
+
+  pipeline->Render(gameRT.Get());
+
+  auto cmdAlloc = GetCurFrameCommandAllocator();
+  ThrowIfFailed(uGCmdList->Reset(cmdAlloc, nullptr));
+
+  D3D12_RESOURCE_BARRIER barrier = {};
+  barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+  barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+  barrier.Transition.pResource = CurrentBackBuffer();
+  barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+  uGCmdList->ResourceBarrier(1, &barrier);
+  uGCmdList->ClearRenderTargetView(CurrentBackBufferView(),
+                                   DirectX::Colors::LightSteelBlue, 0, NULL);
+  uGCmdList->OMSetRenderTargets(1, &CurrentBackBufferView(), FALSE, NULL);
+  auto heap = My::UDX12::DescriptorHeapMngr::Instance()
+                  .GetCSUGpuDH()
+                  ->GetDescriptorHeap();
+  uGCmdList->SetDescriptorHeaps(1, &heap);
+  ImGui::Render();
+  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), uGCmdList.Get());
+  barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+  barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+  uGCmdList->ResourceBarrier(1, &barrier);
+  uGCmdList->Close();
+  uCmdQueue.Execute(uGCmdList.Get());
 
   SwapBackBuffer();
 
   pipeline->EndFrame();
 }
 
-void MyDX12App::OnMouseDown(WPARAM btnState, int x, int y) {
+void Editor::OnMouseDown(WPARAM btnState, int x, int y) {
   mLastMousePos.x = x;
   mLastMousePos.y = y;
 
   SetCapture(MainWnd());
 }
 
-void MyDX12App::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void Editor::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
 
-void MyDX12App::OnMouseMove(WPARAM btnState, int x, int y) {
+void Editor::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
     // Make each pixel correspond to a quarter of a degree.
     float dx = My::to_radian(0.25f * static_cast<float>(x - mLastMousePos.x));
@@ -436,14 +544,11 @@ void MyDX12App::OnMouseMove(WPARAM btnState, int x, int y) {
   mLastMousePos.y = y;
 }
 
-void MyDX12App::UpdateCamera() {
+void Editor::UpdateCamera() {
   My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
                    mRadius * sinf(mTheta) * cosf(mPhi)};
   auto camera = world.entityMngr.Get<My::MyGE::Camera>(cam);
-  camera->fov = 60.f;
-  camera->aspect = AspectRatio();
-  camera->clippingPlaneMin = 1.0f;
-  camera->clippingPlaneMax = 1000.0f;
+  camera->aspect = gameWidth / (float)gameHeight;
   auto view =
       My::transformf::look_at(eye.as<My::pointf3>(), {0.f});  // world to camera
   auto c2w = view.inverse();
@@ -452,37 +557,74 @@ void MyDX12App::UpdateCamera() {
       c2w.decompose_quatenion();
 }
 
-void MyDX12App::BuildWorld() {
+void Editor::BuildWorld() {
   world.systemMngr.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
-      AnimateMeshSystem>();
+      My::MyGE::WorldTimeSystem>();
+  world.entityMngr.cmptTraits.Register<
+      // core
+      My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
+      My::MyGE::WorldTime,
 
-  auto e0 =
-      world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::WorldToLocal,
-                              My::MyGE::Camera, My::MyGE::Translation,
-                              My::MyGE::Rotation>();
-  cam = std::get<My::MyECS::Entity>(e0);
+      // transform
+      My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
+      My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
+      My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
 
-  auto quadMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
-      "../assets/models/quad.obj");
-  auto dynamicCube =
-      world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::MeshFilter,
-                              My::MyGE::MeshRenderer, My::MyGE::Translation,
-                              My::MyGE::Rotation, My::MyGE::Scale>();
-  dynamicMesh = std::make_unique<My::MyGE::Mesh>();
-  dynamicMesh->SetPositions(quadMesh->GetPositions());
-  dynamicMesh->SetNormals(quadMesh->GetNormals());
-  dynamicMesh->SetUV(quadMesh->GetUV());
-  dynamicMesh->SetIndices(quadMesh->GetIndices());
-  dynamicMesh->SetSubMeshCount(quadMesh->GetSubMeshes().size());
-  for (size_t i = 0; i < quadMesh->GetSubMeshes().size(); i++)
-    dynamicMesh->SetSubMesh(i, quadMesh->GetSubMeshes().at(i));
-  std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = dynamicMesh.get();
+  /*world.entityMngr.Create<My::MyGE::WorldTime>();
+
+  auto e0 = world.entityMngr.Create<
+          My::MyGE::LocalToWorld,
+          My::MyGE::WorldToLocal,
+          My::MyGE::Camera,
+          My::MyGE::Translation,
+          My::MyGE::Rotation
+  >();
+  cam = std::get<My::UECS::Entity>(e0);
+
+  auto quadMesh =
+  My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>("../assets/models/quad.obj");
+  auto dynamicCube = world.entityMngr.Create<
+          My::MyGE::LocalToWorld,
+          My::MyGE::MeshFilter,
+          My::MyGE::MeshRenderer,
+          My::MyGE::Translation,
+          My::MyGE::Rotation,
+          My::MyGE::Scale
+  >();
+  std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;*/
+
+  My::MyGE::Serializer::Instance()
+      .Register<
+          // core
+          My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
+          My::MyGE::WorldTime,
+
+          // transform
+          My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
+          My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
+          My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
+  // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
+  auto scene = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Scene>(
+      L"..\\assets\\scenes\\Game.scene");
+  My::MyGE::Serializer::Instance().ToWorld(&world, scene->GetText());
+  cam = world.entityMngr
+            .GetEntityArray({{My::UECS::CmptAccessType::Of<My::MyGE::Camera>}})
+            .front();
+  OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
+
+  auto mainLua = My::MyGE::LuaCtxMngr::Instance().Register(&world)->Main();
+  sol::state_view solLua(mainLua);
+  auto gameLuaScript =
+      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::LuaScript>(
+          L"..\\assets\\scripts\\Game.lua");
+  solLua["world"] = &world;
+  solLua.script(gameLuaScript->GetText());
 }
 
-void MyDX12App::LoadTextures() {
+void Editor::LoadTextures() {
   auto tex2dGUIDs =
       My::MyGE::AssetMngr::Instance().FindAssets(std::wregex{LR"(.*\.tex2d)"});
   for (const auto& guid : tex2dGUIDs) {
@@ -493,7 +635,7 @@ void MyDX12App::LoadTextures() {
   }
 }
 
-void MyDX12App::BuildShaders() {
+void Editor::BuildShaders() {
   auto& assetMngr = My::MyGE::AssetMngr::Instance();
   auto shaderGUIDs = assetMngr.FindAssets(std::wregex{LR"(.*\.shader)"});
   for (const auto& guid : shaderGUIDs) {
@@ -504,10 +646,10 @@ void MyDX12App::BuildShaders() {
   }
 }
 
-void MyDX12App::BuildMaterials() {
-  auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
-      L"..\\assets\\materials\\iron.mat");
+void Editor::BuildMaterials() {
+  /*auto material = My::MyGE::AssetMngr::Instance()
+          .LoadAsset<My::MyGE::Material>(L"..\\assets\\materials\\iron.mat");
   world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
-    meshRenderer->materials.push_back(material);
-  });
+          meshRenderer->materials.push_back(material);
+  });*/
 }

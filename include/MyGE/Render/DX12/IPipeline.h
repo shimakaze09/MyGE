@@ -17,7 +17,7 @@ class IPipeline {
     size_t numFrame;
     ID3D12Device* device;
     ID3D12CommandQueue* cmdQueue;
-    DXGI_FORMAT backBufferFormat;
+    DXGI_FORMAT rtFormat;
     DXGI_FORMAT depthStencilFormat;
   };
 
@@ -27,7 +27,7 @@ class IPipeline {
 
   virtual void UpdateRenderContext(const MyECS::World& world) = 0;
 
-  virtual void Render(ID3D12Resource* curBackBuffer) = 0;
+  virtual void Render(ID3D12Resource* rt) = 0;
   virtual void EndFrame() = 0;
 
   void Resize(size_t width, size_t height, D3D12_VIEWPORT screenViewport,

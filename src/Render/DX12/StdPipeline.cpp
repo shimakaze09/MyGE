@@ -257,7 +257,7 @@ void StdPipeline::Impl::BuildPSOs() {
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_screen),
       nullptr, 0, RsrcMngrDX12::Instance().GetShaderByteCode_vs(screenShader),
       RsrcMngrDX12::Instance().GetShaderByteCode_ps(screenShader),
-      initDesc.backBufferFormat, DXGI_FORMAT_UNKNOWN);
+      initDesc.rtFormat, DXGI_FORMAT_UNKNOWN);
   screenPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   screenPsoDesc.DepthStencilState.DepthEnable = false;
   screenPsoDesc.DepthStencilState.StencilEnable = false;
@@ -279,7 +279,7 @@ void StdPipeline::Impl::BuildPSOs() {
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_defer_light),
       nullptr, 0, RsrcMngrDX12::Instance().GetShaderByteCode_vs(deferShader),
       RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferShader),
-      initDesc.backBufferFormat, DXGI_FORMAT_UNKNOWN);
+      initDesc.rtFormat, DXGI_FORMAT_UNKNOWN);
   deferLightingPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   deferLightingPsoDesc.DepthStencilState.DepthEnable = false;
   deferLightingPsoDesc.DepthStencilState.StencilEnable = false;
@@ -293,7 +293,8 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
   if (target == PSOIDMap.end()) {
     auto [uv, normal, tangent, color] =
         MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
-    if (!uv || !normal) return static_cast<size_t>(-1);  // not support
+    if (!uv || !normal)
+      return static_cast<size_t>(-1);  // not support
 
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
@@ -377,7 +378,8 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
 
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
+    for (const auto& [mat, objects] : mat2objects)
+      objectNum += objects.size();
     if (shader->shaderName == "StdPipeline/Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
       buffer->Reserve(
@@ -573,13 +575,6 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->IASetIndexBuffer(nullptr);
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         cmdList->DrawInstanced(6, 1, 0, 0);
-
-        //==
-
-        if (ImGui::GetCurrentContext()) {
-          ImGui::Render();
-          ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmdList);
-        }
       });
 
   static bool flag{false};
@@ -660,7 +655,9 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() { delete pImpl; }
+StdPipeline::~StdPipeline() {
+  delete pImpl;
+}
 
 void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->UpdateRenderContext(world);
