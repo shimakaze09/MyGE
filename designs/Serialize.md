@@ -1,15 +1,11 @@
 # Serialization
 
 The engine core uses [MySRefl](https://github.com/shimakaze09/MySRefl) for serialization. Users can also customize
-serialization methods for specific components.
-
-## TODO
-
-- [ ] Custom pointer operations
+serialization methods.
 
 ## 1. Serialize
 
-First, support for basic types:
+Basic types are supported first:
 
 - `float`, `double`
 - `bool`
@@ -19,7 +15,7 @@ First, support for basic types:
 Special simple types include:
 
 - Entity: only records the index (non-stable), only used for deserialization
-- asset: checks if a non-`nullptr` pointer is an asset, if so, records its GUID
+- asset: if a non-`nullptr` pointer is detected as an asset, its GUID is recorded
 
 Supported containers:
 
@@ -29,24 +25,16 @@ Supported containers:
 - Tuples: `tuple`, `pair`
 - Associative: `map`, `unordered_map`, `multimap`, `unordered_multimap`
 
-Support for custom containers (via specialization macros), such as:
+Custom containers are supported (through macro specialization), such as:
 
 - Ordered fixed-length: MyGM's `vec`, `val`, etc.
 
-### TODO
+Types registered with TypeInfo are supported
 
-- [x] For unsupported types, users can define custom functions
-- [ ] reserve
+Custom type handling is supported
 
 ## 2. Deserialize
 
-First, iterate once to create an entity index mapping table (used for entity index remapping)
+First, iterate through once to calculate the entity index mapping table (used for entity index remapping)
 
-Implement according to the reverse process
-
-### TODO
-
-- [x] Users provide their own world (with registered cmpt traits, no entity)
-- [x] Add multiple components at once
-- [ ] reserve
-- [x] Support for append mode (index mapping table includes version)
+Implementation follows the reverse process

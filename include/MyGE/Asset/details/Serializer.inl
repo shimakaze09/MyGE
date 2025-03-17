@@ -260,15 +260,15 @@ void WriteVar(const Value& var, Serializer::SerializeContext ctx) {
     else {
       constexpr size_t size = sizeof(Value);
       if constexpr (std::is_unsigned_v<Value>) {
-        if constexpr (size <= 4)
+        if constexpr (size <= sizeof(unsigned int))
           ctx.writer->Uint(static_cast<std::uint32_t>(var));
         else
           ctx.writer->Uint64(static_cast<std::uint64_t>(var));
       } else {
-        if constexpr (size <= 4)
-          ctx.writer->Int(static_cast<std::uint32_t>(var));
+        if constexpr (size <= sizeof(int))
+          ctx.writer->Int(static_cast<std::int32_t>(var));
         else
-          ctx.writer->Int64(static_cast<std::uint64_t>(var));
+          ctx.writer->Int64(static_cast<std::int64_t>(var));
       }
     }
   } else if constexpr (std::is_same_v<Value, std::string>)
@@ -366,12 +366,12 @@ Value ReadVar(const rapidjson::Value& jsonValueField,
     else {
       constexpr size_t size = sizeof(Value);
       if constexpr (std::is_unsigned_v<Value>) {
-        if constexpr (size <= 4)
+        if constexpr (size <= sizeof(unsigned int))
           return static_cast<Value>(jsonValueField.GetUint());
         else
           return static_cast<Value>(jsonValueField.GetUint64());
       } else {
-        if constexpr (size <= 4)
+        if constexpr (size <= sizeof(int))
           return static_cast<Value>(jsonValueField.GetInt());
         else
           return static_cast<Value>(jsonValueField.GetInt64());
