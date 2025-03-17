@@ -9,4 +9,5 @@ ADD_TARGET(
         My::MyGE__deps_crossguid
         My::MyGE__deps_tinyobjloader
         My::MyGE_Core
+        My::MyGE_ScriptSystem
 )

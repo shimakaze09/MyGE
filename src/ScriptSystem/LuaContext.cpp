@@ -5,8 +5,10 @@
 #include <set>
 #include <vector>
 
+#include "InitCore.h"
 #include "InitMyECS.h"
 #include "InitMyGraphviz.h"
+#include "InitTransform.h"
 #include "LuaArray.h"
 #include "LuaBuffer.h"
 #include "LuaMemory.h"
@@ -16,7 +18,9 @@ using namespace My::MyGE;
 
 struct LuaContext::Impl {
   Impl() : main{Construct()} {}
+
   ~Impl() { Destruct(main); }
+
   std::mutex m;
   lua_State* main;
   std::set<lua_State*> busyLuas;
@@ -28,9 +32,13 @@ struct LuaContext::Impl {
 
 LuaContext::LuaContext() : pImpl{new Impl} {}
 
-LuaContext::~LuaContext() { delete pImpl; }
+LuaContext::~LuaContext() {
+  delete pImpl;
+}
 
-lua_State* LuaContext::Main() const { return pImpl->main; }
+lua_State* LuaContext::Main() const {
+  return pImpl->main;
+}
 
 void LuaContext::Reserve(size_t n) {
   size_t num = pImpl->busyLuas.size() + pImpl->freeLuas.size();
@@ -70,15 +78,28 @@ void LuaContext::Recycle(lua_State* L) {
 
 void LuaContext::Clear() {
   assert(pImpl->busyLuas.empty());
-  for (auto L : pImpl->freeLuas) Impl::Destruct(L);
+  for (auto L : pImpl->freeLuas)
+    Impl::Destruct(L);
   delete pImpl;
 }
 
 class LuaArray_CmptType : public LuaArray<My::MyECS::CmptType> {};
+
 template <>
 struct My::MySRefl::TypeInfo<LuaArray_CmptType>
     : My::MySRefl::TypeInfoBase<LuaArray_CmptType,
                                 Base<LuaArray<My::MyECS::CmptType>>> {
+  static constexpr AttrList attrs = {};
+
+  static constexpr FieldList fields = {};
+};
+
+class LuaArray_CmptAccessType : public LuaArray<My::MyECS::CmptAccessType> {};
+
+template <>
+struct My::MySRefl::TypeInfo<LuaArray_CmptAccessType>
+    : My::MySRefl::TypeInfoBase<LuaArray_CmptAccessType,
+                                Base<LuaArray<My::MyECS::CmptAccessType>>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {};
@@ -89,11 +110,16 @@ lua_State* LuaContext::Impl::Construct() {
   luaL_openlibs(L);               /* opens the standard libraries */
   detail::InitMyECS(L);
   detail::InitMyGraphviz(L);
+  detail::InitCore(L);
+  detail::InitTransform(L);
   MyLuaPP::Register<LuaArray_CmptType>(L);
+  MyLuaPP::Register<LuaArray_CmptAccessType>(L);
   MyLuaPP::Register<LuaBuffer>(L);
   MyLuaPP::Register<LuaMemory>(L);
   MyLuaPP::Register<LuaSystem>(L);
   return L;
 }
 
-void LuaContext::Impl::Destruct(lua_State* L) { lua_close(L); }
+void LuaContext::Impl::Destruct(lua_State* L) {
+  lua_close(L);
+}

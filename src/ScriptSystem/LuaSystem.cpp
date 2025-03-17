@@ -21,7 +21,8 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
       [bytes = std::move(bytes), cmptLocator = std::move(cmptLocator)](
           MyECS::World* w, MyECS::SingletonsView singletonsView,
           MyECS::ChunkView chunk) {
-        if (chunk.EntityNum() == 0) return;
+        if (chunk.EntityNum() == 0)
+          return;
 
         auto luaCtx = LuaCtxMngr::Instance().GetContext(w);
         auto L = luaCtx->Request();
@@ -48,7 +49,7 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
           size_t i = 0;
           do {
             MyECS::CmptsView view{cmptPtrs.data(), cmptPtrs.size()};
-            f(w, singletonsView, arrayEntity[i], i, view);
+            f.call(w, singletonsView, arrayEntity[i], i, view);
             for (size_t j = 0; j < cmpts.size(); j++) {
               cmpts[j] = (reinterpret_cast<uint8_t*>(cmpts[j]) + sizes[j]);
               cmptPtrs[j] = {types[j], cmpts[j]};

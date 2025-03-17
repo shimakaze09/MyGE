@@ -111,3 +111,10 @@ f = function(schedule)
     end, SingletonLocator.new())
 end
 LuaSystem.RegisterSystem(world, "LuaSystem-001", f)
+
+parent = Parent.new()
+e = parent.value
+print(parent.value:Idx())
+parent.value = Entity.new(1111, 2222)
+print(parent.value:Idx())
+print(parent.value:Version())
