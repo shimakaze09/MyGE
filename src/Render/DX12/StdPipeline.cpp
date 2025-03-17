@@ -49,6 +49,7 @@ struct StdPipeline::Impl {
     My::transformf World = My::transformf::eye();
     My::transformf TexTransform = My::transformf::eye();
   };
+
   struct PassConstants {
     My::transformf View = My::transformf::eye();
     My::transformf InvView = My::transformf::eye();
@@ -80,12 +81,15 @@ struct StdPipeline::Impl {
       My::pointf3 Position = {0.0f, 0.0f, 0.0f};  // point/spot light only
       float SpotPower = 64.0f;                    // spot light only
     };
+
     Light Lights[16];
   };
+
   struct MatConstants {
     My::rgbf albedoFactor;
     float roughnessFactor;
   };
+
   struct RenderContext {
     Camera cam;
     valf<16> view;
@@ -97,6 +101,7 @@ struct StdPipeline::Impl {
 
       valf<16> l2w;
     };
+
     std::unordered_map<const Shader*,
                        std::unordered_map<const Material*, std::vector<Object>>>
         objectMap;
@@ -288,7 +293,8 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
   if (target == PSOIDMap.end()) {
     auto [uv, normal, tangent, color] =
         MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
-    if (!uv || !normal) return static_cast<size_t>(-1);  // not support
+    if (!uv || !normal)
+      return static_cast<size_t>(-1);  // not support
 
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
@@ -313,23 +319,22 @@ void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
   My::MyECS::ArchetypeFilter objectFilter;
   objectFilter.all = {My::MyECS::CmptAccessType::Of<MeshFilter>,
                       My::MyECS::CmptAccessType::Of<MeshRenderer>};
-  auto objectEntities = world.entityMngr.GetEntityArray(objectFilter);
-  for (auto e : objectEntities) {
-    auto meshFilter = world.entityMngr.Get<MeshFilter>(e);
-    auto meshRenderer = world.entityMngr.Get<MeshRenderer>(e);
-    auto l2w = world.entityMngr.Get<LocalToWorld>(e);
 
-    Impl::RenderContext::Object object;
-    object.mesh = meshFilter->mesh;
-    object.l2w =
-        l2w ? l2w->value.as<valf<16>>() : transformf::eye().as<valf<16>>();
+  const_cast<MyECS::World&>(world).RunEntityJob(
+      [&](const MeshFilter* meshFilter, const MeshRenderer* meshRenderer,
+          const LocalToWorld* l2w) {
+        Impl::RenderContext::Object object;
+        object.mesh = meshFilter->mesh;
+        object.l2w =
+            l2w ? l2w->value.as<valf<16>>() : transformf::eye().as<valf<16>>();
 
-    for (size_t i = 0; i < meshRenderer->materials.size(); i++) {
-      object.submeshIdx = i;
-      auto mat = meshRenderer->materials[i];
-      renderContext.objectMap[mat->shader][mat].push_back(object);
-    }
-  }
+        for (size_t i = 0; i < meshRenderer->materials.size(); i++) {
+          object.submeshIdx = i;
+          auto mat = meshRenderer->materials[i];
+          renderContext.objectMap[mat->shader][mat].push_back(object);
+        }
+      },
+      false);
 
   My::MyECS::ArchetypeFilter cameraFilter;
   cameraFilter.all = {My::MyECS::CmptAccessType::Of<Camera>};
@@ -373,7 +378,8 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
 
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
+    for (const auto& [mat, objects] : mat2objects)
+      objectNum += objects.size();
     if (shader->shaderName == "StdPipeline/Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
       buffer->Reserve(
@@ -656,7 +662,9 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() { delete pImpl; }
+StdPipeline::~StdPipeline() {
+  delete pImpl;
+}
 
 void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->UpdateRenderContext(world);

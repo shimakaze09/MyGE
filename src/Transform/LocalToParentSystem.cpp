@@ -28,13 +28,14 @@ void LocalToParentSystem::ChildLocalToWorld(const transformf& parent_l2w,
 
   if (w->entityMngr.Have(e, CmptType::Of<Children>)) {
     auto children = w->entityMngr.Get<Children>(e);
-    for (const auto& child : children->value) ChildLocalToWorld(l2w, e);
+    for (const auto& child : children->value)
+      ChildLocalToWorld(l2w, e);
   }
 }
 
 void LocalToParentSystem::OnUpdate(MyECS::Schedule& schedule) {
   MyECS::ArchetypeFilter rootFilter;
-  rootFilter.none = { CmptType::Of<Parent> };
+  rootFilter.none = {CmptType::Of<Parent>};
 
   schedule.InsertNone(TRSToLocalToWorldSystem::SystemFuncName,
                       MyECS::CmptType::Of<Parent>);
@@ -43,6 +44,6 @@ void LocalToParentSystem::OnUpdate(MyECS::Schedule& schedule) {
         for (const auto& child : children->value)
           ChildLocalToWorld(l2w->value, child);
       },
-      SystemFuncName, rootFilter);
+      SystemFuncName, true, rootFilter);
   schedule.Order(TRSToLocalToParentSystem::SystemFuncName, SystemFuncName);
 }

@@ -103,6 +103,11 @@ f = function(schedule)
     end
     local filter = ArchetypeFilter.new()
     filter.all:add(CmptAccessType.new("Cmpt0", AccessMode.LATEST))
-    LuaSystem.RegisterChunkJob(schedule, g, "test", filter, SingletonLocator.new())
+    LuaSystem.RegisterChunkJob(schedule, g, "test", filter, SingletonLocator.new(), true)
+    world:RunJob(function(w)
+        local em = w:GetEntityMngr();
+        local num = em:TotalEntityNum()
+        print("world's entity num : " .. num)
+    end, SingletonLocator.new())
 end
 LuaSystem.RegisterSystem(world, "LuaSystem-001", f)

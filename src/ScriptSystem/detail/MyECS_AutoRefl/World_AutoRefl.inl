@@ -31,5 +31,55 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
       Field{"GenUpdateFrameGraph", &My::MyECS::World::GenUpdateFrameGraph},
       Field{"AddCommand", &My::MyECS::World::AddCommand},
       // Field{"Accept", &My::MyECS::World::Accept},
-  };
+      Field{"RunEntityJob",
+            static_cast<void (*)(
+                My::MyECS::World*,
+                std::function<void(My::MyECS::World*, My::MyECS::SingletonsView,
+                                   My::MyECS::Entity, size_t,
+                                   My::MyECS::CmptsView)>,
+                My::MyECS::ArchetypeFilter, My::MyECS::CmptLocator,
+                My::MyECS::SingletonLocator, bool)>(
+                [](My::MyECS::World* world,
+                   std::function<void(
+                       My::MyECS::World*, My::MyECS::SingletonsView,
+                       My::MyECS::Entity, size_t, My::MyECS::CmptsView)>
+                       func,
+                   My::MyECS::ArchetypeFilter archetypeFilter,
+                   My::MyECS::CmptLocator cmptLocator,
+                   My::MyECS::SingletonLocator singletonLocator,
+                   bool isParallel) {
+                  world->RunEntityJob(
+                      std::move(func), isParallel, std::move(archetypeFilter),
+                      std::move(cmptLocator), std::move(singletonLocator));
+                })},
+      Field{"RunChunkJob",
+            static_cast<void (*)(
+                My::MyECS::World*,
+                std::function<void(My::MyECS::World*, My::MyECS::ChunkView,
+                                   My::MyECS::SingletonsView)>,
+                My::MyECS::ArchetypeFilter, My::MyECS::SingletonLocator, bool)>(
+                [](My::MyECS::World* world,
+                   std::function<void(My::MyECS::World*, My::MyECS::ChunkView,
+                                      My::MyECS::SingletonsView)>
+                       func,
+                   My::MyECS::ArchetypeFilter archetypeFilter,
+                   My::MyECS::SingletonLocator singletonLocator,
+                   bool isParallel) {
+                  world->RunChunkJob(std::move(func),
+                                     std::move(archetypeFilter), isParallel,
+                                     std::move(singletonLocator));
+                })},
+      Field{
+          "RunJob",
+          static_cast<void (*)(
+              My::MyECS::World*,
+              std::function<void(My::MyECS::World*, My::MyECS::SingletonsView)>,
+              My::MyECS::SingletonLocator)>(
+              [](My::MyECS::World* world,
+                 std::function<void(My::MyECS::World*,
+                                    My::MyECS::SingletonsView)>
+                     func,
+                 My::MyECS::SingletonLocator singletonLocator) {
+                world->RunJob(std::move(func), std::move(singletonLocator));
+              })}};
 };

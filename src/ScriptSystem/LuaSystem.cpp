@@ -14,15 +14,14 @@ void LuaSystem::RegisterSystem(MyECS::World* world, std::string name,
 const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
     MyECS::Schedule* s, sol::function systemFunc, std::string name,
     MyECS::ArchetypeFilter filter, MyECS::CmptLocator cmptLocator,
-    MyECS::SingletonLocator singletonLocator) {
+    MyECS::SingletonLocator singletonLocator, bool isParallel) {
   assert(!cmptLocator.CmptAccessTypes().empty());
   auto bytes = systemFunc.dump();
   auto sysfunc = s->RegisterChunkJob(
       [bytes = std::move(bytes), cmptLocator = std::move(cmptLocator)](
           MyECS::World* w, MyECS::SingletonsView singletonsView,
           MyECS::ChunkView chunk) {
-        if (chunk.EntityNum() == 0)
-          return;
+        if (chunk.EntityNum() == 0) return;
 
         auto luaCtx = LuaCtxMngr::Instance().GetContext(w);
         auto L = luaCtx->Request();
@@ -58,13 +57,15 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
         }
         luaCtx->Recycle(L);
       },
-      std::move(name), std::move(filter), std::move(singletonLocator));
+      std::move(name), std::move(filter), isParallel,
+      std::move(singletonLocator));
   return sysfunc;
 }
 
 const My::MyECS::SystemFunc* LuaSystem::RegisterChunkJob(
     MyECS::Schedule* s, sol::function systemFunc, std::string name,
-    MyECS::ArchetypeFilter filter, MyECS::SingletonLocator singletonLocator) {
+    MyECS::ArchetypeFilter filter, MyECS::SingletonLocator singletonLocator,
+    bool isParallel) {
   auto bytes = systemFunc.dump();
   auto sysfunc = s->RegisterChunkJob(
       [bytes](MyECS::World* w, MyECS::SingletonsView singletonsView,
@@ -78,7 +79,8 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterChunkJob(
         }
         luaCtx->Recycle(L);
       },
-      std::move(name), std::move(filter), std::move(singletonLocator));
+      std::move(name), std::move(filter), isParallel,
+      std::move(singletonLocator));
   return sysfunc;
 }
 

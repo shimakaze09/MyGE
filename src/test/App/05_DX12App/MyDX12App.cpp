@@ -86,10 +86,6 @@ class MyDX12App : public My::MyGE::DX12App {
 
   POINT mLastMousePos;
 
-  My::MyGE::Texture2D* albedoTex2D;
-  My::MyGE::Texture2D* roughnessTex2D;
-  My::MyGE::Texture2D* metalnessTex2D;
-
   My::MyECS::World world;
   My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
 
@@ -321,17 +317,15 @@ void MyDX12App::Update() {
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
   auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
+  upload.Begin();
 
   // update mesh
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
-  auto meshFilters =
-      world.entityMngr.GetCmptArray<My::MyGE::MeshFilter>(filter);
-  upload.Begin();
-  for (auto meshFilter : meshFilters) {
-    My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-        upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
-  }
+  world.RunEntityJob(
+      [&](const My::MyGE::MeshFilter* meshFilter) {
+        My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
+            upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+      },
+      false);
 
   // commit upload, delete ...
   upload.End(myCmdQueue.Get());
@@ -489,51 +483,14 @@ void MyDX12App::BuildWorld() {
 }
 
 void MyDX12App::LoadTextures() {
-  auto albedoImg = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-      "../assets/textures/iron/albedo.png");
-  auto roughnessImg =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-          "../assets/textures/iron/roughness.png");
-  auto metalnessImg =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-          "../assets/textures/iron/metalness.png");
-
-  albedoTex2D = new My::MyGE::Texture2D;
-  albedoTex2D->image = albedoImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          albedoTex2D, "../assets/textures/iron/albedo.tex2d")) {
-    delete albedoTex2D;
-    albedoTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/albedo.tex2d");
+  auto tex2dGUIDs =
+      My::MyGE::AssetMngr::Instance().FindAssets(std::wregex{LR"(.*\.tex2d)"});
+  for (const auto& guid : tex2dGUIDs) {
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
   }
-
-  roughnessTex2D = new My::MyGE::Texture2D;
-  roughnessTex2D->image = roughnessImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          roughnessTex2D, "../assets/textures/iron/roughness.tex2d")) {
-    delete roughnessTex2D;
-    roughnessTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/roughness.tex2d");
-  }
-
-  metalnessTex2D = new My::MyGE::Texture2D;
-  metalnessTex2D->image = metalnessImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          metalnessTex2D, "../assets/textures/iron/metalness.tex2d")) {
-    delete metalnessTex2D;
-    metalnessTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/metalness.tex2d");
-  }
-
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), albedoTex2D);
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), roughnessTex2D);
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), metalnessTex2D);
 }
 
 void MyDX12App::BuildShaders() {
@@ -550,10 +507,7 @@ void MyDX12App::BuildShaders() {
 void MyDX12App::BuildMaterials() {
   auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
       L"..\\assets\\materials\\iron.mat");
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshRenderer>};
-  auto meshRenderers =
-      world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
-  for (auto meshRenderer : meshRenderers)
+  world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
     meshRenderer->materials.push_back(material);
+  });
 }
