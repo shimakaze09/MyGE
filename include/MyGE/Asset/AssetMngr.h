@@ -7,6 +7,7 @@
 #include <MyECS/Entity.h>
 
 #include <filesystem>
+#include <regex>
 #include <unordered_map>
 #include <vector>
 
@@ -34,6 +35,8 @@ class AssetMngr {
   bool CreateAsset(void* ptr, const std::filesystem::path& path);
 
   bool Contains(const void* ptr) const;
+
+  std::vector<xg::Guid> FindAssets(const std::wregex& matchRegex) const;
 
   // if ptr is not an asset, return empty path
   const std::filesystem::path& GetAssetPath(const void* ptr) const;

@@ -12,6 +12,7 @@
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
+#include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
@@ -74,6 +75,7 @@ class MyDX12App : public My::MyGE::DX12App {
 
   void BuildWorld();
   void LoadTextures();
+  void BuildShaders();
   void BuildMaterials();
 
  private:
@@ -273,14 +275,6 @@ bool MyDX12App::Initialize() {
 
   if (!InitDirect3D()) return false;
 
-  My::MyGE::IPipeline::InitDesc initDesc;
-  initDesc.device = myDevice.Get();
-  initDesc.backBufferFormat = GetBackBufferFormat();
-  initDesc.depthStencilFormat = GetDepthStencilBufferFormat();
-  initDesc.cmdQueue = myCmdQueue.Get();
-  initDesc.numFrame = NumFrameResources;
-  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
-
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
   // Setup Dear ImGui context
@@ -307,15 +301,26 @@ bool MyDX12App::Initialize() {
                           ->GetDescriptorHeap(),
                       imguiAlloc.GetCpuHandle(), imguiAlloc.GetGpuHandle());
 
-  // Do the initial resize code.
-  OnResize();
-
   BuildWorld();
+
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
+  BuildShaders();
   BuildMaterials();
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
+
+  My::MyGE::IPipeline::InitDesc initDesc;
+  initDesc.device = myDevice.Get();
+  initDesc.backBufferFormat = GetBackBufferFormat();
+  initDesc.depthStencilFormat = GetDepthStencilBufferFormat();
+  initDesc.cmdQueue = myCmdQueue.Get();
+  initDesc.numFrame = NumFrameResources;
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
+
+  // Do the initial resize code.
+  OnResize();
 
   // Wait until initialization is complete.
   FlushCommandQueue();
@@ -326,9 +331,9 @@ bool MyDX12App::Initialize() {
 void MyDX12App::OnResize() {
   DX12App::OnResize();
 
-  if (pipeline)
-    pipeline->Resize(mClientWidth, mClientHeight, GetScreenViewport(),
-                     GetScissorRect(), GetDepthStencilBuffer());
+  assert(pipeline);
+  pipeline->Resize(mClientWidth, mClientHeight, GetScreenViewport(),
+                   GetScissorRect(), GetDepthStencilBuffer());
 }
 
 void MyDX12App::Update() {
@@ -562,25 +567,24 @@ void MyDX12App::LoadTextures() {
       My::MyGE::RsrcMngrDX12::Instance().GetUpload(), metalnessTex2D);
 }
 
-void MyDX12App::BuildMaterials() {
-  std::filesystem::path matPath = "../assets/materials/iron.mat";
-  auto material = new My::MyGE::Material;
-  material->shader =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Shader>(
-          "../assets/shaders/geometry.shader");
-  material->texture2Ds.emplace("gAlbedoMap", albedoTex2D);
-  material->texture2Ds.emplace("gRoughnessMap", roughnessTex2D);
-  material->texture2Ds.emplace("gMetalnessMap", metalnessTex2D);
-
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(material, matPath)) {
-    delete material;
-    material =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(matPath);
+void MyDX12App::BuildShaders() {
+  auto& assetMngr = My::MyGE::AssetMngr::Instance();
+  auto shaderGUIDs = assetMngr.FindAssets(std::wregex{LR"(.*\.shader)"});
+  for (const auto& guid : shaderGUIDs) {
+    const auto& path = assetMngr.GUIDToAssetPath(guid);
+    auto shader = assetMngr.LoadAsset<My::MyGE::Shader>(path);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterShader(shader);
+    My::MyGE::ShaderMngr::Instance().Register(shader);
   }
+}
+
+void MyDX12App::BuildMaterials() {
+  auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
+      L"..\\assets\\materials\\iron.mat");
   My::MyECS::ArchetypeFilter filter;
   filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshRenderer>};
   auto meshRenderers =
       world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
   for (auto meshRenderer : meshRenderers)
-    meshRenderer->material.push_back(material);
+    meshRenderer->materials.push_back(material);
 }

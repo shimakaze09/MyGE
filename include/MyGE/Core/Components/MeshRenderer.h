@@ -10,7 +10,7 @@
 
 namespace My::MyGE {
 struct MeshRenderer {
-  std::vector<const Material*> material;
+  std::vector<const Material*> materials;
 };
 }  // namespace My::MyGE
 

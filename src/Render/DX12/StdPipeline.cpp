@@ -3,7 +3,6 @@
 //
 
 #include <MyDX12/FrameResourceMngr.h>
-#include <MyECS/World.h>
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
@@ -13,6 +12,7 @@
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
+#include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
@@ -23,7 +23,6 @@
 #include <MyGE/_deps/imgui/imgui.h>
 #include <MyGE/_deps/imgui/imgui_impl_dx12.h>
 #include <MyGE/_deps/imgui/imgui_impl_win32.h>
-#include <MyGM/MyGM.h>
 
 using namespace My::MyGE;
 using namespace My;
@@ -50,7 +49,6 @@ struct StdPipeline::Impl {
     My::transformf World = My::transformf::eye();
     My::transformf TexTransform = My::transformf::eye();
   };
-
   struct PassConstants {
     My::transformf View = My::transformf::eye();
     My::transformf InvView = My::transformf::eye();
@@ -82,15 +80,12 @@ struct StdPipeline::Impl {
       My::pointf3 Position = {0.0f, 0.0f, 0.0f};  // point/spot light only
       float SpotPower = 64.0f;                    // spot light only
     };
-
     Light Lights[16];
   };
-
   struct MatConstants {
     My::rgbf albedoFactor;
     float roughnessFactor;
   };
-
   struct RenderContext {
     Camera cam;
     valf<16> view;
@@ -102,7 +97,6 @@ struct StdPipeline::Impl {
 
       valf<16> l2w;
     };
-
     std::unordered_map<const Shader*,
                        std::unordered_map<const Material*, std::vector<Object>>>
         objectMap;
@@ -115,8 +109,8 @@ struct StdPipeline::Impl {
   MyDX12::FrameResourceMngr frameRsrcMngr;
 
   My::MyDX12::FG::Executor fgExecutor;
-  My::MyFG::Compiler fgCompiler;
-  My::MyFG::FrameGraph fg;
+  My::UFG::Compiler fgCompiler;
+  My::UFG::FrameGraph fg;
 
   My::MyGE::Shader* screenShader;
   My::MyGE::Shader* geomrtryShader;
@@ -154,76 +148,22 @@ void StdPipeline::Impl::BuildFrameResources() {
 }
 
 void StdPipeline::Impl::BuildShadersAndInputLayout() {
-  std::filesystem::path hlslScreenPath = "../assets/shaders/Screen.hlsl";
-  std::filesystem::path shaderScreenPath = "../assets/shaders/Screen.shader";
-  std::filesystem::path hlslGeomrtryPath = "../assets/shaders/Geometry.hlsl";
+  /*std::filesystem::path shaderScreenPath = "../assets/shaders/Screen.shader";
   std::filesystem::path shaderGeometryPath =
-      "../assets/shaders/Geometry.shader";
-  std::filesystem::path hlslDeferPath = "../assets/shaders/deferLighting.hlsl";
-  std::filesystem::path shaderDeferPath =
-      "../assets/shaders/deferLighting.shader";
+  "../assets/shaders/Geometry.shader"; std::filesystem::path shaderDeferPath =
+  "../assets/shaders/deferLighting.shader";
 
-  if (!std::filesystem::is_directory("../assets/shaders"))
-    std::filesystem::create_directories("../assets/shaders");
-
-  auto& assetMngr = AssetMngr::Instance();
-  auto hlslScreen = assetMngr.LoadAsset<HLSLFile>(hlslScreenPath);
-  auto hlslGeomrtry = assetMngr.LoadAsset<HLSLFile>(hlslGeomrtryPath);
-  auto hlslDefer = assetMngr.LoadAsset<HLSLFile>(hlslDeferPath);
-
-  screenShader = new Shader;
-  geomrtryShader = new Shader;
-  deferShader = new Shader;
-
-  screenShader->hlslFile = hlslScreen;
-  geomrtryShader->hlslFile = hlslGeomrtry;
-  deferShader->hlslFile = hlslDefer;
-
-  screenShader->vertexName = "VS";
-  geomrtryShader->vertexName = "VS";
-  deferShader->vertexName = "VS";
-
-  screenShader->fragmentName = "PS";
-  geomrtryShader->fragmentName = "PS";
-  deferShader->fragmentName = "PS";
-
-  screenShader->targetName = "5_0";
-  geomrtryShader->targetName = "5_0";
-  deferShader->targetName = "5_0";
-
-  screenShader->shaderName = "Screen";
-  geomrtryShader->shaderName = "Geometry";
-  deferShader->shaderName = "Defer";
-
-  if (!assetMngr.CreateAsset(screenShader, shaderScreenPath)) {
-    delete screenShader;
-    screenShader = assetMngr.LoadAsset<Shader>(shaderScreenPath);
-  }
-
-  if (!assetMngr.CreateAsset(geomrtryShader, shaderGeometryPath)) {
-    delete geomrtryShader;
-    geomrtryShader = assetMngr.LoadAsset<Shader>(shaderGeometryPath);
-  }
-
-  if (!assetMngr.CreateAsset(deferShader, shaderDeferPath)) {
-    delete deferShader;
-    deferShader = assetMngr.LoadAsset<Shader>(shaderDeferPath);
-  }
+  screenShader = AssetMngr::Instance().LoadAsset<Shader>(shaderScreenPath);
+  geomrtryShader = AssetMngr::Instance().LoadAsset<Shader>(shaderGeometryPath);
+  deferShader = AssetMngr::Instance().LoadAsset<Shader>(shaderDeferPath);
 
   RsrcMngrDX12::Instance().RegisterShader(screenShader);
   RsrcMngrDX12::Instance().RegisterShader(geomrtryShader);
-  RsrcMngrDX12::Instance().RegisterShader(deferShader);
+  RsrcMngrDX12::Instance().RegisterShader(deferShader);*/
 
-  mInputLayout = {
-      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-       D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-      {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12,
-       D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20,
-       D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-      {"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32,
-       D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-  };
+  screenShader = ShaderMngr::Instance().Get("StdPipeline/Screen");
+  geomrtryShader = ShaderMngr::Instance().Get("StdPipeline/Geometry");
+  deferShader = ShaderMngr::Instance().Get("StdPipeline/Defer Lighting");
 }
 
 void StdPipeline::Impl::BuildRootSignature() {
@@ -348,8 +288,7 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
   if (target == PSOIDMap.end()) {
     auto [uv, normal, tangent, color] =
         MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
-    if (!uv || !normal)
-      return static_cast<size_t>(-1);  // not support
+    if (!uv || !normal) return static_cast<size_t>(-1);  // not support
 
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
@@ -385,9 +324,9 @@ void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
     object.l2w =
         l2w ? l2w->value.as<valf<16>>() : transformf::eye().as<valf<16>>();
 
-    for (size_t i = 0; i < meshRenderer->material.size(); i++) {
+    for (size_t i = 0; i < meshRenderer->materials.size(); i++) {
       object.submeshIdx = i;
-      auto mat = meshRenderer->material[i];
+      auto mat = meshRenderer->materials[i];
       renderContext.objectMap[mat->shader][mat].push_back(object);
     }
   }
@@ -434,9 +373,8 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
 
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects)
-      objectNum += objects.size();
-    if (shader->shaderName == "Geometry") {
+    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
+    if (shader->shaderName == "StdPipeline/Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
       buffer->Reserve(
           My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(PassConstants)) +
@@ -718,9 +656,7 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() {
-  delete pImpl;
-}
+StdPipeline::~StdPipeline() { delete pImpl; }
 
 void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->UpdateRenderContext(world);
@@ -733,9 +669,7 @@ void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
   pImpl->UpdateShaderCBs(GetResizeData());
 }
 
-void StdPipeline::Render() {
-  pImpl->Render(GetResizeData(), GetFrameData());
-}
+void StdPipeline::Render() { pImpl->Render(GetResizeData(), GetFrameData()); }
 
 void StdPipeline::EndFrame() {
   pImpl->frameRsrcMngr.EndFrame(initDesc.cmdQueue);

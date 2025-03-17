@@ -34,6 +34,7 @@ const int gNumFrameResources = 3;
 struct AnimateMeshSystem : My::MyECS::System {
   using My::MyECS::System::System;
   size_t cnt = 0;
+
   virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
     if (cnt < 600) {
       schedule.RegisterEntityJob(
@@ -118,7 +119,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
                                                              LPARAM lParam);
 
 LRESULT ImGUIApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) return true;
+  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
+    return true;
   // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
   // your main application.
   // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data
@@ -221,21 +223,25 @@ LRESULT ImGUIApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
+        return 0;
       OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
+        return 0;
       OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_MOUSEMOVE:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
+        return 0;
       OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_KEYUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureKeyboard) return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureKeyboard)
+        return 0;
       if (wParam == VK_ESCAPE) {
         PostQuitMessage(0);
       } else if ((int)wParam == VK_F2)
@@ -256,7 +262,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     ImGUIApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    if (!theApp.Initialize())
+      return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -271,7 +278,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 ImGUIApp::ImGUIApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 ImGUIApp::~ImGUIApp() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 
   ImGui_ImplDX12_Shutdown();
   ImGui_ImplWin32_Shutdown();
@@ -282,9 +290,11 @@ ImGUIApp::~ImGUIApp() {
 }
 
 bool ImGUIApp::Initialize() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
@@ -408,7 +418,8 @@ void ImGUIApp::Draw() {
   // 1. Show the big demo window (Most of the sample code is in
   // ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear
   // ImGui!).
-  if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
+  if (show_demo_window)
+    ImGui::ShowDemoWindow(&show_demo_window);
 
   // 2. Show a simple window that we create ourselves. We use a Begin/End pair
   // to created a named window.
@@ -450,7 +461,8 @@ void ImGUIApp::Draw() {
                                 // window will have a closing button that will
                                 // clear the bool when clicked)
     ImGui::Text("Hello from another window!");
-    if (ImGui::Button("Close Me")) show_another_window = false;
+    if (ImGui::Button("Close Me"))
+      show_another_window = false;
     ImGui::End();
   }
 
@@ -470,7 +482,9 @@ void ImGUIApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void ImGUIApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void ImGUIApp::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void ImGUIApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -628,5 +642,5 @@ void ImGUIApp::BuildMaterials() {
   auto meshRenderers =
       world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
   for (auto meshRenderer : meshRenderers)
-    meshRenderer->material.push_back(material);
+    meshRenderer->materials.push_back(material);
 }

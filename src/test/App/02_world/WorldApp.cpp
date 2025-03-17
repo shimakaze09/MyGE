@@ -341,5 +341,5 @@ void WorldApp::BuildMaterials() {
   auto meshRenderers =
       world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
   for (auto meshRenderer : meshRenderers)
-    meshRenderer->material.push_back(material);
+    meshRenderer->materials.push_back(material);
 }

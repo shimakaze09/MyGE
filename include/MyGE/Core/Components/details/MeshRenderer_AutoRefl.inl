@@ -10,6 +10,6 @@ struct My::MySRefl::TypeInfo<My::MyGE::MeshRenderer>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{"material", &My::MyGE::MeshRenderer::material},
+      Field{"materials", &My::MyGE::MeshRenderer::materials},
   };
 };
