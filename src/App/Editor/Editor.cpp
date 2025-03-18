@@ -552,7 +552,6 @@ void Editor::Draw() {
 
   pipeline->EndFrame();
   GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
-  ImGui_ImplWin32_EndFrame();
   ImGui_ImplDX12_EndFrame();
 }
 
