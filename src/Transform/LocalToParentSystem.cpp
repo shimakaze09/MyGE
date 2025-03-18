@@ -17,11 +17,10 @@ void LocalToParentSystem::ChildLocalToWorld(const transformf& parent_l2w,
                                             Entity e) {
   transformf l2w;
   auto w = GetWorld();
-  if (w->entityMngr.Have(e, CmptType::Of<LocalToWorld>) &&
-      w->entityMngr.Have(e, CmptType::Of<LocalToParent>)) {
+  if (w->entityMngr.Have(e, CmptType::Of<LocalToWorld>)) {
     auto child_l2w = w->entityMngr.Get<LocalToWorld>(e);
     auto child_l2p = w->entityMngr.Get<LocalToParent>(e);
-    l2w = parent_l2w * child_l2p->value;
+    l2w = parent_l2w * (child_l2p ? child_l2p->value : child_l2w->value);
     child_l2w->value = l2w;
   } else
     l2w = parent_l2w;
@@ -38,12 +37,13 @@ void LocalToParentSystem::OnUpdate(MyECS::Schedule& schedule) {
   rootFilter.none = {CmptType::Of<Parent>};
 
   schedule.InsertNone(TRSToLocalToWorldSystem::SystemFuncName,
-                      MyECS::CmptType::Of<Parent>);
+                      MyECS::CmptType::Of<LocalToParent>);
   schedule.RegisterEntityJob(
-      [this](const LocalToWorld* l2w, const Children* children) {
+      [this](LocalToWorld* l2w, const Children* children) {
         for (const auto& child : children->value)
           ChildLocalToWorld(l2w->value, child);
       },
       SystemFuncName, true, rootFilter);
   schedule.Order(TRSToLocalToParentSystem::SystemFuncName, SystemFuncName);
+  schedule.Order(TRSToLocalToWorldSystem::SystemFuncName, SystemFuncName);
 }

@@ -2,6 +2,9 @@
 // Created by Admin on 17/03/2025.
 //
 
+#include "Components/Hierarchy.h"
+#include "Systems/HierarchySystem.h"
+
 #include <MyGE/App/DX12App/DX12App.h>
 
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
@@ -386,9 +389,9 @@ void Editor::OnGameResize() {
       &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(gameRT.ReleaseAndGetAddressOf())));
   myDevice->CreateShaderResourceView(gameRT.Get(), nullptr,
-                                     gameRT_SRV.GetCpuHandle());
+                                    gameRT_SRV.GetCpuHandle());
   myDevice->CreateRenderTargetView(gameRT.Get(), nullptr,
-                                   gameRT_RTV.GetCpuHandle());
+                                  gameRT_RTV.GetCpuHandle());
 
   assert(gamePipeline);
   D3D12_VIEWPORT viewport;
@@ -412,9 +415,9 @@ void Editor::OnEditorSceneResize() {
       &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(editorSceneRT.ReleaseAndGetAddressOf())));
   myDevice->CreateShaderResourceView(editorSceneRT.Get(), nullptr,
-                                     editorSceneRT_SRV.GetCpuHandle());
+                                    editorSceneRT_SRV.GetCpuHandle());
   myDevice->CreateRenderTargetView(editorSceneRT.Get(), nullptr,
-                                   editorSceneRT_RTV.GetCpuHandle());
+                                  editorSceneRT_RTV.GetCpuHandle());
 
   assert(editorScenePipeline);
   D3D12_VIEWPORT viewport;
@@ -758,7 +761,9 @@ void Editor::BuildWorld() {
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
-      My::MyGE::WorldTimeSystem>();
+      My::MyGE::WorldTimeSystem,
+
+      My::MyGE::HierarchySystem>();
   editorWorld.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
@@ -767,12 +772,20 @@ void Editor::BuildWorld() {
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
       My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
-      My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
-  {
+      My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal,
+
+      // editor
+      My::MyGE::Hierarchy>();
+
+  {  // editor camera
     auto [e, l2w, w2l, cam, t, rot] = editorWorld.entityMngr.Create<
         My::MyGE::LocalToWorld, My::MyGE::WorldToLocal, My::MyGE::Camera,
         My::MyGE::Translation, My::MyGE::Rotation>();
     editorSceneCamera = e;
+  }
+  {  // hierarchy
+    auto [e, hierarchy] = editorWorld.entityMngr.Create<My::MyGE::Hierarchy>();
+    hierarchy->world = &world;
   }
 
   world.systemMngr.Register<

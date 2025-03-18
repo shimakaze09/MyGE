@@ -330,7 +330,7 @@ void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
                            : transformf::eye().as<valf<16>>();
           for (size_t j = 0; j < std::min(meshRendererArr[i].materials.size(),
                                           obj.mesh->GetSubMeshes().size());
-               i++) {
+               j++) {
             auto material = meshRendererArr[i].materials[j];
             obj.submeshIdx = j;
             renderContext.objectMap[material->shader][material].push_back(obj);
