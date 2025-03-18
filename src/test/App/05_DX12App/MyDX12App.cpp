@@ -268,9 +268,9 @@ bool MyDX12App::Initialize() {
   My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
                                        NumFrameResources);
 
-  BuildWorld();
-
   My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
+
+  BuildWorld();
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
@@ -281,7 +281,6 @@ bool MyDX12App::Initialize() {
   My::MyGE::IPipeline::InitDesc initDesc;
   initDesc.device = myDevice.Get();
   initDesc.rtFormat = GetBackBufferFormat();
-  initDesc.depthStencilFormat = GetDepthStencilBufferFormat();
   initDesc.cmdQueue = myCmdQueue.Get();
   initDesc.numFrame = NumFrameResources;
   pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
@@ -300,7 +299,7 @@ void MyDX12App::OnResize() {
 
   assert(pipeline);
   pipeline->Resize(mClientWidth, mClientHeight, GetScreenViewport(),
-                   GetScissorRect(), GetDepthStencilBuffer());
+                   GetScissorRect());
 }
 
 void MyDX12App::Update() {
@@ -329,10 +328,9 @@ void MyDX12App::Update() {
 
   // commit upload, delete ...
   upload.End(myCmdQueue.Get());
-  deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.Get());
-  GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
+  deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
 
   pipeline->UpdateRenderContext(world);
 }
@@ -394,9 +392,27 @@ void MyDX12App::Draw() {
 
   pipeline->Render(CurrentBackBuffer());
 
+  auto cmdAlloc = GetCurFrameCommandAllocator();
+  ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
+  myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
+                                       D3D12_RESOURCE_STATE_PRESENT,
+                                       D3D12_RESOURCE_STATE_RENDER_TARGET);
+  myGCmdList->OMSetRenderTargets(1, &CurrentBackBufferView(), FALSE, NULL);
+  myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
+                                    .GetCSUGpuDH()
+                                    ->GetDescriptorHeap());
+  ImGui::Render();
+  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), myGCmdList.Get());
+  myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
+                                       D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                       D3D12_RESOURCE_STATE_PRESENT);
+  myGCmdList->Close();
+  myCmdQueue.Execute(myGCmdList.Get());
+
   SwapBackBuffer();
 
   pipeline->EndFrame();
+  GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
 }
 
 void MyDX12App::OnMouseDown(WPARAM btnState, int x, int y) {

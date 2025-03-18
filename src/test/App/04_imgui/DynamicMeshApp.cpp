@@ -8,9 +8,11 @@
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
 #include <MyGE/Core/HLSLFile.h>
+#include <MyGE/Core/ImGUIMngr.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
+#include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
@@ -34,7 +36,6 @@ const int gNumFrameResources = 3;
 struct AnimateMeshSystem : My::MyECS::System {
   using My::MyECS::System::System;
   size_t cnt = 0;
-
   virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
     if (cnt < 600) {
       schedule.RegisterEntityJob(
@@ -84,7 +85,7 @@ class ImGUIApp : public D3DApp {
 
   void BuildWorld();
   void LoadTextures();
-  void BuildShapeGeometry();
+  void BuildShaders();
   void BuildMaterials();
 
  private:
@@ -94,10 +95,6 @@ class ImGUIApp : public D3DApp {
 
   POINT mLastMousePos;
 
-  My::MyGE::Texture2D* albedoTex2D;
-  My::MyGE::Texture2D* roughnessTex2D;
-  My::MyGE::Texture2D* metalnessTex2D;
-
   My::MyECS::World world;
   My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
 
@@ -105,8 +102,6 @@ class ImGUIApp : public D3DApp {
   std::unique_ptr<My::MyGE::Mesh> dynamicMesh;
 
   std::unique_ptr<My::MyDX12::FrameResourceMngr> frameRsrcMngr;
-
-  My::MyDX12::DescriptorHeapAllocation imguiAlloc;
 
   bool show_demo_window = true;
   bool show_another_window = false;
@@ -119,8 +114,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
                                                              LPARAM lParam);
 
 LRESULT ImGUIApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
-    return true;
+  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) return true;
   // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
   // your main application.
   // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data
@@ -223,25 +217,21 @@ LRESULT ImGUIApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
-        return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
       OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
-        return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
       OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_MOUSEMOVE:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
-        return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
       OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_KEYUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureKeyboard)
-        return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureKeyboard) return 0;
       if (wParam == VK_ESCAPE) {
         PostQuitMessage(0);
       } else if ((int)wParam == VK_F2)
@@ -262,8 +252,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     ImGUIApp theApp(hInstance);
-    if (!theApp.Initialize())
-      return 0;
+    if (!theApp.Initialize()) return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -278,82 +267,54 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 ImGUIApp::ImGUIApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 ImGUIApp::~ImGUIApp() {
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 
-  ImGui_ImplDX12_Shutdown();
-  ImGui_ImplWin32_Shutdown();
-  ImGui::DestroyContext();
-
-  My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
-      std::move(imguiAlloc));
+  My::MyGE::ImGUIMngr::Instance().Clear();
 }
 
 bool ImGUIApp::Initialize() {
-  if (!InitMainWindow())
-    return false;
+  if (!InitMainWindow()) return false;
 
-  if (!InitDirect3D())
-    return false;
+  if (!InitDirect3D()) return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
   My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
                                                   1024, 1024, 1024, 1024);
 
-  My::MyGE::IPipeline::InitDesc initDesc;
-  initDesc.device = myDevice.raw.Get();
-  initDesc.rtFormat = mBackBufferFormat;
-  initDesc.depthStencilFormat = mDepthStencilFormat;
-  initDesc.cmdQueue = myCmdQueue.raw.Get();
-  initDesc.numFrame = gNumFrameResources;
-  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
-
   frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
       gNumFrameResources, myDevice.raw.Get());
   for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-    ThrowIfFailed(initDesc.device->CreateCommandAllocator(
+    ThrowIfFailed(myDevice->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
     fr->RegisterResource("CommandAllocator", allocator);
   }
 
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
-  // Setup Dear ImGui context
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImGuiIO& io = ImGui::GetIO();
-  (void)io;
-  // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable
-  // Keyboard Controls io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; //
-  // Enable Gamepad Controls
+  My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
+                                       gNumFrameResources);
 
-  // Setup Dear ImGui style
-  ImGui::StyleColorsDark();
-  // ImGui::StyleColorsClassic();
-
-  // Setup Platform/Renderer bindings
-  ImGui_ImplWin32_Init(mhMainWnd);
-  imguiAlloc =
-      My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
-  ImGui_ImplDX12_Init(myDevice.raw.Get(), gNumFrameResources,
-                      DXGI_FORMAT_R8G8B8A8_UNORM,
-                      My::MyDX12::DescriptorHeapMngr::Instance()
-                          .GetCSUGpuDH()
-                          ->GetDescriptorHeap(),
-                      imguiAlloc.GetCpuHandle(), imguiAlloc.GetGpuHandle());
-
-  // Do the initial resize code.
-  OnResize();
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
 
   BuildWorld();
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
-  BuildShapeGeometry();
+  BuildShaders();
   BuildMaterials();
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.raw.Get());
+
+  My::MyGE::IPipeline::InitDesc initDesc;
+  initDesc.device = myDevice.raw.Get();
+  initDesc.rtFormat = mBackBufferFormat;
+  initDesc.cmdQueue = myCmdQueue.raw.Get();
+  initDesc.numFrame = gNumFrameResources;
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
+
+  // Do the initial resize code.
+  OnResize();
 
   // Wait until initialization is complete.
   FlushCommandQueue();
@@ -365,8 +326,8 @@ void ImGUIApp::OnResize() {
   D3DApp::OnResize();
 
   if (pipeline)
-    pipeline->Resize(mClientWidth, mClientHeight, mScreenViewport, mScissorRect,
-                     mDepthStencilBuffer.Get());
+    pipeline->Resize(mClientWidth, mClientHeight, mScreenViewport,
+                     mScissorRect);
 }
 
 void ImGUIApp::Update() {
@@ -388,23 +349,21 @@ void ImGUIApp::Update() {
   auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
 
-  // update mesh
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
-  auto meshFilters =
-      world.entityMngr.GetCmptArray<My::MyGE::MeshFilter>(filter);
   upload.Begin();
-  for (auto meshFilter : meshFilters) {
-    My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-        upload, deleteBatch, myGCmdList.raw.Get(), meshFilter->mesh);
-  }
+
+  // update mesh
+  world.RunEntityJob(
+      [&](const My::MyGE::MeshFilter* meshFilter) {
+        My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
+            upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+      },
+      false);
 
   // commit upload, delete ...
   upload.End(myCmdQueue.raw.Get());
-  deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.raw.Get());
-  frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
+  deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
 
   pipeline->UpdateRenderContext(world);
 }
@@ -418,8 +377,7 @@ void ImGUIApp::Draw() {
   // 1. Show the big demo window (Most of the sample code is in
   // ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear
   // ImGui!).
-  if (show_demo_window)
-    ImGui::ShowDemoWindow(&show_demo_window);
+  if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
   // 2. Show a simple window that we create ourselves. We use a Begin/End pair
   // to created a named window.
@@ -461,18 +419,38 @@ void ImGUIApp::Draw() {
                                 // window will have a closing button that will
                                 // clear the bool when clicked)
     ImGui::Text("Hello from another window!");
-    if (ImGui::Button("Close Me"))
-      show_another_window = false;
+    if (ImGui::Button("Close Me")) show_another_window = false;
     ImGui::End();
   }
 
-  pipeline->UpdateBackBuffer(CurrentBackBuffer());
-  pipeline->Render();
+  pipeline->Render(CurrentBackBuffer());
+
+  auto cmdAlloc =
+      frameRsrcMngr->GetCurrentFrameResource()
+          ->GetResource<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>>(
+              "CommandAllocator");
+  ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
+  myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
+                                       D3D12_RESOURCE_STATE_PRESENT,
+                                       D3D12_RESOURCE_STATE_RENDER_TARGET);
+  myGCmdList->OMSetRenderTargets(1, &CurrentBackBufferView(), FALSE, NULL);
+  myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
+                                    .GetCSUGpuDH()
+                                    ->GetDescriptorHeap());
+  ImGui::Render();
+  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), myGCmdList.Get());
+  myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
+                                       D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                       D3D12_RESOURCE_STATE_PRESENT);
+  myGCmdList->Close();
+  myCmdQueue.Execute(myGCmdList.Get());
 
   // Swap the back and front buffers
   ThrowIfFailed(mSwapChain->Present(0, 0));
   mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+
   pipeline->EndFrame();
+  frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
 }
 
 void ImGUIApp::OnMouseDown(WPARAM btnState, int x, int y) {
@@ -482,9 +460,7 @@ void ImGUIApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void ImGUIApp::OnMouseUp(WPARAM btnState, int x, int y) {
-  ReleaseCapture();
-}
+void ImGUIApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
 
 void ImGUIApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -565,82 +541,31 @@ void ImGUIApp::BuildWorld() {
 }
 
 void ImGUIApp::LoadTextures() {
-  auto albedoImg = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-      "../assets/textures/iron/albedo.png");
-  auto roughnessImg =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-          "../assets/textures/iron/roughness.png");
-  auto metalnessImg =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-          "../assets/textures/iron/metalness.png");
-
-  albedoTex2D = new My::MyGE::Texture2D;
-  albedoTex2D->image = albedoImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          albedoTex2D, "../assets/textures/iron/albedo.tex2d")) {
-    delete albedoTex2D;
-    albedoTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/albedo.tex2d");
+  auto tex2dGUIDs =
+      My::MyGE::AssetMngr::Instance().FindAssets(std::wregex{LR"(.*\.tex2d)"});
+  for (const auto& guid : tex2dGUIDs) {
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
   }
-
-  roughnessTex2D = new My::MyGE::Texture2D;
-  roughnessTex2D->image = roughnessImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          roughnessTex2D, "../assets/textures/iron/roughness.tex2d")) {
-    delete roughnessTex2D;
-    roughnessTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/roughness.tex2d");
-  }
-
-  metalnessTex2D = new My::MyGE::Texture2D;
-  metalnessTex2D->image = metalnessImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          metalnessTex2D, "../assets/textures/iron/metalness.tex2d")) {
-    delete metalnessTex2D;
-    metalnessTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/metalness.tex2d");
-  }
-
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), albedoTex2D);
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), roughnessTex2D);
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), metalnessTex2D);
 }
 
-void ImGUIApp::BuildShapeGeometry() {
-  // auto mesh =
-  // My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>("../assets/models/cube.obj");
-  // My::MyECS::ArchetypeFilter filter;
-  // filter.all = { My::MyECS::CmptType::Of<My::MyGE::MeshFilter> };
-  // auto meshFilters =
-  // world.entityMngr.GetCmptArray<My::MyGE::MeshFilter>(filter); for
-  // (auto meshFilter : meshFilters) 	meshFilter->mesh = mesh;
+void ImGUIApp::BuildShaders() {
+  auto& assetMngr = My::MyGE::AssetMngr::Instance();
+  auto shaderGUIDs = assetMngr.FindAssets(std::wregex{LR"(.*\.shader)"});
+  for (const auto& guid : shaderGUIDs) {
+    const auto& path = assetMngr.GUIDToAssetPath(guid);
+    auto shader = assetMngr.LoadAsset<My::MyGE::Shader>(path);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterShader(shader);
+    My::MyGE::ShaderMngr::Instance().Register(shader);
+  }
 }
 
 void ImGUIApp::BuildMaterials() {
-  std::filesystem::path matPath = "../assets/materials/iron.mat";
-  auto material = new My::MyGE::Material;
-  material->shader =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Shader>(
-          "../assets/shaders/geometry.shader");
-  material->texture2Ds.emplace("gAlbedoMap", albedoTex2D);
-  material->texture2Ds.emplace("gRoughnessMap", roughnessTex2D);
-  material->texture2Ds.emplace("gMetalnessMap", metalnessTex2D);
-
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(material, matPath)) {
-    delete material;
-    material =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(matPath);
-  }
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshRenderer>};
-  auto meshRenderers =
-      world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
-  for (auto meshRenderer : meshRenderers)
+  auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
+      L"..\\assets\\materials\\iron.mat");
+  world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
     meshRenderer->materials.push_back(material);
+  });
 }

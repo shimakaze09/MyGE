@@ -11,6 +11,7 @@
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
+#include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
@@ -77,7 +78,7 @@ class DynamicMeshApp : public D3DApp {
 
   void BuildWorld();
   void LoadTextures();
-  void BuildShapeGeometry();
+  void BuildShaders();
   void BuildMaterials();
 
  private:
@@ -86,10 +87,6 @@ class DynamicMeshApp : public D3DApp {
   float mRadius = 5.0f;
 
   POINT mLastMousePos;
-
-  My::MyGE::Texture2D* albedoTex2D;
-  My::MyGE::Texture2D* roughnessTex2D;
-  My::MyGE::Texture2D* metalnessTex2D;
 
   My::MyECS::World world;
   My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
@@ -137,35 +134,36 @@ bool DynamicMeshApp::Initialize() {
   My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
                                                   1024, 1024, 1024, 1024);
 
-  My::MyGE::IPipeline::InitDesc initDesc;
-  initDesc.device = myDevice.raw.Get();
-  initDesc.rtFormat = mBackBufferFormat;
-  initDesc.depthStencilFormat = mDepthStencilFormat;
-  initDesc.cmdQueue = myCmdQueue.raw.Get();
-  initDesc.numFrame = gNumFrameResources;
-  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
-
   frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
       gNumFrameResources, myDevice.raw.Get());
   for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
-    ThrowIfFailed(initDesc.device->CreateCommandAllocator(
+    ThrowIfFailed(myDevice->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
     fr->RegisterResource("CommandAllocator", allocator);
   }
 
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
-  // Do the initial resize code.
-  OnResize();
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
 
   BuildWorld();
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
-  BuildShapeGeometry();
+  BuildShaders();
   BuildMaterials();
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.raw.Get());
+
+  My::MyGE::IPipeline::InitDesc initDesc;
+  initDesc.device = myDevice.raw.Get();
+  initDesc.rtFormat = mBackBufferFormat;
+  initDesc.cmdQueue = myCmdQueue.raw.Get();
+  initDesc.numFrame = gNumFrameResources;
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
+
+  // Do the initial resize code.
+  OnResize();
 
   // Wait until initialization is complete.
   FlushCommandQueue();
@@ -177,8 +175,8 @@ void DynamicMeshApp::OnResize() {
   D3DApp::OnResize();
 
   if (pipeline)
-    pipeline->Resize(mClientWidth, mClientHeight, mScreenViewport, mScissorRect,
-                     mDepthStencilBuffer.Get());
+    pipeline->Resize(mClientWidth, mClientHeight, mScreenViewport,
+                     mScissorRect);
 }
 
 void DynamicMeshApp::Update() {
@@ -199,31 +197,28 @@ void DynamicMeshApp::Update() {
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
   auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
+  upload.Begin();
 
   // update mesh
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
-  auto meshFilters =
-      world.entityMngr.GetCmptArray<My::MyGE::MeshFilter>(filter);
-  upload.Begin();
-  for (auto meshFilter : meshFilters) {
-    My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-        upload, deleteBatch, myGCmdList.raw.Get(), meshFilter->mesh);
-  }
+  world.RunEntityJob(
+      [&](const My::MyGE::MeshFilter* meshFilter) {
+        My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
+            upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+      },
+      false);
 
   // commit upload, delete ...
   upload.End(myCmdQueue.raw.Get());
-  deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.raw.Get());
+  deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
   frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
 
   pipeline->UpdateRenderContext(world);
 }
 
 void DynamicMeshApp::Draw() {
-  pipeline->BeginFrame(CurrentBackBuffer());
-  pipeline->Render();
+  pipeline->Render(CurrentBackBuffer());
   // Swap the back and front buffers
   ThrowIfFailed(mSwapChain->Present(0, 0));
   mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
@@ -320,82 +315,31 @@ void DynamicMeshApp::BuildWorld() {
 }
 
 void DynamicMeshApp::LoadTextures() {
-  auto albedoImg = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-      "../assets/textures/iron/albedo.png");
-  auto roughnessImg =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-          "../assets/textures/iron/roughness.png");
-  auto metalnessImg =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-          "../assets/textures/iron/metalness.png");
-
-  albedoTex2D = new My::MyGE::Texture2D;
-  albedoTex2D->image = albedoImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          albedoTex2D, "../assets/textures/iron/albedo.tex2d")) {
-    delete albedoTex2D;
-    albedoTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/albedo.tex2d");
+  auto tex2dGUIDs =
+      My::MyGE::AssetMngr::Instance().FindAssets(std::wregex{LR"(.*\.tex2d)"});
+  for (const auto& guid : tex2dGUIDs) {
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
   }
-
-  roughnessTex2D = new My::MyGE::Texture2D;
-  roughnessTex2D->image = roughnessImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          roughnessTex2D, "../assets/textures/iron/roughness.tex2d")) {
-    delete roughnessTex2D;
-    roughnessTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/roughness.tex2d");
-  }
-
-  metalnessTex2D = new My::MyGE::Texture2D;
-  metalnessTex2D->image = metalnessImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          metalnessTex2D, "../assets/textures/iron/metalness.tex2d")) {
-    delete metalnessTex2D;
-    metalnessTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/metalness.tex2d");
-  }
-
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), albedoTex2D);
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), roughnessTex2D);
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), metalnessTex2D);
 }
 
-void DynamicMeshApp::BuildShapeGeometry() {
-  // auto mesh =
-  // My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>("../assets/models/cube.obj");
-  // My::MyECS::ArchetypeFilter filter;
-  // filter.all = { My::MyECS::CmptType::Of<My::MyGE::MeshFilter> };
-  // auto meshFilters =
-  // world.entityMngr.GetCmptArray<My::MyGE::MeshFilter>(filter); for
-  // (auto meshFilter : meshFilters) 	meshFilter->mesh = mesh;
+void DynamicMeshApp::BuildShaders() {
+  auto& assetMngr = My::MyGE::AssetMngr::Instance();
+  auto shaderGUIDs = assetMngr.FindAssets(std::wregex{LR"(.*\.shader)"});
+  for (const auto& guid : shaderGUIDs) {
+    const auto& path = assetMngr.GUIDToAssetPath(guid);
+    auto shader = assetMngr.LoadAsset<My::MyGE::Shader>(path);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterShader(shader);
+    My::MyGE::ShaderMngr::Instance().Register(shader);
+  }
 }
 
 void DynamicMeshApp::BuildMaterials() {
-  std::filesystem::path matPath = "../assets/materials/iron.mat";
-  auto material = new My::MyGE::Material;
-  material->shader =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Shader>(
-          "../assets/shaders/geometry.shader");
-  material->texture2Ds.emplace("gAlbedoMap", albedoTex2D);
-  material->texture2Ds.emplace("gRoughnessMap", roughnessTex2D);
-  material->texture2Ds.emplace("gMetalnessMap", metalnessTex2D);
-
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(material, matPath)) {
-    delete material;
-    material =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(matPath);
-  }
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshRenderer>};
-  auto meshRenderers =
-      world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
-  for (auto meshRenderer : meshRenderers)
+  auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
+      L"..\\assets\\materials\\iron.mat");
+  world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
     meshRenderer->materials.push_back(material);
+  });
 }

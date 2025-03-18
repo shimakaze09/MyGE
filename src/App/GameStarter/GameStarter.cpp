@@ -381,8 +381,6 @@ void GameStarter::Draw() {
   myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
                                        D3D12_RESOURCE_STATE_PRESENT,
                                        D3D12_RESOURCE_STATE_RENDER_TARGET);
-  myGCmdList->ClearRenderTargetView(CurrentBackBufferView(),
-                                    DirectX::Colors::Black, 0, NULL);
   myGCmdList->OMSetRenderTargets(1, &CurrentBackBufferView(), FALSE, NULL);
   myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
                                     .GetCSUGpuDH()

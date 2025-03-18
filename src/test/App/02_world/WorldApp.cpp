@@ -11,6 +11,7 @@
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
+#include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
@@ -29,14 +30,17 @@ const int gNumFrameResources = 3;
 
 struct RotateSystem : My::MyECS::System {
   using My::MyECS::System::System;
-
   virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
     My::MyECS::ArchetypeFilter filter;
     filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
     schedule.RegisterEntityJob(
-        [](My::MyGE::Rotation* rot) {
+        [](My::MyGE::Rotation* rot, My::MyGE::Translation* trans) {
           rot->value =
               rot->value * My::quatf{My::vecf3{0, 1, 0}, My::to_radian(2.f)};
+          trans->value +=
+              0.2f * (My::vecf3{My::rand01<float>(), My::rand01<float>(),
+                                My::rand01<float>()} -
+                      My::vecf3{0.5f});
         },
         "rotate", true, filter);
   }
@@ -65,7 +69,7 @@ class WorldApp : public D3DApp {
 
   void BuildWorld();
   void LoadTextures();
-  void BuildShapeGeometry();
+  void BuildShaders();
   void BuildMaterials();
 
  private:
@@ -94,8 +98,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     WorldApp theApp(hInstance);
-    if (!theApp.Initialize())
-      return 0;
+    if (!theApp.Initialize()) return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -110,42 +113,58 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 WorldApp::WorldApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 WorldApp::~WorldApp() {
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
 bool WorldApp::Initialize() {
-  if (!InitMainWindow())
-    return false;
+  if (!InitMainWindow()) return false;
 
-  if (!InitDirect3D())
-    return false;
+  if (!InitDirect3D()) return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
   My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
                                                   1024, 1024, 1024, 1024);
 
+  My::MyGE::MeshLayoutMngr::Instance().Init();
+
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
+
+  BuildWorld();
+
+  ThrowIfFailed(myGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
+  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
+  auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
+
+  upload.Begin();
+
+  LoadTextures();
+  BuildShaders();
+  BuildMaterials();
+
+  // update mesh
+  world.RunEntityJob(
+      [&](const My::MyGE::MeshFilter* meshFilter) {
+        My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
+            upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+      },
+      false);
+
+  // commit upload, delete ...
+  upload.End(myCmdQueue.raw.Get());
+  myGCmdList->Close();
+  myCmdQueue.Execute(myGCmdList.raw.Get());
+  deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
+
   My::MyGE::IPipeline::InitDesc initDesc;
   initDesc.device = myDevice.raw.Get();
   initDesc.rtFormat = mBackBufferFormat;
-  initDesc.depthStencilFormat = mDepthStencilFormat;
   initDesc.cmdQueue = myCmdQueue.raw.Get();
   initDesc.numFrame = gNumFrameResources;
   pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
 
-  My::MyGE::MeshLayoutMngr::Instance().Init();
-
   // Do the initial resize code.
   OnResize();
-
-  BuildWorld();
-
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
-  LoadTextures();
-  BuildShapeGeometry();
-  BuildMaterials();
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.raw.Get());
 
   // Wait until initialization is complete.
   FlushCommandQueue();
@@ -157,8 +176,8 @@ void WorldApp::OnResize() {
   D3DApp::OnResize();
 
   if (pipeline)
-    pipeline->Resize(mClientWidth, mClientHeight, mScreenViewport, mScissorRect,
-                     mDepthStencilBuffer.Get());
+    pipeline->Resize(mClientWidth, mClientHeight, mScreenViewport,
+                     mScissorRect);
 }
 
 void WorldApp::Update() {
@@ -166,6 +185,7 @@ void WorldApp::Update() {
   UpdateCamera();
 
   world.Update();
+
   pipeline->UpdateRenderContext(world);
 }
 
@@ -184,9 +204,7 @@ void WorldApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void WorldApp::OnMouseUp(WPARAM btnState, int x, int y) {
-  ReleaseCapture();
-}
+void WorldApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
 
 void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -250,6 +268,8 @@ void WorldApp::BuildWorld() {
   cam = std::get<My::MyECS::Entity>(e0);
 
   int num = 11;
+  auto cubeMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
+      L"..\\assets\\models\\cube.obj");
   for (int i = 0; i < num; i++) {
     for (int j = 0; j < num; j++) {
       auto cube =
@@ -260,92 +280,37 @@ void WorldApp::BuildWorld() {
       auto s = std::get<My::MyGE::Scale*>(cube);
       s->value = 0.2f;
       t->value = {0.5f * (i - num / 2), 0.5f * (j - num / 2), 0};
+      std::get<My::MyGE::MeshFilter*>(cube)->mesh = cubeMesh;
     }
   }
 }
 
 void WorldApp::LoadTextures() {
-  auto albedoImg = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-      "../assets/textures/iron/albedo.png");
-  auto roughnessImg =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-          "../assets/textures/iron/roughness.png");
-  auto metalnessImg =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Image>(
-          "../assets/textures/iron/metalness.png");
-
-  albedoTex2D = new My::MyGE::Texture2D;
-  albedoTex2D->image = albedoImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          albedoTex2D, "../assets/textures/iron/albedo.tex2d")) {
-    delete albedoTex2D;
-    albedoTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/albedo.tex2d");
+  auto tex2dGUIDs =
+      My::MyGE::AssetMngr::Instance().FindAssets(std::wregex{LR"(.*\.tex2d)"});
+  for (const auto& guid : tex2dGUIDs) {
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
   }
-
-  roughnessTex2D = new My::MyGE::Texture2D;
-  roughnessTex2D->image = roughnessImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          roughnessTex2D, "../assets/textures/iron/roughness.tex2d")) {
-    delete roughnessTex2D;
-    roughnessTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/roughness.tex2d");
-  }
-
-  metalnessTex2D = new My::MyGE::Texture2D;
-  metalnessTex2D->image = metalnessImg;
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(
-          metalnessTex2D, "../assets/textures/iron/metalness.tex2d")) {
-    delete metalnessTex2D;
-    metalnessTex2D =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            "../assets/textures/iron/metalness.tex2d");
-  }
-
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), albedoTex2D);
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), roughnessTex2D);
-  My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), metalnessTex2D);
 }
 
-void WorldApp::BuildShapeGeometry() {
-  auto mesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
-      "../assets/models/cube.obj");
-  My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
-      My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch(), myGCmdList.raw.Get(),
-      mesh);
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
-  auto meshFilters =
-      world.entityMngr.GetCmptArray<My::MyGE::MeshFilter>(filter);
-  for (auto meshFilter : meshFilters)
-    meshFilter->mesh = mesh;
+void WorldApp::BuildShaders() {
+  auto& assetMngr = My::MyGE::AssetMngr::Instance();
+  auto shaderGUIDs = assetMngr.FindAssets(std::wregex{LR"(.*\.shader)"});
+  for (const auto& guid : shaderGUIDs) {
+    const auto& path = assetMngr.GUIDToAssetPath(guid);
+    auto shader = assetMngr.LoadAsset<My::MyGE::Shader>(path);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterShader(shader);
+    My::MyGE::ShaderMngr::Instance().Register(shader);
+  }
 }
 
 void WorldApp::BuildMaterials() {
-  std::filesystem::path matPath = "../assets/materials/iron.mat";
-  auto material = new My::MyGE::Material;
-  material->shader =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Shader>(
-          "../assets/shaders/geometry.shader");
-  material->texture2Ds.emplace("gAlbedoMap", albedoTex2D);
-  material->texture2Ds.emplace("gRoughnessMap", roughnessTex2D);
-  material->texture2Ds.emplace("gMetalnessMap", metalnessTex2D);
-
-  if (!My::MyGE::AssetMngr::Instance().CreateAsset(material, matPath)) {
-    delete material;
-    material =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(matPath);
-  }
-  My::MyECS::ArchetypeFilter filter;
-  filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshRenderer>};
-  auto meshRenderers =
-      world.entityMngr.GetCmptArray<My::MyGE::MeshRenderer>(filter);
-  for (auto meshRenderer : meshRenderers)
+  auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
+      L"..\\assets\\materials\\iron.mat");
+  world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
     meshRenderer->materials.push_back(material);
+  });
 }
