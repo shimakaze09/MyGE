@@ -25,6 +25,8 @@ struct Serializer::Impl : IListener {
       deserializer;
   Serializer::SerializeContext ctx{&writer, &serializer};
 
+  const World* curWorld{nullptr};
+
   Impl() { writer.Reset(sb); }
 
   void Clear() {
@@ -35,13 +37,20 @@ struct Serializer::Impl : IListener {
   virtual void EnterWorld(const World* world) override {
     writer.StartObject();
     writer.Key(Serializer::Key::ENTITY_MNGR);
+    curWorld = world;
   }
-  virtual void ExistWorld(const World* world) override { writer.EndObject(); }
+
+  virtual void ExistWorld(const World* world) override {
+    writer.EndObject();
+    curWorld = nullptr;
+  }
 
   virtual void EnterSystemMngr(const SystemMngr*) override {}
+
   virtual void ExistSystemMngr(const SystemMngr*) override {}
 
   virtual void EnterSystem(const System*) override {}
+
   virtual void ExistSystem(const System*) override {}
 
   virtual void EnterEntityMngr(const EntityMngr*) override {
@@ -49,6 +58,7 @@ struct Serializer::Impl : IListener {
     writer.Key(Serializer::Key::ENTITIES);
     writer.StartArray();
   }
+
   virtual void ExistEntityMngr(const EntityMngr*) override {
     writer.EndArray();  // entities
     writer.EndObject();
@@ -61,6 +71,7 @@ struct Serializer::Impl : IListener {
     writer.Key(Key::COMPONENTS);
     writer.StartArray();
   }
+
   virtual void ExistEntity(const Entity*) override {
     writer.EndArray();  // components
     writer.EndObject();
@@ -70,18 +81,26 @@ struct Serializer::Impl : IListener {
     writer.StartObject();
     writer.Key(Key::TYPE);
     writer.Uint64(p->Type().HashCode());
+    auto name = curWorld->cmptTraits.Nameof(p->Type());
+    if (!name.empty()) {
+      writer.Key(Key::NAME);
+      writer.String(name.data());
+    }
     writer.Key(Key::CONTENT);
     if (serializer.IsRegistered(p->Type().HashCode()))
       serializer.Visit(p->Type().HashCode(), p->Ptr(), ctx);
     else
       writer.Key(Key::NOT_SUPPORT);
   }
+
   virtual void ExistCmptPtr(const CmptPtr*) override { writer.EndObject(); }
 };
 
 Serializer::Serializer() : pImpl{new Impl} {}
 
-Serializer::~Serializer() { delete pImpl; }
+Serializer::~Serializer() {
+  delete pImpl;
+}
 
 string Serializer::ToJSON(const World* world) {
   world->Accept(pImpl);

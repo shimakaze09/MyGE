@@ -18,7 +18,8 @@ DX12App::DX12App(HINSTANCE hInstance) : mhAppInst(hInstance) {
 }
 
 DX12App::~DX12App() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
   if (!swapchainRTVCpuDH.IsNull())
     My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         std::move(swapchainRTVCpuDH));
@@ -69,7 +70,8 @@ void DX12App::OnResize() {
   ThrowIfFailed(myGCmdList->Reset(mainCmdAlloc.Get(), nullptr));
 
   // Release the previous resources we will be recreating.
-  for (int i = 0; i < NumSwapChainBuffer; ++i) mSwapChainBuffer[i].Reset();
+  for (int i = 0; i < NumSwapChainBuffer; ++i)
+    mSwapChainBuffer[i].Reset();
 
   // Resize the swap chain.
   ThrowIfFailed(mSwapChain->ResizeBuffers(

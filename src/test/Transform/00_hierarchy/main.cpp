@@ -30,9 +30,8 @@ class PrintSystem : public System {
 int main() {
   World w;
 
-  w.entityMngr.cmptTraits
-      .Register<Children, LocalToParent, LocalToWorld, Parent, Rotation,
-                RotationEuler, Scale, Translation, WorldToLocal>();
+  w.cmptTraits.Register<Children, LocalToParent, LocalToWorld, Parent, Rotation,
+                        RotationEuler, Scale, Translation, WorldToLocal>();
 
   w.systemMngr.Register<PrintSystem, LocalToParentSystem, RotationEulerSystem,
                         TRSToLocalToParentSystem, TRSToLocalToWorldSystem,

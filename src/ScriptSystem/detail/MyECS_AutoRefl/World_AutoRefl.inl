@@ -26,6 +26,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
             static_cast<
                 const My::MyECS::EntityMngr* (*)(const My::MyECS::World&)>(
                 [](const My::MyECS::World& w) { return &w.entityMngr; })},
+      Field{"cmptTraits", &My::MyECS::World::cmptTraits},
       Field{"Update", &My::MyECS::World::Update},
       Field{"DumpUpdateJobGraph", &My::MyECS::World::DumpUpdateJobGraph},
       Field{"GenUpdateFrameGraph", &My::MyECS::World::GenUpdateFrameGraph},

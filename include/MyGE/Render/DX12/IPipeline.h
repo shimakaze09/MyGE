@@ -6,6 +6,8 @@
 
 #include <MyDX12/MyDX12.h>
 
+#include <MyECS/Entity.h>
+
 namespace My::MyECS {
 class World;
 }  // namespace My::MyECS
@@ -20,13 +22,21 @@ class IPipeline {
     DXGI_FORMAT rtFormat;
   };
 
+  struct CameraData {
+    CameraData(MyECS::Entity entity, const MyECS::World& world)
+        : entity{entity}, world{world} {}
+
+    MyECS::Entity entity;
+    const MyECS::World& world;
+  };
+
   IPipeline(InitDesc initDesc) : initDesc{initDesc} {}
 
   virtual ~IPipeline() = default;
 
   // data : cpu -> gpu
   // run in update
-  virtual void BeginFrame(const MyECS::World& world) = 0;
+  virtual void BeginFrame(const MyECS::World& world, const std::vector<CameraData>& cameras) = 0;
   // run in draw
   virtual void Render(ID3D12Resource* rt) = 0;
   // run at the end of draw
