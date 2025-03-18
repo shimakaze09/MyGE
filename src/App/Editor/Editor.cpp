@@ -59,7 +59,6 @@ class Editor : public My::MyGE::DX12App {
   void BuildWorld();
   void LoadTextures();
   void BuildShaders();
-  void BuildMaterials();
 
  private:
   float mTheta = 0.4f * My::PI<float>;
@@ -90,7 +89,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
                                                              LPARAM lParam);
 
 LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) return true;
+  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
+    return true;
   // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
   // your main application.
   // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data
@@ -193,21 +193,25 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
+        return 0;
       OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
+        return 0;
       OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_MOUSEMOVE:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
+        return 0;
       OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_KEYUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureKeyboard) return 0;
+      if (imgui_ctx && ImGui::GetIO().WantCaptureKeyboard)
+        return 0;
       if (wParam == VK_ESCAPE) {
         PostQuitMessage(0);
       }
@@ -227,7 +231,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     Editor theApp(hInstance);
-    if (!theApp.Initialize()) return 1;
+    if (!theApp.Initialize())
+      return 1;
 
     int rst = theApp.Run();
     return rst;
@@ -240,7 +245,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 Editor::Editor(HINSTANCE hInstance) : DX12App(hInstance) {}
 
 Editor::~Editor() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 
   My::MyGE::ImGUIMngr::Instance().Clear();
   if (!gameRT_SRV.IsNull())
@@ -249,9 +255,11 @@ Editor::~Editor() {
 }
 
 bool Editor::Initialize() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   gameRT_SRV =
       My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
@@ -268,7 +276,6 @@ bool Editor::Initialize() {
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
   BuildShaders();
-  BuildMaterials();
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
   // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
@@ -289,7 +296,9 @@ bool Editor::Initialize() {
   return true;
 }
 
-void Editor::OnResize() { DX12App::OnResize(); }
+void Editor::OnResize() {
+  DX12App::OnResize();
+}
 
 void Editor::OnGameResize() {
   // Flush before changing any resources.
@@ -351,7 +360,7 @@ void Editor::Update() {
   myCmdQueue.Execute(myGCmdList.Get());
   deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
 
-  pipeline->UpdateRenderContext(world);
+  pipeline->BeginFrame(world);
 }
 
 void Editor::Draw() {
@@ -363,7 +372,8 @@ void Editor::Draw() {
   // 1. Show the big demo window (Most of the sample code is in
   // ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear
   // ImGui!).
-  if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
+  if (show_demo_window)
+    ImGui::ShowDemoWindow(&show_demo_window);
 
   // 2. Show a simple window that we create ourselves. We use a Begin/End pair
   // to created a named window.
@@ -405,18 +415,20 @@ void Editor::Draw() {
                                 // window will have a closing button that will
                                 // clear the bool when clicked)
     ImGui::Text("Hello from another window!");
-    if (ImGui::Button("Close Me")) show_another_window = false;
+    if (ImGui::Button("Close Me"))
+      show_another_window = false;
     ImGui::End();
   }
 
   // 4. game window
-  if (ImGui::Begin("output", nullptr, ImGuiWindowFlags_NoScrollbar)) {
+  if (ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoScrollbar)) {
     auto tex = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
         L"..\\assets\\textures\\chessboard.tex2d");
     auto gameSize = ImGui::GetContentRegionAvail();
     auto w = (size_t)gameSize.x;
     auto h = (size_t)gameSize.y;
-    if (w != gameWidth || h != gameHeight) {
+    if (gameSize.x > 0 && gameSize.y > 0 && w > 0 && h > 0 &&
+        (w != gameWidth || h != gameHeight)) {
       gameWidth = w;
       gameHeight = h;
       OnGameResize();
@@ -429,7 +441,8 @@ void Editor::Draw() {
   }
   ImGui::End();
 
-  pipeline->Render(gameRT.Get());
+  if (gameRT)
+    pipeline->Render(gameRT.Get());
 
   auto cmdAlloc = GetCurFrameCommandAllocator();
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
@@ -463,7 +476,9 @@ void Editor::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(MainWnd());
 }
 
-void Editor::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void Editor::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void Editor::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -593,12 +608,4 @@ void Editor::BuildShaders() {
     My::MyGE::RsrcMngrDX12::Instance().RegisterShader(shader);
     My::MyGE::ShaderMngr::Instance().Register(shader);
   }
-}
-
-void Editor::BuildMaterials() {
-  /*auto material = My::MyGE::AssetMngr::Instance()
-          .LoadAsset<My::MyGE::Material>(L"..\\assets\\materials\\iron.mat");
-  world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
-          meshRenderer->materials.push_back(material);
-  });*/
 }

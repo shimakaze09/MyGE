@@ -14,10 +14,6 @@ struct Texture2D;
 struct Shader;
 class Mesh;
 
-// TODO
-// 1. IsRegistered
-// 2. DynamicMesh
-// 3. Shader multi-compile
 class RsrcMngrDX12 {
  public:
   static RsrcMngrDX12& Instance() noexcept {
@@ -31,27 +27,20 @@ class RsrcMngrDX12 {
   RsrcMngrDX12& Init(ID3D12Device* device);
   void Clear();
 
-  // support tex2d and tex cube
-  /*
-  RsrcMngrDX12& RegisterTexture2D(DirectX::ResourceUploadBatch& upload,
-          size_t id, std::wstring_view filename);
-  RsrcMngrDX12& RegisterDDSTextureArrayFromFile(DirectX::ResourceUploadBatch&
-  upload, size_t id, const std::wstring_view* filenameArr, UINT num);
-  */
   RsrcMngrDX12& RegisterTexture2D(DirectX::ResourceUploadBatch& upload,
                                   const Texture2D* tex2D);
-  /*RsrcMngrDX12& RegisterTexture2DArray(DirectX::ResourceUploadBatch& upload,
-          size_t id, const Texture2D** tex2Ds, size_t num);*/
 
+  // [sync]
+  // - (maybe) construct resized upload buffer
+  // - (maybe) construct resized default buffer
+  // - (maybe) cpu buffer -> upload buffer
+  // [async]
+  // - (maybe) upload buffer -> default buffer
+  // - (maybe) delete upload buffer
   MyDX12::MeshGPUBuffer& RegisterMesh(DirectX::ResourceUploadBatch& upload,
                                       MyDX12::ResourceDeleteBatch& deleteBatch,
                                       ID3D12GraphicsCommandList* cmdList,
                                       Mesh* mesh);
-
-  /*MyDX12::MeshGPUBuffer& RegisterDynamicMesh(
-          size_t id,
-          const void* vb_data, UINT vb_count, UINT vb_stride,
-          const void* ib_data, UINT ib_count, DXGI_FORMAT ib_format);*/
 
   RsrcMngrDX12& RegisterShader(const Shader* shader);
 
@@ -59,10 +48,6 @@ class RsrcMngrDX12 {
                                       const D3D12_ROOT_SIGNATURE_DESC* descs);
 
   size_t RegisterPSO(const D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc);
-
-  /*RsrcMngrDX12& RegisterRenderTexture2D(size_t id, UINT width, UINT height,
-  DXGI_FORMAT format); RsrcMngrDX12& RegisterRenderTextureCube(size_t id, UINT
-  size, DXGI_FORMAT format);*/
 
   D3D12_CPU_DESCRIPTOR_HANDLE GetTexture2DSrvCpuHandle(
       const Texture2D* tex2D) const;

@@ -49,6 +49,7 @@ struct StdPipeline::Impl {
     My::transformf World = My::transformf::eye();
     My::transformf TexTransform = My::transformf::eye();
   };
+
   struct PassConstants {
     My::transformf View = My::transformf::eye();
     My::transformf InvView = My::transformf::eye();
@@ -80,23 +81,27 @@ struct StdPipeline::Impl {
       My::pointf3 Position = {0.0f, 0.0f, 0.0f};  // point/spot light only
       float SpotPower = 64.0f;                    // spot light only
     };
+
     Light Lights[16];
   };
+
   struct MatConstants {
     My::rgbf albedoFactor;
     float roughnessFactor;
   };
-  struct RenderContext {
-    Camera cam;
+
+  struct CPUContext {
+    Camera* camera;
     valf<16> view;
     pointf3 camPos;
 
     struct Object {
-      const Mesh* mesh;
-      size_t submeshIdx;
+      const Mesh* mesh{nullptr};
+      size_t submeshIdx{static_cast<size_t>(-1)};
 
       valf<16> l2w;
     };
+
     std::unordered_map<const Shader*,
                        std::unordered_map<const Material*, std::vector<Object>>>
         objectMap;
@@ -104,7 +109,7 @@ struct StdPipeline::Impl {
 
   const InitDesc initDesc;
 
-  RenderContext renderContext;
+  CPUContext renderContext;
 
   MyDX12::FrameResourceMngr frameRsrcMngr;
 
@@ -128,7 +133,7 @@ struct StdPipeline::Impl {
   size_t GetGeometryPSO_ID(const Mesh* mesh);
   std::unordered_map<size_t, size_t> PSOIDMap;
 
-  void UpdateRenderContext(const MyECS::World& world);
+  void UpdateCPUContext(const MyECS::World& world);
   void UpdateShaderCBs(const ResizeData& resizeData);
   void Render(const ResizeData& resizeData, ID3D12Resource* curBackBuffer);
   void DrawObjects(ID3D12GraphicsCommandList*);
@@ -150,19 +155,6 @@ void StdPipeline::Impl::BuildFrameResources() {
 }
 
 void StdPipeline::Impl::BuildShadersAndInputLayout() {
-  /*std::filesystem::path shaderScreenPath = "../assets/shaders/Screen.shader";
-  std::filesystem::path shaderGeometryPath =
-  "../assets/shaders/Geometry.shader"; std::filesystem::path shaderDeferPath =
-  "../assets/shaders/deferLighting.shader";
-
-  screenShader = AssetMngr::Instance().LoadAsset<Shader>(shaderScreenPath);
-  geomrtryShader = AssetMngr::Instance().LoadAsset<Shader>(shaderGeometryPath);
-  deferShader = AssetMngr::Instance().LoadAsset<Shader>(shaderDeferPath);
-
-  RsrcMngrDX12::Instance().RegisterShader(screenShader);
-  RsrcMngrDX12::Instance().RegisterShader(geomrtryShader);
-  RsrcMngrDX12::Instance().RegisterShader(deferShader);*/
-
   screenShader = ShaderMngr::Instance().Get("StdPipeline/Screen");
   geomrtryShader = ShaderMngr::Instance().Get("StdPipeline/Geometry");
   deferShader = ShaderMngr::Instance().Get("StdPipeline/Defer Lighting");
@@ -309,7 +301,7 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
   return target->second;
 }
 
-void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
+void StdPipeline::Impl::UpdateCPUContext(const MyECS::World& world) {
   renderContext.objectMap.clear();
 
   My::MyECS::ArchetypeFilter objectFilter;
@@ -319,7 +311,7 @@ void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
   const_cast<MyECS::World&>(world).RunEntityJob(
       [&](const MeshFilter* meshFilter, const MeshRenderer* meshRenderer,
           const LocalToWorld* l2w) {
-        Impl::RenderContext::Object object;
+        Impl::CPUContext::Object object;
         object.mesh = meshFilter->mesh;
         object.l2w =
             l2w ? l2w->value.as<valf<16>>() : transformf::eye().as<valf<16>>();
@@ -336,7 +328,7 @@ void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
   cameraFilter.all = {My::MyECS::CmptAccessType::Of<Camera>};
   auto cameras = world.entityMngr.GetEntityArray(cameraFilter);
   assert(cameras.size() == 1);
-  renderContext.cam = *world.entityMngr.Get<Camera>(cameras.front());
+  renderContext.camera = world.entityMngr.Get<Camera>(cameras.front());
   renderContext.view =
       world.entityMngr.Get<WorldToLocal>(cameras.front())->value.as<valf<16>>();
   renderContext.camPos =
@@ -347,7 +339,7 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
   PassConstants passCB;
   passCB.View = renderContext.view;
   passCB.InvView = passCB.View.inverse();
-  passCB.Proj = renderContext.cam.prjectionMatrix;
+  passCB.Proj = renderContext.camera->prjectionMatrix;
   passCB.InvProj = passCB.Proj.inverse();
   passCB.ViewProj = passCB.Proj * passCB.View;
   passCB.InvViewProj = passCB.InvView * passCB.InvProj;
@@ -356,8 +348,8 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
   passCB.InvRenderTargetSize = {1.0f / resizeData.width,
                                 1.0f / resizeData.height};
 
-  passCB.NearZ = renderContext.cam.clippingPlaneMin;
-  passCB.FarZ = renderContext.cam.clippingPlaneMax;
+  passCB.NearZ = renderContext.camera->clippingPlaneMin;
+  passCB.FarZ = renderContext.camera->clippingPlaneMax;
   passCB.TotalTime = My::MyGE::GameTimer::Instance().TotalTime();
   passCB.DeltaTime = My::MyGE::GameTimer::Instance().DeltaTime();
   passCB.AmbientLight = {0.25f, 0.25f, 0.35f, 1.0f};
@@ -665,19 +657,21 @@ StdPipeline::StdPipeline(InitDesc initDesc)
 
 StdPipeline::~StdPipeline() { delete pImpl; }
 
-void StdPipeline::UpdateRenderContext(const MyECS::World& world) {
-  pImpl->UpdateRenderContext(world);
+void StdPipeline::BeginFrame(const MyECS::World& world) {
+  // collect cpu data
+  pImpl->UpdateCPUContext(world);
 
   // Cycle through the circular frame resource array.
   // Has the GPU finished processing the commands of the current frame resource?
   // If not, wait until the GPU has completed commands up to this fence point.
   pImpl->frameRsrcMngr.BeginFrame();
 
+  // cpu -> gpu
   pImpl->UpdateShaderCBs(GetResizeData());
 }
 
-void StdPipeline::Render(ID3D12Resource* curBackBuffer) {
-  pImpl->Render(GetResizeData(), curBackBuffer);
+void StdPipeline::Render(ID3D12Resource* rt) {
+  pImpl->Render(GetResizeData(), rt);
 }
 
 void StdPipeline::EndFrame() {

@@ -24,9 +24,12 @@ class IPipeline {
 
   virtual ~IPipeline() = default;
 
-  virtual void UpdateRenderContext(const  MyECS::World& world) = 0;
-
+  // data : cpu -> gpu
+  // run in update
+  virtual void BeginFrame(const MyECS::World& world) = 0;
+  // run in draw
   virtual void Render(ID3D12Resource* rt) = 0;
+  // run at the end of draw
   virtual void EndFrame() = 0;
 
   void Resize(size_t width, size_t height, D3D12_VIEWPORT screenViewport,

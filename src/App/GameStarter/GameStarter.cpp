@@ -316,7 +316,7 @@ void GameStarter::Update() {
   myCmdQueue.Execute(myGCmdList.Get());
   deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
 
-  pipeline->UpdateRenderContext(world);
+  pipeline->BeginFrame(world);
 }
 
 void GameStarter::Draw() {

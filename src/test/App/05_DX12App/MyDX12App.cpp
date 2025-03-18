@@ -332,7 +332,7 @@ void MyDX12App::Update() {
   myCmdQueue.Execute(myGCmdList.Get());
   deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
 
-  pipeline->UpdateRenderContext(world);
+  pipeline->BeginFrame(world);
 }
 
 void MyDX12App::Draw() {

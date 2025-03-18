@@ -214,7 +214,7 @@ void DynamicMeshApp::Update() {
   deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
   frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
 
-  pipeline->UpdateRenderContext(world);
+  pipeline->BeginFrame(world);
 }
 
 void DynamicMeshApp::Draw() {
