@@ -3,15 +3,21 @@
 //
 
 #include <MyGE/App/DX12App/DX12App.h>
+
+#include <MyGE/Render/DX12/MeshLayoutMngr.h>
+#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
+#include <MyGE/Render/DX12/StdPipeline.h>
+
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Asset/Serializer.h>
+
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
 #include <MyGE/Core/Components/WorldTime.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/HLSLFile.h>
-#include <MyGE/Core/ImGUIMngr.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Scene.h>
@@ -20,17 +26,19 @@
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Systems/WorldTimeSystem.h>
 #include <MyGE/Core/Texture2D.h>
-#include <MyGE/Render/DX12/MeshLayoutMngr.h>
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
-#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
-#include <MyGE/Render/DX12/StdPipeline.h>
-#include <MyGE/ScriptSystem/LuaContext.h>
-#include <MyGE/ScriptSystem/LuaCtxMngr.h>
-#include <MyGE/ScriptSystem/LuaScript.h>
+
 #include <MyGE/Transform/Transform.h>
+
+#include <MyGE/Core/ImGUIMngr.h>
+
 #include <MyGE/_deps/imgui/imgui.h>
 #include <MyGE/_deps/imgui/imgui_impl_dx12.h>
 #include <MyGE/_deps/imgui/imgui_impl_win32.h>
+
+#include <MyGE/ScriptSystem/LuaContext.h>
+#include <MyGE/ScriptSystem/LuaCtxMngr.h>
+#include <MyGE/ScriptSystem/LuaScript.h>
+
 #include <MyLuaPP/MyLuaPP.h>
 
 using Microsoft::WRL::ComPtr;
@@ -74,28 +82,59 @@ class Editor : public My::MyGE::DX12App {
 
   void OnGameResize();
   size_t gameWidth, gameHeight;
+  ImVec2 gamePos;
   ComPtr<ID3D12Resource> gameRT;
   const DXGI_FORMAT gameRTFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
   My::MyDX12::DescriptorHeapAllocation gameRT_SRV;
+  My::MyDX12::DescriptorHeapAllocation gameRT_RTV;
 
   bool show_demo_window = true;
   bool show_another_window = false;
+
+  ImGuiContext* mainImGuiCtx = nullptr;
+  ImGuiContext* gameImGuiCtx = nullptr;
 };
 
 // Forward declare message handler from imgui_impl_win32.cpp
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
-                                                             UINT msg,
-                                                             WPARAM wParam,
-                                                             LPARAM lParam);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler_Shared(
+    HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler_Context(
+    ImGuiContext* ctx, bool ingore_mouse, bool ingore_keyboard, HWND hWnd,
+    UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
-    return true;
-  // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
-  // your main application.
-  // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data
-  // to your main application.
-  auto imgui_ctx = ImGui::GetCurrentContext();
+  if (ImGui_ImplWin32_WndProcHandler_Shared(hwnd, msg, wParam, lParam))
+    return 1;
+
+  bool imguiWantCaptureMouse = false;
+  bool imguiWantCaptureKeyboard = false;
+
+  if (gameImGuiCtx && mainImGuiCtx) {
+    ImGui::SetCurrentContext(gameImGuiCtx);
+    auto& gameIO = ImGui::GetIO();
+    bool gameWantCaptureMouse = gameIO.WantCaptureMouse;
+    bool gameWantCaptureKeyboard = gameIO.WantCaptureKeyboard;
+    ImGui::SetCurrentContext(mainImGuiCtx);
+    auto& mainIO = ImGui::GetIO();
+    bool mainWantCaptureMouse = mainIO.WantCaptureMouse;
+    bool mainWantCaptureKeyboard = mainIO.WantCaptureKeyboard;
+
+    if (ImGui_ImplWin32_WndProcHandler_Context(gameImGuiCtx, false, false, hwnd,
+                                               msg, wParam, lParam))
+      return 1;
+
+    if (ImGui_ImplWin32_WndProcHandler_Context(
+            mainImGuiCtx, gameWantCaptureMouse, gameWantCaptureKeyboard, hwnd,
+            msg, wParam, lParam))
+      return 1;
+
+    imguiWantCaptureMouse = gameWantCaptureMouse || mainWantCaptureMouse;
+    imguiWantCaptureKeyboard =
+        gameWantCaptureKeyboard || mainWantCaptureKeyboard;
+  }
+
+  // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
+  // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
   switch (msg) {
       // WM_ACTIVATE is sent when the window is activated or deactivated.
       // We pause the game when the window is deactivated and unpause it
@@ -126,6 +165,7 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
           mMaximized = true;
           OnResize();
         } else if (wParam == SIZE_RESTORED) {
+
           // Restoring from minimized state?
           if (mMinimized) {
             mAppPaused = false;
@@ -147,8 +187,7 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             // the resize bars.  So instead, we reset after the user is
             // done resizing the window and releases the resize bars, which
             // sends a WM_EXITSIZEMOVE message.
-          } else  // API call such as SetWindowPos or
-                  // mSwapChain->SetFullscreenState.
+          } else  // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
           {
             OnResize();
           }
@@ -177,9 +216,8 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       PostQuitMessage(0);
       return 0;
 
-      // The WM_MENUCHAR message is sent when a menu is active and the user
-      // presses a key that does not correspond to any mnemonic or accelerator
-      // key.
+      // The WM_MENUCHAR message is sent when a menu is active and the user presses
+      // a key that does not correspond to any mnemonic or accelerator key.
     case WM_MENUCHAR:
       // Don't beep when we alt-enter.
       return MAKELRESULT(0, MNC_CLOSE);
@@ -193,24 +231,24 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
+      if (imguiWantCaptureMouse)
         return 0;
       OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
+      if (imguiWantCaptureMouse)
         return 0;
       OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_MOUSEMOVE:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse)
+      if (imguiWantCaptureMouse)
         return 0;
       OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_KEYUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureKeyboard)
+      if (imguiWantCaptureKeyboard)
         return 0;
       if (wParam == VK_ESCAPE) {
         PostQuitMessage(0);
@@ -252,6 +290,9 @@ Editor::~Editor() {
   if (!gameRT_SRV.IsNull())
     My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
         std::move(gameRT_SRV));
+  if (!gameRT_RTV.IsNull())
+    My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
+        std::move(gameRT_RTV));
 }
 
 bool Editor::Initialize() {
@@ -263,11 +304,17 @@ bool Editor::Initialize() {
 
   gameRT_SRV =
       My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+  gameRT_RTV =
+      My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
 
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
   My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
-                                       NumFrameResources);
+                                       NumFrameResources, 2);
+  mainImGuiCtx = My::MyGE::ImGUIMngr::Instance().GetContexts().at(0);
+  gameImGuiCtx = My::MyGE::ImGUIMngr::Instance().GetContexts().at(1);
+  ImGui::SetCurrentContext(gameImGuiCtx);
+  ImGui::GetIO().IniFilename = nullptr;
 
   My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
 
@@ -278,7 +325,7 @@ bool Editor::Initialize() {
   BuildShaders();
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
-  // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
+  //OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
 
   My::MyGE::IPipeline::InitDesc initDesc;
   initDesc.device = myDevice.Get();
@@ -311,9 +358,10 @@ void Editor::OnGameResize() {
       &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
       &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(gameRT.ReleaseAndGetAddressOf())));
-  // auto rtvDesc = My::MyDX12::Desc::SRV::Tex2D(gameRTFormat);
   myDevice->CreateShaderResourceView(gameRT.Get(), nullptr,
                                      gameRT_SRV.GetCpuHandle());
+  myDevice->CreateRenderTargetView(gameRT.Get(), nullptr,
+                                   gameRT_RTV.GetCpuHandle());
 
   assert(pipeline);
   D3D12_VIEWPORT viewport;
@@ -331,9 +379,105 @@ void Editor::OnGameResize() {
 }
 
 void Editor::Update() {
-  UpdateCamera();
+  // Start the Dear ImGui frame
+  ImGui_ImplDX12_NewFrame();
+  ImGui_ImplWin32_NewFrame_Context(mainImGuiCtx, {0.f, 0.f}, mClientWidth,
+                                   mClientHeight);
+  ImGui_ImplWin32_NewFrame_Context(gameImGuiCtx, gamePos, gameWidth,
+                                   gameHeight);
+  ImGui_ImplWin32_NewFrame_Shared();
 
-  world.Update();
+  ImGui::SetCurrentContext(mainImGuiCtx);
+  ImGui::NewFrame();  // main ctx
+
+  // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+  if (show_demo_window)
+    ImGui::ShowDemoWindow(&show_demo_window);
+
+  // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+  {
+    static float f = 0.0f;
+    static int counter = 0;
+
+    ImGui::Begin(
+        "Hello, world!");  // Create a window called "Hello, world!" and append into it.
+
+    ImGui::Text(
+        "This is some useful text.");  // Display some text (you can use a format strings too)
+    ImGui::Checkbox(
+        "Demo Window",
+        &show_demo_window);  // Edit bools storing our window open/close state
+    ImGui::Checkbox("Another Window", &show_another_window);
+
+    ImGui::SliderFloat("float", &f, 0.0f,
+                       1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
+    //ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+    if (ImGui::Button(
+            "Button"))  // Buttons return true when clicked (most widgets return true when edited/activated)
+      counter++;
+    ImGui::SameLine();
+    ImGui::Text("counter = %d", counter);
+
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
+  }
+
+  // 3. Show another simple window.
+  if (show_another_window) {
+    ImGui::Begin(
+        "Another Window",
+        &show_another_window);  // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+    ImGui::Text("Hello from another window!");
+    if (ImGui::Button("Close Me"))
+      show_another_window = false;
+    ImGui::End();
+  }
+
+  // 4. game window
+  if (ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoScrollbar)) {
+    auto content_max_minus_local_pos = ImGui::GetContentRegionAvail();
+    auto content_max = ImGui::GetWindowContentRegionMax();
+    auto game_window_pos = ImGui::GetWindowPos();
+    gamePos.x =
+        game_window_pos.x + content_max.x - content_max_minus_local_pos.x;
+    gamePos.y =
+        game_window_pos.y + content_max.y - content_max_minus_local_pos.y;
+
+    auto tex = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
+        L"..\\assets\\textures\\chessboard.tex2d");
+    auto gameSize = ImGui::GetContentRegionAvail();
+    auto w = (size_t)gameSize.x;
+    auto h = (size_t)gameSize.y;
+    if (gameSize.x > 0 && gameSize.y > 0 && w > 0 && h > 0 &&
+        (w != gameWidth || h != gameHeight)) {
+      gameWidth = w;
+      gameHeight = h;
+      OnGameResize();
+    }
+    ImGui::Image(
+        ImTextureID(gameRT_SRV.GetGpuHandle().ptr),
+        //{ float(tex->image->width.get()), float(tex->image->height.get()) }
+        ImGui::GetContentRegionAvail());
+  }
+  ImGui::End();  // game window
+
+  {  // game update
+    ImGui::SetCurrentContext(gameImGuiCtx);
+    ImGui::NewFrame();  // game ctx
+
+    UpdateCamera();
+
+    world.Update();
+
+    ImGui::Begin("in game");
+    ImGui::Text(
+        "This is some useful text.");  // Display some text (you can use a format strings too)
+    ImGui::End();
+  }
+
+  ImGui::SetCurrentContext(nullptr);
 
   // update mesh, texture ...
   GetFrameResourceMngr()->BeginFrame();
@@ -364,88 +508,28 @@ void Editor::Update() {
 }
 
 void Editor::Draw() {
-  // Start the Dear ImGui frame
-  ImGui_ImplDX12_NewFrame();
-  ImGui_ImplWin32_NewFrame();
-  ImGui::NewFrame();
-
-  // 1. Show the big demo window (Most of the sample code is in
-  // ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear
-  // ImGui!).
-  if (show_demo_window)
-    ImGui::ShowDemoWindow(&show_demo_window);
-
-  // 2. Show a simple window that we create ourselves. We use a Begin/End pair
-  // to created a named window.
-  {
-    static float f = 0.0f;
-    static int counter = 0;
-
-    ImGui::Begin("Hello, world!");  // Create a window called "Hello, world!"
-                                    // and append into it.
-
-    ImGui::Text("This is some useful text.");  // Display some text (you can use
-                                               // a format strings too)
-    ImGui::Checkbox(
-        "Demo Window",
-        &show_demo_window);  // Edit bools storing our window open/close state
-    ImGui::Checkbox("Another Window", &show_another_window);
-
-    ImGui::SliderFloat("float", &f, 0.0f,
-                       1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
-    // ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats
-    // representing a color
-
-    if (ImGui::Button("Button"))  // Buttons return true when clicked (most
-                                  // widgets return true when edited/activated)
-      counter++;
-    ImGui::SameLine();
-    ImGui::Text("counter = %d", counter);
-
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::End();
-  }
-
-  // 3. Show another simple window.
-  if (show_another_window) {
-    ImGui::Begin(
-        "Another Window",
-        &show_another_window);  // Pass a pointer to our bool variable (the
-                                // window will have a closing button that will
-                                // clear the bool when clicked)
-    ImGui::Text("Hello from another window!");
-    if (ImGui::Button("Close Me"))
-      show_another_window = false;
-    ImGui::End();
-  }
-
-  // 4. game window
-  if (ImGui::Begin("Game", nullptr, ImGuiWindowFlags_NoScrollbar)) {
-    auto tex = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-        L"..\\assets\\textures\\chessboard.tex2d");
-    auto gameSize = ImGui::GetContentRegionAvail();
-    auto w = (size_t)gameSize.x;
-    auto h = (size_t)gameSize.y;
-    if (gameSize.x > 0 && gameSize.y > 0 && w > 0 && h > 0 &&
-        (w != gameWidth || h != gameHeight)) {
-      gameWidth = w;
-      gameHeight = h;
-      OnGameResize();
-    }
-
-    ImGui::Image(
-        ImTextureID(gameRT_SRV.GetGpuHandle().ptr),
-        //{ float(tex->image->width.get()), float(tex->image->height.get()) }
-        ImGui::GetContentRegionAvail());
-  }
-  ImGui::End();
-
-  if (gameRT)
-    pipeline->Render(gameRT.Get());
-
   auto cmdAlloc = GetCurFrameCommandAllocator();
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
+
+  ImGui::SetCurrentContext(gameImGuiCtx);
+  if (gameRT) {
+    pipeline->Render(gameRT.Get());
+    myGCmdList.ResourceBarrierTransition(gameRT.Get(),
+                                         D3D12_RESOURCE_STATE_PRESENT,
+                                         D3D12_RESOURCE_STATE_RENDER_TARGET);
+    myGCmdList->OMSetRenderTargets(1, &gameRT_RTV.GetCpuHandle(), FALSE, NULL);
+    myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
+                                      .GetCSUGpuDH()
+                                      ->GetDescriptorHeap());
+    ImGui::Render();
+    ImGui_ImplDX12_RenderDrawData(1, ImGui::GetDrawData(), myGCmdList.Get());
+    myGCmdList.ResourceBarrierTransition(gameRT.Get(),
+                                         D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                         D3D12_RESOURCE_STATE_PRESENT);
+  } else
+    ImGui::EndFrame();
+
+  ImGui::SetCurrentContext(mainImGuiCtx);
   myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
                                        D3D12_RESOURCE_STATE_PRESENT,
                                        D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -456,10 +540,11 @@ void Editor::Draw() {
                                     .GetCSUGpuDH()
                                     ->GetDescriptorHeap());
   ImGui::Render();
-  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), myGCmdList.Get());
+  ImGui_ImplDX12_RenderDrawData(0, ImGui::GetDrawData(), myGCmdList.Get());
   myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
                                        D3D12_RESOURCE_STATE_RENDER_TARGET,
                                        D3D12_RESOURCE_STATE_PRESENT);
+
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.Get());
 
@@ -467,6 +552,8 @@ void Editor::Draw() {
 
   pipeline->EndFrame();
   GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
+  ImGui_ImplWin32_EndFrame();
+  ImGui_ImplDX12_EndFrame();
 }
 
 void Editor::OnMouseDown(WPARAM btnState, int x, int y) {
@@ -539,26 +626,25 @@ void Editor::BuildWorld() {
 
   /*world.entityMngr.Create<My::MyGE::WorldTime>();
 
-  auto e0 = world.entityMngr.Create<
-          My::MyGE::LocalToWorld,
-          My::MyGE::WorldToLocal,
-          My::MyGE::Camera,
-          My::MyGE::Translation,
-          My::MyGE::Rotation
-  >();
-  cam = std::get<My::MyECS::Entity>(e0);
+	auto e0 = world.entityMngr.Create<
+		My::MyGE::LocalToWorld,
+		My::MyGE::WorldToLocal,
+		My::MyGE::Camera,
+		My::MyGE::Translation,
+		My::MyGE::Rotation
+	>();
+	cam = std::get<My::MyECS::Entity>(e0);
 
-  auto quadMesh =
-  My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>("../assets/models/quad.obj");
-  auto dynamicCube = world.entityMngr.Create<
-          My::MyGE::LocalToWorld,
-          My::MyGE::MeshFilter,
-          My::MyGE::MeshRenderer,
-          My::MyGE::Translation,
-          My::MyGE::Rotation,
-          My::MyGE::Scale
-  >();
-  std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;*/
+	auto quadMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>("../assets/models/quad.obj");
+	auto dynamicCube = world.entityMngr.Create<
+		My::MyGE::LocalToWorld,
+		My::MyGE::MeshFilter,
+		My::MyGE::MeshRenderer,
+		My::MyGE::Translation,
+		My::MyGE::Rotation,
+		My::MyGE::Scale
+	>();
+	std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;*/
 
   My::MyGE::Serializer::Instance()
       .Register<
@@ -570,7 +656,7 @@ void Editor::BuildWorld() {
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
           My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
           My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
-  // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
+  //OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
   auto scene = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Scene>(
       L"..\\assets\\scenes\\Game.scene");
   My::MyGE::Serializer::Instance().ToWorld(&world, scene->GetText());

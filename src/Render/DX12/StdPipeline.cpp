@@ -135,7 +135,7 @@ struct StdPipeline::Impl {
 
   void UpdateCPUContext(const MyECS::World& world);
   void UpdateShaderCBs(const ResizeData& resizeData);
-  void Render(const ResizeData& resizeData, ID3D12Resource* curBackBuffer);
+  void Render(const ResizeData& resizeData, ID3D12Resource* rtb);
   void DrawObjects(ID3D12GraphicsCommandList*);
 };
 
@@ -400,7 +400,7 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData) {
 }
 
 void StdPipeline::Impl::Render(const ResizeData& resizeData,
-                               ID3D12Resource* curBackBuffer) {
+                               ID3D12Resource* rtb) {
   size_t width = resizeData.width;
   size_t height = resizeData.height;
 
@@ -465,7 +465,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
            {gbuffer2,
             My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT)}})
 
-      .RegisterImportedRsrc(rt, {curBackBuffer, D3D12_RESOURCE_STATE_PRESENT})
+      .RegisterImportedRsrc(rt, {rtb, D3D12_RESOURCE_STATE_PRESENT})
 
       .RegisterPassRsrcs(gbPass, gbuffer0, D3D12_RESOURCE_STATE_RENDER_TARGET,
                          My::MyDX12::FG::RsrcImplDesc_RTV_Null{})
