@@ -13,6 +13,8 @@
 
 #include <MyGE/Core/Traits.h>
 
+#include <MyECS/Entity.h>
+
 #include <MySTL/tuple.h>
 
 namespace My::MyGE::detail {
@@ -122,6 +124,9 @@ void InspectVar(Field field, const Value& var,
     ImGui::Button(var.c_str());
     ImGui::SameLine();
     ImGui::Text(field.name.data());
+  } else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
+    // TODO : drag, name
+    ImGui::BulletText("Entity %d", var.Idx());
   } else if constexpr (std::is_pointer_v<Value>) {
     ImGui::Text("(*)");
     ImGui::SameLine();
@@ -273,7 +278,10 @@ void InspectVar(Field field, Value& var, CmptInspector::InspectContext ctx) {
     ImGui::DragScalar(field.name.data(), ImGuiDataType_Double, &var, 0.001f);
   else if constexpr (std::is_same_v<Value, std::string>)
     ImGui::InputText(field.name.data(), &var);
-  else if constexpr (std::is_enum_v<Value>) {
+  else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
+    // TODO : drag, name
+    ImGui::BulletText("Entity %d", var.Idx());
+  } else if constexpr (std::is_enum_v<Value>) {
     if constexpr (HasDefinition<MySRefl::TypeInfo<Value>>::value) {
       std::string_view cur;
       MySRefl::TypeInfo<Value>::fields.FindIf([&](auto field) {
