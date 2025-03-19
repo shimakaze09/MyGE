@@ -7,6 +7,8 @@
 #include "../../Core/Traits.h"
 #include "../AssetMngr.h"
 
+#include <variant>
+
 namespace My::MyGE::detail {
 template <typename Value>
 void WriteVar(const Value& var, Serializer::SerializeContext ctx);
@@ -29,6 +31,29 @@ void WriteUserType(const UserType* obj, Serializer::SerializeContext ctx) {
       ctx.writer->String(Serializer::Key::NOT_SUPPORT);
     }
   }
+}
+
+template <size_t Idx, typename Variant>
+bool WriteVariantAt(const Variant& var, size_t idx,
+                    Serializer::SerializeContext ctx) {
+  if (idx != Idx)
+    return false;
+
+  ctx.writer->StartObject();
+  ctx.writer->Key(Serializer::Key::INDEX);
+  ctx.writer->Uint64(var.index());
+  ctx.writer->Key(Serializer::Key::CONTENT);
+  WriteVar(std::get<std::variant_alternative_t<Idx, Variant>>(var), ctx);
+  ctx.writer->EndObject();
+
+  return true;
+}
+
+// TODO : stop
+template <typename Variant, size_t... Ns>
+void WriteVariant(const Variant& var, std::index_sequence<Ns...>,
+                  Serializer::SerializeContext ctx) {
+  (WriteVariantAt<Ns>(var, var.index(), ctx), ...);
 }
 
 template <typename Value>
@@ -110,6 +135,9 @@ void WriteVar(const Value& var, Serializer::SerializeContext ctx) {
     std::apply([&](const auto&... elements) { (WriteVar(elements, ctx), ...); },
                var);
     ctx.writer->EndArray();
+  } else if constexpr (My::is_instance_of_v<Value, std::variant>) {
+    constexpr size_t N = std::variant_size_v<Value>;
+    WriteVariant(var, std::make_index_sequence<N>{}, ctx);
   } else
     WriteUserType(&var, ctx);
 }
@@ -117,6 +145,30 @@ void WriteVar(const Value& var, Serializer::SerializeContext ctx) {
 template <typename Value>
 Value ReadVar(const rapidjson::Value& jsonValueField,
               Serializer::DeserializeContext ctx);
+
+template <size_t Idx, typename Variant>
+bool ReadVariantAt(Variant& var, size_t idx,
+                   const rapidjson::Value& jsonValueContent,
+                   Serializer::DeserializeContext ctx) {
+  if (idx != Idx)
+    return false;
+
+  var =
+      ReadVar<std::variant_alternative_t<Idx, Variant>>(jsonValueContent, ctx);
+
+  return true;
+}
+
+// TODO : stop
+template <typename Variant, size_t... Ns>
+void ReadVariant(Variant& var, std::index_sequence<Ns...>,
+                 const rapidjson::Value& jsonValueField,
+                 Serializer::DeserializeContext ctx) {
+  const auto& jsonObject = jsonValueField.GetObject();
+  size_t idx = jsonObject[Serializer::Key::INDEX].GetUint64();
+  const auto& jsonValueVariantData = jsonObject[Serializer::Key::CONTENT];
+  (ReadVariantAt<Ns>(var, idx, jsonValueVariantData, ctx), ...);
+}
 
 template <typename UserType>
 void ReadUserType(UserType* obj, const rapidjson::Value& jsonValueField,
@@ -224,6 +276,9 @@ Value ReadVar(const rapidjson::Value& jsonValueField,
              ...);
           },
           rst);
+    } else if constexpr (My::is_instance_of_v<Value, std::variant>) {
+      constexpr size_t N = std::variant_size_v<Value>;
+      ReadVariant(rst, std::make_index_sequence<N>{}, jsonValueField, ctx);
     } else
       ReadUserType(&rst, jsonValueField, ctx);
 
