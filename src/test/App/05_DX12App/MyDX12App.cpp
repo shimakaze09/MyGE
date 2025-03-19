@@ -14,6 +14,7 @@
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
+#include <MyGE/Core/Components/Skybox.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
@@ -22,6 +23,7 @@
 #include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
+#include <MyGE/Core/TextureCube.h>
 
 #include <MyGE/Transform/Transform.h>
 
@@ -343,6 +345,9 @@ void MyDX12App::Update() {
                                    mClientHeight);
   ImGui_ImplWin32_NewFrame_Shared();
 
+  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
+  upload.Begin();
+
   ImGui::SetCurrentContext(gameImGuiCtx);
   ImGui::NewFrame();
 
@@ -404,20 +409,53 @@ void MyDX12App::Update() {
   cmdAlloc->Reset();
 
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
-  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
-  upload.Begin();
 
   // update mesh
+
   world.RunEntityJob(
-      [&](const My::MyGE::MeshFilter* meshFilter) {
-        if (!meshFilter->mesh)
+      [&](const My::MyGE::MeshFilter* meshFilter,
+          const My::MyGE::MeshRenderer* meshRenderer) {
+        if (!meshFilter->mesh || meshRenderer->materials.empty())
           return;
 
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+
+        for (const auto& mat : meshRenderer->materials) {
+          if (!mat)
+            continue;
+          for (const auto& [name, tex] : mat->texture2Ds) {
+            if (!tex)
+              continue;
+            My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+          }
+          for (const auto& [name, tex] : mat->textureCubes) {
+            if (!tex)
+              continue;
+            My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+          }
+        }
       },
       false);
+
+  if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>();
+      skybox && skybox->material) {
+    for (const auto& [name, tex] : skybox->material->texture2Ds) {
+      if (!tex)
+        continue;
+      My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    }
+    for (const auto& [name, tex] : skybox->material->textureCubes) {
+      if (!tex)
+        continue;
+      My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    }
+  }
 
   // commit upload, delete ...
   upload.End(myCmdQueue.Get());
@@ -451,7 +489,7 @@ void MyDX12App::Draw() {
                                     .GetCSUGpuDH()
                                     ->GetDescriptorHeap());
   ImGui::Render();
-  ImGui_ImplDX12_RenderDrawData(0, ImGui::GetDrawData(), myGCmdList.Get());
+  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), myGCmdList.Get());
   myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
                                        D3D12_RESOURCE_STATE_RENDER_TARGET,
                                        D3D12_RESOURCE_STATE_PRESENT);
@@ -463,7 +501,7 @@ void MyDX12App::Draw() {
 
   pipeline->EndFrame();
   GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
-  ImGui_ImplDX12_EndFrame();
+  ImGui_ImplWin32_EndFrame();
 }
 
 void MyDX12App::OnMouseDown(WPARAM btnState, int x, int y) {
@@ -528,6 +566,14 @@ void MyDX12App::BuildWorld() {
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       AnimateMeshSystem>();
 
+  {  // skybox
+    auto [e, skybox] = world.entityMngr.Create<My::MyGE::Skybox>();
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(
+        xg::Guid{"bba13c3e-87d1-463a-974b-324d997349e3"});
+    skybox->material =
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(path);
+  }
+
   auto e0 =
       world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::WorldToLocal,
                               My::MyGE::Camera, My::MyGE::Translation,
@@ -552,13 +598,22 @@ void MyDX12App::BuildWorld() {
 }
 
 void MyDX12App::LoadTextures() {
-  auto tex2dGUIDs =
-      My::MyGE::AssetMngr::Instance().FindAssets(std::wregex{LR"(.*\.tex2d)"});
+  auto tex2dGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+      std::wregex{LR"(\.\.\\assets\\_internal\\.*\.tex2d)"});
   for (const auto& guid : tex2dGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
         My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
         My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
+  }
+
+  auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+      std::wregex{LR"(\.\.\\assets\\_internal\\.*\.texcube)"});
+  for (const auto& guid : texcubeGUIDs) {
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(path));
   }
 }
 

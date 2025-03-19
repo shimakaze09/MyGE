@@ -23,9 +23,9 @@ DOWNLOAD_ZIP(
 )
 
 DOWNLOAD_ZIP(
-        https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/imgui/imgui_1_78_3.zip
-        imgui_1_78_2.zip
-        SHA256 8E90BCF8218B009BC4C9DAAC3DDD86753A72EC6EE40791FF2DFDD2D5C0811B77
+        https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/imgui/imgui_dock_1_78_0.zip
+        imgui_dock_1_78_0.zip
+        SHA256 E57BA9CD40CA2113BEF0BC1864C3B8BC0B9A97C39F50DA02AAF251CE0A168F0C
 )
 
 ADD_SUB_DIRS_REC(include)

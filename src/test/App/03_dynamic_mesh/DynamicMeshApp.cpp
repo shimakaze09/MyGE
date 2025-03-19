@@ -2,11 +2,20 @@
 // Created by Admin on 16/03/2025.
 //
 
-#include <MyDX12/UploadBuffer.h>
+#include "../common/d3dApp.h"
+
+#include <MyGE/Render/DX12/MeshLayoutMngr.h>
+#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
+#include <MyGE/Render/DX12/StdPipeline.h>
+
 #include <MyGE/Asset/AssetMngr.h>
+
+#include <MyGE/Transform/Transform.h>
+
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
+#include <MyGE/Core/Components/Skybox.h>
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
@@ -14,13 +23,11 @@
 #include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
-#include <MyGE/Render/DX12/MeshLayoutMngr.h>
-#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
-#include <MyGE/Render/DX12/StdPipeline.h>
-#include <MyGE/Transform/Transform.h>
-#include <MyGM/MyGM.h>
+#include <MyGE/Core/TextureCube.h>
 
-#include "../common/d3dApp.h"
+#include <MyDX12/UploadBuffer.h>
+
+#include <MyGM/MyGM.h>
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -73,7 +80,6 @@ class DynamicMeshApp : public D3DApp {
   virtual void OnMouseUp(WPARAM btnState, int x, int y) override;
   virtual void OnMouseMove(WPARAM btnState, int x, int y) override;
 
-  void OnKeyboardInput();
   void UpdateCamera();
 
   void BuildWorld();
@@ -184,7 +190,9 @@ void DynamicMeshApp::OnResize() {
 }
 
 void DynamicMeshApp::Update() {
-  OnKeyboardInput();
+  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
+  upload.Begin();
+
   UpdateCamera();
 
   world.Update();
@@ -199,17 +207,53 @@ void DynamicMeshApp::Update() {
   cmdAlloc->Reset();
 
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
-  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
-  upload.Begin();
 
   // update mesh
+
   world.RunEntityJob(
-      [&](const My::MyGE::MeshFilter* meshFilter) {
+      [&](const My::MyGE::MeshFilter* meshFilter,
+          const My::MyGE::MeshRenderer* meshRenderer) {
+        if (!meshFilter->mesh || meshRenderer->materials.empty())
+          return;
+
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+
+        for (const auto& mat : meshRenderer->materials) {
+          if (!mat)
+            continue;
+          for (const auto& [name, tex] : mat->texture2Ds) {
+            if (!tex)
+              continue;
+            My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+          }
+          for (const auto& [name, tex] : mat->textureCubes) {
+            if (!tex)
+              continue;
+            My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+          }
+        }
       },
       false);
+
+  if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>();
+      skybox && skybox->material) {
+    for (const auto& [name, tex] : skybox->material->texture2Ds) {
+      if (!tex)
+        continue;
+      My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    }
+    for (const auto& [name, tex] : skybox->material->textureCubes) {
+      if (!tex)
+        continue;
+      My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    }
+  }
 
   // commit upload, delete ...
   upload.End(myCmdQueue.raw.Get());
@@ -277,8 +321,6 @@ void DynamicMeshApp::OnMouseMove(WPARAM btnState, int x, int y) {
   mLastMousePos.y = y;
 }
 
-void DynamicMeshApp::OnKeyboardInput() {}
-
 void DynamicMeshApp::UpdateCamera() {
   My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
                    mRadius * sinf(mTheta) * cosf(mPhi)};
@@ -301,6 +343,14 @@ void DynamicMeshApp::BuildWorld() {
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       AnimateMeshSystem>();
+
+  {  // skybox
+    auto [e, skybox] = world.entityMngr.Create<My::MyGE::Skybox>();
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(
+        xg::Guid{"bba13c3e-87d1-463a-974b-324d997349e3"});
+    skybox->material =
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(path);
+  }
 
   auto e0 =
       world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::WorldToLocal,
@@ -326,13 +376,22 @@ void DynamicMeshApp::BuildWorld() {
 }
 
 void DynamicMeshApp::LoadTextures() {
-  auto tex2dGUIDs =
-      My::MyGE::AssetMngr::Instance().FindAssets(std::wregex{LR"(.*\.tex2d)"});
+  auto tex2dGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+      std::wregex{LR"(\.\.\\assets\\_internal\\.*\.tex2d)"});
   for (const auto& guid : tex2dGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
         My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
         My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
+  }
+
+  auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+      std::wregex{LR"(\.\.\\assets\\_internal\\.*\.texcube)"});
+  for (const auto& guid : texcubeGUIDs) {
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(path));
   }
 }
 

@@ -21,8 +21,6 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
          MyECS::Singleton<Inspector> inspector) {
         switch (inspector->mode) {
           case Inspector::Mode::Asset: {
-            if (!inspector->asset.isValid())
-              break;
             w->AddCommand([inspector](MyECS::World*) mutable {
               auto path =
                   AssetMngr::Instance().GUIDToAssetPath(inspector->asset);
@@ -34,7 +32,7 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
               auto asset = AssetMngr::Instance().LoadAsset(path);
               const auto& typeinfo = AssetMngr::Instance().GetAssetType(path);
 
-              if (ImGui::Begin("Inspector")) {
+              if (ImGui::Begin("Inspector") && inspector->asset.isValid()) {
                 ImGui::Checkbox("lock", &inspector->lock);
                 ImGui::Separator();
                 if (InspectorRegistry::Instance().IsRegisteredAsset(typeinfo))
@@ -45,17 +43,14 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
             break;
           }
           case Inspector::Mode::Entity: {
-            if (!inspector->entity.Valid())
-              break;
             w->AddCommand([inspector,
                            world = hierarchy->world](MyECS::World*) mutable {
               if (!world->entityMngr.Exist(inspector->entity)) {
                 inspector->entity = MyECS::Entity::Invalid();
                 inspector->lock = false;
-                return;
               }
 
-              if (ImGui::Begin("Inspector")) {
+              if (ImGui::Begin("Inspector") && inspector->entity.Valid()) {
                 if (ImGui::Button("Attach Component"))
                   ImGui::OpenPopup("Attach Component Popup");
 

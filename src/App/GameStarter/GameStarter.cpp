@@ -403,11 +403,17 @@ void GameStarter::Update() {
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
 
         for (const auto& mat : meshRenderer->materials) {
+          if (!mat)
+            continue;
           for (const auto& [name, tex] : mat->texture2Ds) {
+            if (!tex)
+              continue;
             My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
                 My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
           }
           for (const auto& [name, tex] : mat->textureCubes) {
+            if (!tex)
+              continue;
             My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
                 My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
           }
@@ -415,12 +421,17 @@ void GameStarter::Update() {
       },
       false);
 
-  if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>()) {
+  if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>();
+      skybox && skybox->material) {
     for (const auto& [name, tex] : skybox->material->texture2Ds) {
+      if (!tex)
+        continue;
       My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
           My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
     }
     for (const auto& [name, tex] : skybox->material->textureCubes) {
+      if (!tex)
+        continue;
       My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
           My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
     }
@@ -458,7 +469,7 @@ void GameStarter::Draw() {
                                     .GetCSUGpuDH()
                                     ->GetDescriptorHeap());
   ImGui::Render();
-  ImGui_ImplDX12_RenderDrawData(0, ImGui::GetDrawData(), myGCmdList.Get());
+  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), myGCmdList.Get());
   myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
                                        D3D12_RESOURCE_STATE_RENDER_TARGET,
                                        D3D12_RESOURCE_STATE_PRESENT);
@@ -470,7 +481,7 @@ void GameStarter::Draw() {
 
   pipeline->EndFrame();
   GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
-  ImGui_ImplDX12_EndFrame();
+  ImGui_ImplWin32_EndFrame();
 }
 
 void GameStarter::OnMouseDown(WPARAM btnState, int x, int y) {
@@ -591,7 +602,25 @@ void GameStarter::BuildWorld() {
   solLua.script(gameLuaScript->GetText());
 }
 
-void GameStarter::LoadTextures() {}
+void GameStarter::LoadTextures() {
+  auto tex2dGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+      std::wregex{LR"(\.\.\\assets\\_internal\\.*\.tex2d)"});
+  for (const auto& guid : tex2dGUIDs) {
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
+  }
+
+  auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+      std::wregex{LR"(\.\.\\assets\\_internal\\.*\.texcube)"});
+  for (const auto& guid : texcubeGUIDs) {
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(path));
+  }
+}
 
 void GameStarter::BuildShaders() {
   auto& assetMngr = My::MyGE::AssetMngr::Instance();
