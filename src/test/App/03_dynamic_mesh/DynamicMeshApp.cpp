@@ -106,7 +106,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     DynamicMeshApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    if (!theApp.Initialize())
+      return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -121,13 +122,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 DynamicMeshApp::DynamicMeshApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 DynamicMeshApp::~DynamicMeshApp() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 }
 
 bool DynamicMeshApp::Initialize() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
@@ -145,7 +149,7 @@ bool DynamicMeshApp::Initialize() {
 
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
-  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
 
   BuildWorld();
 
@@ -214,7 +218,13 @@ void DynamicMeshApp::Update() {
   deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
   frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
 
-  pipeline->BeginFrame(world);
+  std::vector<My::MyGE::IPipeline::CameraData> gameCameras;
+  My::MyECS::ArchetypeFilter camFilter{
+      {My::MyECS::CmptAccessType::Of<My::MyGE::Camera>}};
+  world.RunEntityJob(
+      [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
+      camFilter);
+  pipeline->BeginFrame(world, gameCameras);
 }
 
 void DynamicMeshApp::Draw() {

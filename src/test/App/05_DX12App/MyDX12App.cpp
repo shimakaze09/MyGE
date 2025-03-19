@@ -3,24 +3,30 @@
 //
 
 #include <MyGE/App/DX12App/DX12App.h>
+
+#include <MyGE/Render/DX12/MeshLayoutMngr.h>
+#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
+#include <MyGE/Render/DX12/StdPipeline.h>
+
 #include <MyGE/Asset/AssetMngr.h>
+
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/HLSLFile.h>
-#include <MyGE/Core/ImGUIMngr.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
-#include <MyGE/Render/DX12/MeshLayoutMngr.h>
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
-#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
-#include <MyGE/Render/DX12/StdPipeline.h>
+
 #include <MyGE/Transform/Transform.h>
+
+#include <MyGE/Core/ImGUIMngr.h>
+
 #include <MyGE/_deps/imgui/imgui.h>
 #include <MyGE/_deps/imgui/imgui_impl_dx12.h>
 #include <MyGE/_deps/imgui/imgui_impl_win32.h>
@@ -30,6 +36,7 @@ using Microsoft::WRL::ComPtr;
 struct AnimateMeshSystem : My::MyECS::System {
   using My::MyECS::System::System;
   size_t cnt = 0;
+
   virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
     if (cnt < 600) {
       schedule.RegisterEntityJob(
@@ -94,20 +101,39 @@ class MyDX12App : public My::MyGE::DX12App {
 
   bool show_demo_window = true;
   bool show_another_window = false;
+
+  ImGuiContext* gameImGuiCtx = nullptr;
 };
 
 // Forward declare message handler from imgui_impl_win32.cpp
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
-                                                             UINT msg,
-                                                             WPARAM wParam,
-                                                             LPARAM lParam);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler_Shared(
+    HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler_Context(
+    ImGuiContext* ctx, bool ingore_mouse, bool ingore_keyboard, HWND hWnd,
+    UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) return true;
-  // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
-  // your main application.
-  // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data
-  // to your main application.
+  if (ImGui_ImplWin32_WndProcHandler_Shared(hwnd, msg, wParam, lParam))
+    return 1;
+
+  bool imguiWantCaptureMouse = false;
+  bool imguiWantCaptureKeyboard = false;
+
+  if (ImGui::GetCurrentContext()) {
+    auto& gameIO = ImGui::GetIO();
+    bool gameWantCaptureMouse = gameIO.WantCaptureMouse;
+    bool gameWantCaptureKeyboard = gameIO.WantCaptureKeyboard;
+    if (ImGui_ImplWin32_WndProcHandler_Context(ImGui::GetCurrentContext(),
+                                               false, false, hwnd, msg, wParam,
+                                               lParam))
+      return 1;
+
+    imguiWantCaptureMouse = gameWantCaptureMouse;
+    imguiWantCaptureKeyboard = gameWantCaptureKeyboard;
+  }
+
+  // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
+  // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
   auto imgui_ctx = ImGui::GetCurrentContext();
   switch (msg) {
       // WM_ACTIVATE is sent when the window is activated or deactivated.
@@ -139,6 +165,7 @@ LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
           mMaximized = true;
           OnResize();
         } else if (wParam == SIZE_RESTORED) {
+
           // Restoring from minimized state?
           if (mMinimized) {
             mAppPaused = false;
@@ -160,8 +187,7 @@ LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             // the resize bars.  So instead, we reset after the user is
             // done resizing the window and releases the resize bars, which
             // sends a WM_EXITSIZEMOVE message.
-          } else  // API call such as SetWindowPos or
-                  // mSwapChain->SetFullscreenState.
+          } else  // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
           {
             OnResize();
           }
@@ -190,9 +216,8 @@ LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       PostQuitMessage(0);
       return 0;
 
-      // The WM_MENUCHAR message is sent when a menu is active and the user
-      // presses a key that does not correspond to any mnemonic or accelerator
-      // key.
+      // The WM_MENUCHAR message is sent when a menu is active and the user presses
+      // a key that does not correspond to any mnemonic or accelerator key.
     case WM_MENUCHAR:
       // Don't beep when we alt-enter.
       return MAKELRESULT(0, MNC_CLOSE);
@@ -206,21 +231,25 @@ LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
+      if (imguiWantCaptureMouse)
+        return 0;
       OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
+      if (imguiWantCaptureMouse)
+        return 0;
       OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_MOUSEMOVE:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureMouse) return 0;
+      if (imguiWantCaptureMouse)
+        return 0;
       OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_KEYUP:
-      if (imgui_ctx && ImGui::GetIO().WantCaptureKeyboard) return 0;
+      if (imguiWantCaptureKeyboard)
+        return 0;
       if (wParam == VK_ESCAPE) {
         PostQuitMessage(0);
       }
@@ -240,7 +269,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     MyDX12App theApp(hInstance);
-    if (!theApp.Initialize()) return 1;
+    if (!theApp.Initialize())
+      return 1;
 
     int rst = theApp.Run();
     return rst;
@@ -253,22 +283,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 MyDX12App::MyDX12App(HINSTANCE hInstance) : DX12App(hInstance) {}
 
 MyDX12App::~MyDX12App() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 
   My::MyGE::ImGUIMngr::Instance().Clear();
 }
 
 bool MyDX12App::Initialize() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
   My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
-                                       NumFrameResources);
+                                       NumFrameResources, 1);
+  gameImGuiCtx = My::MyGE::ImGUIMngr::Instance().GetContexts().at(0);
 
-  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
 
   BuildWorld();
 
@@ -303,9 +337,65 @@ void MyDX12App::OnResize() {
 }
 
 void MyDX12App::Update() {
+  // Start the Dear ImGui frame
+  ImGui_ImplDX12_NewFrame();
+  ImGui_ImplWin32_NewFrame_Context(gameImGuiCtx, {0, 0}, mClientWidth,
+                                   mClientHeight);
+  ImGui_ImplWin32_NewFrame_Shared();
+
+  ImGui::SetCurrentContext(gameImGuiCtx);
+  ImGui::NewFrame();
+
+  // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+  if (show_demo_window)
+    ImGui::ShowDemoWindow(&show_demo_window);
+
+  // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+  {
+    static float f = 0.0f;
+    static int counter = 0;
+
+    ImGui::Begin(
+        "Hello, world!");  // Create a window called "Hello, world!" and append into it.
+
+    ImGui::Text(
+        "This is some useful text.");  // Display some text (you can use a format strings too)
+    ImGui::Checkbox(
+        "Demo Window",
+        &show_demo_window);  // Edit bools storing our window open/close state
+    ImGui::Checkbox("Another Window", &show_another_window);
+
+    ImGui::SliderFloat("float", &f, 0.0f,
+                       1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
+    //ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+    if (ImGui::Button(
+            "Button"))  // Buttons return true when clicked (most widgets return true when edited/activated)
+      counter++;
+    ImGui::SameLine();
+    ImGui::Text("counter = %d", counter);
+
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
+  }
+
+  // 3. Show another simple window.
+  if (show_another_window) {
+    ImGui::Begin(
+        "Another Window",
+        &show_another_window);  // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+    ImGui::Text("Hello from another window!");
+    if (ImGui::Button("Close Me"))
+      show_another_window = false;
+    ImGui::End();
+  }
+
   UpdateCamera();
 
   world.Update();
+
+  ImGui::SetCurrentContext(nullptr);
 
   // update mesh, texture ...
   GetFrameResourceMngr()->BeginFrame();
@@ -321,6 +411,9 @@ void MyDX12App::Update() {
   // update mesh
   world.RunEntityJob(
       [&](const My::MyGE::MeshFilter* meshFilter) {
+        if (!meshFilter->mesh)
+          return;
+
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
       },
@@ -332,68 +425,23 @@ void MyDX12App::Update() {
   myCmdQueue.Execute(myGCmdList.Get());
   deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
 
-  pipeline->BeginFrame(world);
+  std::vector<My::MyGE::IPipeline::CameraData> gameCameras;
+  My::MyECS::ArchetypeFilter camFilter{
+      {My::MyECS::CmptAccessType::Of<My::MyGE::Camera>}};
+  world.RunEntityJob(
+      [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
+      camFilter);
+  pipeline->BeginFrame(world, gameCameras);
 }
 
 void MyDX12App::Draw() {
-  // Start the Dear ImGui frame
-  ImGui_ImplDX12_NewFrame();
-  ImGui_ImplWin32_NewFrame();
-  ImGui::NewFrame();
+  auto cmdAlloc = GetCurFrameCommandAllocator();
+  ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
 
-  // 1. Show the big demo window (Most of the sample code is in
-  // ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear
-  // ImGui!).
-  if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
-
-  // 2. Show a simple window that we create ourselves. We use a Begin/End pair
-  // to created a named window.
-  {
-    static float f = 0.0f;
-    static int counter = 0;
-
-    ImGui::Begin("Hello, world!");  // Create a window called "Hello, world!"
-                                    // and append into it.
-
-    ImGui::Text("This is some useful text.");  // Display some text (you can use
-                                               // a format strings too)
-    ImGui::Checkbox(
-        "Demo Window",
-        &show_demo_window);  // Edit bools storing our window open/close state
-    ImGui::Checkbox("Another Window", &show_another_window);
-
-    ImGui::SliderFloat("float", &f, 0.0f,
-                       1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
-    // ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats
-    // representing a color
-
-    if (ImGui::Button("Button"))  // Buttons return true when clicked (most
-                                  // widgets return true when edited/activated)
-      counter++;
-    ImGui::SameLine();
-    ImGui::Text("counter = %d", counter);
-
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::End();
-  }
-
-  // 3. Show another simple window.
-  if (show_another_window) {
-    ImGui::Begin(
-        "Another Window",
-        &show_another_window);  // Pass a pointer to our bool variable (the
-                                // window will have a closing button that will
-                                // clear the bool when clicked)
-    ImGui::Text("Hello from another window!");
-    if (ImGui::Button("Close Me")) show_another_window = false;
-    ImGui::End();
-  }
+  ImGui::SetCurrentContext(gameImGuiCtx);
 
   pipeline->Render(CurrentBackBuffer());
 
-  auto cmdAlloc = GetCurFrameCommandAllocator();
-  ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
   myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
                                        D3D12_RESOURCE_STATE_PRESENT,
                                        D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -402,10 +450,11 @@ void MyDX12App::Draw() {
                                     .GetCSUGpuDH()
                                     ->GetDescriptorHeap());
   ImGui::Render();
-  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), myGCmdList.Get());
+  ImGui_ImplDX12_RenderDrawData(0, ImGui::GetDrawData(), myGCmdList.Get());
   myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
                                        D3D12_RESOURCE_STATE_RENDER_TARGET,
                                        D3D12_RESOURCE_STATE_PRESENT);
+
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.Get());
 
@@ -413,6 +462,7 @@ void MyDX12App::Draw() {
 
   pipeline->EndFrame();
   GetFrameResourceMngr()->EndFrame(myCmdQueue.Get());
+  ImGui_ImplDX12_EndFrame();
 }
 
 void MyDX12App::OnMouseDown(WPARAM btnState, int x, int y) {
@@ -422,7 +472,9 @@ void MyDX12App::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(MainWnd());
 }
 
-void MyDX12App::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void MyDX12App::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void MyDX12App::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {

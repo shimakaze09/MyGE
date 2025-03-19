@@ -30,6 +30,7 @@ const int gNumFrameResources = 3;
 
 struct RotateSystem : My::MyECS::System {
   using My::MyECS::System::System;
+
   virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
     My::MyECS::ArchetypeFilter filter;
     filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
@@ -98,7 +99,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     WorldApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    if (!theApp.Initialize())
+      return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -113,13 +115,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 WorldApp::WorldApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 WorldApp::~WorldApp() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 }
 
 bool WorldApp::Initialize() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
@@ -128,7 +133,7 @@ bool WorldApp::Initialize() {
 
   My::MyGE::MeshLayoutMngr::Instance().Init();
 
-  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
 
   BuildWorld();
 
@@ -186,7 +191,13 @@ void WorldApp::Update() {
 
   world.Update();
 
-  pipeline->BeginFrame(world);
+  std::vector<My::MyGE::IPipeline::CameraData> gameCameras;
+  My::MyECS::ArchetypeFilter camFilter{
+      {My::MyECS::CmptAccessType::Of<My::MyGE::Camera>}};
+  world.RunEntityJob(
+      [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
+      camFilter);
+  pipeline->BeginFrame(world, gameCameras);
 }
 
 void WorldApp::Draw() {
@@ -204,7 +215,9 @@ void WorldApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void WorldApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void WorldApp::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
