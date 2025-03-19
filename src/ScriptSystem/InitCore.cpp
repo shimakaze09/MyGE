@@ -7,6 +7,7 @@
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
+#include <MyGE/Core/Components/Name.h>
 #include <MyGE/Core/Components/WorldTime.h>
 
 void My::MyGE::detail::InitCore(lua_State* L) {
@@ -14,4 +15,5 @@ void My::MyGE::detail::InitCore(lua_State* L) {
   MyLuaPP::Register<MeshFilter>(L);
   MyLuaPP::Register<MeshRenderer>(L);
   MyLuaPP::Register<WorldTime>(L);
+  MyLuaPP::Register<Name>(L);
 }

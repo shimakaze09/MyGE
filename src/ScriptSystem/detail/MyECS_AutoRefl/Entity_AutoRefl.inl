@@ -16,7 +16,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::Entity>
       Field{"Idx", &My::MyECS::Entity::Idx},
       Field{"Version", &My::MyECS::Entity::Version},
       Field{"Invalid", &My::MyECS::Entity::Invalid},
-      Field{"IsValid", &My::MyECS::Entity::IsValid},
+      Field{"Valid", &My::MyECS::Entity::Valid},
       Field{"operator==", &My::MyECS::Entity::operator== },
             Field{
                 "operator<",

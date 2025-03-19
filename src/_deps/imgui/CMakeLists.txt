@@ -6,4 +6,5 @@ ADD_TARGET(
         "${PROJECT_SOURCE_DIR}/include"
         INC_PRIVATE
         "${PROJECT_SOURCE_DIR}/include/MyGE/_deps/imgui"
+        "${PROJECT_SOURCE_DIR}/include/MyGE/_deps/imgui/misc/cpp"
 )

@@ -2,8 +2,12 @@
 // Created by Admin on 17/03/2025.
 //
 
+#include "CmptInsepctor.h"
 #include "Components/Hierarchy.h"
+#include "Components/Inspector.h"
+#include "Components/TestInspector.h"
 #include "Systems/HierarchySystem.h"
+#include "Systems/InspectorSystem.h"
 
 #include <MyGE/App/DX12App/DX12App.h>
 
@@ -18,6 +22,7 @@
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
+#include <MyGE/Core/Components/Name.h>
 #include <MyGE/Core/Components/WorldTime.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/HLSLFile.h>
@@ -389,9 +394,9 @@ void Editor::OnGameResize() {
       &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(gameRT.ReleaseAndGetAddressOf())));
   myDevice->CreateShaderResourceView(gameRT.Get(), nullptr,
-                                    gameRT_SRV.GetCpuHandle());
+                                     gameRT_SRV.GetCpuHandle());
   myDevice->CreateRenderTargetView(gameRT.Get(), nullptr,
-                                  gameRT_RTV.GetCpuHandle());
+                                   gameRT_RTV.GetCpuHandle());
 
   assert(gamePipeline);
   D3D12_VIEWPORT viewport;
@@ -415,9 +420,9 @@ void Editor::OnEditorSceneResize() {
       &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(editorSceneRT.ReleaseAndGetAddressOf())));
   myDevice->CreateShaderResourceView(editorSceneRT.Get(), nullptr,
-                                    editorSceneRT_SRV.GetCpuHandle());
+                                     editorSceneRT_SRV.GetCpuHandle());
   myDevice->CreateRenderTargetView(editorSceneRT.Get(), nullptr,
-                                  editorSceneRT_RTV.GetCpuHandle());
+                                   editorSceneRT_RTV.GetCpuHandle());
 
   assert(editorScenePipeline);
   D3D12_VIEWPORT viewport;
@@ -757,17 +762,30 @@ void Editor::UpdateCamera() {
 }
 
 void Editor::BuildWorld() {
+  My::MyGE::CmptInspector::Instance()
+      .RegisterCmpts<
+          // core
+          My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
+          My::MyGE::WorldTime, My::MyGE::Name,
+
+          // transform
+          My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
+          My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
+          My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal,
+
+          My::MyGE::TestInspector>();
+
   editorWorld.systemMngr.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem,
 
-      My::MyGE::HierarchySystem>();
+      My::MyGE::HierarchySystem, My::MyGE::InspectorSystem>();
   editorWorld.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-      My::MyGE::WorldTime,
+      My::MyGE::WorldTime, My::MyGE::Name,
 
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -775,7 +793,7 @@ void Editor::BuildWorld() {
       My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal,
 
       // editor
-      My::MyGE::Hierarchy>();
+      My::MyGE::Hierarchy, My::MyGE::Inspector, My::MyGE::TestInspector>();
 
   {  // editor camera
     auto [e, l2w, w2l, cam, t, rot] = editorWorld.entityMngr.Create<
@@ -787,6 +805,9 @@ void Editor::BuildWorld() {
     auto [e, hierarchy] = editorWorld.entityMngr.Create<My::MyGE::Hierarchy>();
     hierarchy->world = &world;
   }
+  {  // inspector
+    auto [e, inspector] = editorWorld.entityMngr.Create<My::MyGE::Inspector>();
+  }
 
   world.systemMngr.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
@@ -796,12 +817,21 @@ void Editor::BuildWorld() {
   world.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-      My::MyGE::WorldTime,
+      My::MyGE::WorldTime, My::MyGE::Name,
 
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
       My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
-      My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
+      My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal,
+
+      My::MyGE::TestInspector>();
+
+  {  // test inspector
+
+    auto [e, test, name] =
+        world.entityMngr.Create<My::MyGE::TestInspector, My::MyGE::Name>();
+    name->value = "TEst Inspector";
+  }
 
   /*world.entityMngr.Create<My::MyGE::WorldTime>();
 
@@ -829,12 +859,14 @@ void Editor::BuildWorld() {
       .Register<
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-          My::MyGE::WorldTime,
+          My::MyGE::WorldTime, My::MyGE::Name,
 
           // transform
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
           My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
-          My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
+          My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal,
+
+          My::MyGE::TestInspector>();
   //OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
   auto scene = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Scene>(
       L"..\\assets\\scenes\\Game.scene");
