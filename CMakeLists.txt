@@ -17,15 +17,15 @@ ADD_DEP(MyECS 0.12.2)
 ADD_DEP(MyDX12 0.0.8)
 
 DOWNLOAD_ZIP(
-        https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/crossguid/crossguid_15032025.zip
-        crossguid.zip
-        SHA256 1d9584217221dcad377df79eae2fe9fb1c3b6fc762499401b819a625e5b81bbe
+        https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/crossguid/crossguid_19032025.zip
+        crossguid_19032025.zip
+        SHA256 1BEE5F2424612E3EF3684D139D6038EF2420EAC7687BF210057E752EFE2A05D5
 )
 
 DOWNLOAD_ZIP(
-        https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/imgui/imgui_1_78_2.zip
+        https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/imgui/imgui_1_78_3.zip
         imgui_1_78_2.zip
-        SHA256 9c6a15ed489baef0427af51f972fa36d33373e229d65d756adcc761b22f6a22a
+        SHA256 8E90BCF8218B009BC4C9DAAC3DDD86753A72EC6EE40791FF2DFDD2D5C0811B77
 )
 
 ADD_SUB_DIRS_REC(include)
