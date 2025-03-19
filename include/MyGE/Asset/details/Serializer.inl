@@ -99,7 +99,7 @@ void WriteVar(const Value& var, Serializer::SerializeContext ctx) {
     for (size_t i = 0; i < ArrayTraits<Value>::size; i++)
       WriteVar(ArrayTraits_Get(var, i), ctx);
     ctx.writer->EndArray();
-  } else if constexpr (OrderContainerTraits<Value>::isVector) {
+  } else if constexpr (OrderContainerTraits<Value>::isOrderContainer) {
     ctx.writer->StartArray();
     auto iter_end = OrderContainerTraits_End(var);
     for (auto iter = OrderContainerTraits_Begin(var); iter != iter_end; iter++)
@@ -239,7 +239,7 @@ Value ReadVar(const rapidjson::Value& jsonValueField,
                         ReadVar<ArrayTraits_ValueType<Value>>(
                             arr[static_cast<rapidjson::SizeType>(i)], ctx));
       }
-    } else if constexpr (OrderContainerTraits<Value>::isVector) {
+    } else if constexpr (OrderContainerTraits<Value>::isOrderContainer) {
       const auto& arr = jsonValueField.GetArray();
       for (size_t i = 0; i < arr.Size(); i++) {
         OrderContainerTraits_Add(

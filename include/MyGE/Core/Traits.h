@@ -130,11 +130,11 @@ struct ArrayTraits<transform<T>> : ArrayTraitsBase<4> {};
 
 template <typename T>
 struct OrderContainerTraits {
-  static constexpr bool isVector = false;
+  static constexpr bool isOrderContainer = false;
 };
 
 struct OrderContainerTraitsBase {
-  static constexpr bool isVector = true;
+  static constexpr bool isOrderContainer = true;
 };
 
 template <typename OrderContainer>
@@ -144,6 +144,16 @@ auto OrderContainerTraits_Begin(const OrderContainer& container) noexcept {
 
 template <typename OrderContainer>
 auto OrderContainerTraits_End(const OrderContainer& container) noexcept {
+  return container.end();
+}
+
+template <typename OrderContainer>
+auto OrderContainerTraits_Begin(OrderContainer& container) noexcept {
+  return container.begin();
+}
+
+template <typename OrderContainer>
+auto OrderContainerTraits_End(OrderContainer& container) noexcept {
   return container.end();
 }
 
@@ -245,6 +255,16 @@ auto MapTraits_Begin(const Map& m) noexcept {
 
 template <typename Map>
 auto MapTraits_End(const Map& m) noexcept {
+  return m.end();
+}
+
+template <typename Map>
+auto MapTraits_Begin(Map& m) noexcept {
+  return m.begin();
+}
+
+template <typename Map>
+auto MapTraits_End(Map& m) noexcept {
   return m.end();
 }
 

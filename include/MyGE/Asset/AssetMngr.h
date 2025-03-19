@@ -7,7 +7,9 @@
 #include <MyECS/Entity.h>
 
 #include <filesystem>
+#include <map>
 #include <regex>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -27,6 +29,8 @@ class AssetMngr {
 
   void Clear();
 
+  bool IsImported(const std::filesystem::path& path) const;
+
   // Get the GUID for the asset at path.
   // If the asset does not exist, AssetPathToGUID will return invalid xg::Guid
   xg::Guid AssetPathToGUID(const std::filesystem::path& path) const;
@@ -41,13 +45,20 @@ class AssetMngr {
   // if ptr is not an asset, return empty path
   const std::filesystem::path& GetAssetPath(const void* ptr) const;
 
-  // gets the corresponding asset path for the supplied guid, or an empty path
-  // if the GUID can't be found.
+  // empty xg::Guid is root
+  const std::map<xg::Guid, std::set<xg::Guid>>& GetAssetTree() const;
+
+  // gets the corresponding asset path for the supplied guid, or an empty path if the GUID can't be found.
   const std::filesystem::path& GUIDToAssetPath(const xg::Guid& guid) const;
+  // if not loaded, return nullptr
+  void* GUIDToAsset(const xg::Guid& guid) const;
+  void* GUIDToAsset(const xg::Guid& guid, const std::type_info&) const;
+  template <typename T>
+  T* GUIDToAsset(const xg::Guid& guid) const;
 
   // import asset at path (relative)
   // * generate meta
-  void ImportAsset(const std::filesystem::path& path);
+  xg::Guid ImportAsset(const std::filesystem::path& path);
   // recursively import asset in directory (relative)
   // not import the 'directory'
   void ImportAssetRecursively(const std::filesystem::path& directory);

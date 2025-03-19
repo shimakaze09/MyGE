@@ -30,7 +30,7 @@ struct TestInspector {
   vecf3 v_vec;
   rgbf v_rgb;
   rgbaf v_rgba;
-  //std::vector<std::string> v_vector;
+  std::vector<std::string> v_vector{"abc", "edf"};
   //std::deque<size_t> v_deque;
   //std::forward_list<size_t> v_forward_list;
   //std::list<size_t> v_list;
@@ -38,7 +38,8 @@ struct TestInspector {
   //std::multiset<size_t> v_multiset;
   //std::unordered_set<size_t> v_unordered_set;
   //std::unordered_multiset<size_t> v_unordered_multiset;
-  //std::map<std::string, std::vector<bool>> v_map;
+  std::map<std::string, std::array<int, 3>> v_map{{"a", {1, 2, 3}},
+                                                  {"b", {4, 5, 6}}};
   //std::multimap<size_t, std::string> v_multimap;
   //std::unordered_map<std::string, std::string> v_unordered_map;
   //std::unordered_multimap<std::string, std::string> v_unordered_multimap;
@@ -76,7 +77,7 @@ struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
       Field{"v_vec", &My::MyGE::TestInspector::v_vec},
       Field{"v_rgb", &My::MyGE::TestInspector::v_rgb},
       Field{"v_rgba", &My::MyGE::TestInspector::v_rgba},
-      //Field{"v_vector", &My::MyGE::TestInspector::v_vector},
+      Field{"v_vector", &My::MyGE::TestInspector::v_vector},
       //Field{"v_deque", &My::MyGE::TestInspector::v_deque},
       //Field{"v_forward_list", &My::MyGE::TestInspector::v_forward_list},
       //Field{"v_list", &My::MyGE::TestInspector::v_list},
@@ -84,7 +85,7 @@ struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
       //Field{"v_multiset", &My::MyGE::TestInspector::v_multiset},
       //Field{"v_unordered_set", &My::MyGE::TestInspector::v_unordered_set},
       //Field{"v_unordered_multiset", &My::MyGE::TestInspector::v_unordered_multiset},
-      //Field{"v_map", &My::MyGE::TestInspector::v_map},
+      Field{"v_map", &My::MyGE::TestInspector::v_map},
       //Field{"v_multimap", &My::MyGE::TestInspector::v_multimap},
       //Field{"v_unordered_map", &My::MyGE::TestInspector::v_unordered_map},
       //Field{"v_unordered_multimap", &My::MyGE::TestInspector::v_unordered_multimap},

@@ -2,12 +2,16 @@
 // Created by Admin on 17/03/2025.
 //
 
-#include "CmptInsepctor.h"
 #include "Components/Hierarchy.h"
 #include "Components/Inspector.h"
+#include "Components/ProjectViewer.h"
 #include "Components/TestInspector.h"
+
 #include "Systems/HierarchySystem.h"
 #include "Systems/InspectorSystem.h"
+#include "Systems/ProjectViewerSystem.h"
+
+#include "CmptInsepctor.h"
 
 #include <MyGE/App/DX12App/DX12App.h>
 
@@ -353,7 +357,7 @@ bool Editor::Initialize() {
   ImGui::SetCurrentContext(gameImGuiCtx);
   ImGui::GetIO().IniFilename = nullptr;
 
-  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(LR"(..\\assets)");
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
 
   BuildWorld();
 
@@ -782,7 +786,8 @@ void Editor::BuildWorld() {
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem,
 
-      My::MyGE::HierarchySystem, My::MyGE::InspectorSystem>();
+      My::MyGE::HierarchySystem, My::MyGE::InspectorSystem,
+      My::MyGE::ProjectViewerSystem>();
   editorWorld.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
@@ -794,7 +799,8 @@ void Editor::BuildWorld() {
       My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal,
 
       // editor
-      My::MyGE::Hierarchy, My::MyGE::Inspector, My::MyGE::TestInspector>();
+      My::MyGE::Hierarchy, My::MyGE::Inspector, My::MyGE::ProjectViewer,
+      My::MyGE::TestInspector>();
 
   {  // editor camera
     auto [e, l2w, w2l, cam, t, rot] = editorWorld.entityMngr.Create<
@@ -806,8 +812,9 @@ void Editor::BuildWorld() {
     auto [e, hierarchy] = editorWorld.entityMngr.Create<My::MyGE::Hierarchy>();
     hierarchy->world = &world;
   }
-  {  // inspector
-    auto [e, inspector] = editorWorld.entityMngr.Create<My::MyGE::Inspector>();
+  {  // inspector, project viewer
+    editorWorld.entityMngr.Create<My::MyGE::Inspector>();
+    editorWorld.entityMngr.Create<My::MyGE::ProjectViewer>();
   }
 
   world.systemMngr.Register<

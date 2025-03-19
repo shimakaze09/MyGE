@@ -21,11 +21,13 @@ struct RsrcMngrDX12::Impl {
     ID3D12Resource* resource;
     MyDX12::DescriptorHeapAllocation allocationSRV;
   };
+
   struct RenderTargetGPUData {
     vector<ID3D12Resource*> resources;
     MyDX12::DescriptorHeapAllocation allocationSRV;
     MyDX12::DescriptorHeapAllocation allocationRTV;
   };
+
   struct ShaderCompileData {
     Microsoft::WRL::ComPtr<ID3DBlob> vsByteCode;
     Microsoft::WRL::ComPtr<ID3DBlob> psByteCode;
@@ -128,12 +130,15 @@ void RsrcMngrDX12::Clear() {
         move(tex.allocationSRV));
     MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         move(tex.allocationRTV));
-    for (auto rsrc : tex.resources) rsrc->Release();
+    for (auto rsrc : tex.resources)
+      rsrc->Release();
   }
 
-  for (auto& [name, rootSig] : pImpl->rootSignatureMap) rootSig->Release();
+  for (auto& [name, rootSig] : pImpl->rootSignatureMap)
+    rootSig->Release();
 
-  for (auto PSO : pImpl->PSOs) PSO->Release();
+  for (auto PSO : pImpl->PSOs)
+    PSO->Release();
 
   pImpl->device = nullptr;
   delete pImpl->upload;
@@ -203,6 +208,10 @@ MyDX12::ResourceDeleteBatch& RsrcMngrDX12::GetDeleteBatch() const {
 
 RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
     DirectX::ResourceUploadBatch& upload, const Texture2D* tex2D) {
+  auto target = pImpl->texture2DMap.find(tex2D->GetInstanceID());
+  if (target != pImpl->texture2DMap.end())
+    return *this;
+
   Impl::Texture2DGPUData tex;
 
   tex.allocationSRV =
@@ -231,6 +240,8 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
       tex.allocationSRV.GetCpuHandle(static_cast<uint32_t>(0)));
 
   pImpl->texture2DMap.emplace(tex2D->GetInstanceID(), move(tex));
+  pImpl->texture2DMap.emplace_hint(
+      target, std::make_pair(tex2D->GetInstanceID(), move(tex)));
 
   return *this;
 }
@@ -286,11 +297,13 @@ D3D12_CPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTexture2DSrvCpuHandle(
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())
       ->second.allocationSRV.GetCpuHandle(0);
 }
+
 D3D12_GPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTexture2DSrvGpuHandle(
     const Texture2D* tex2D) const {
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())
       ->second.allocationSRV.GetGpuHandle(0);
 }
+
 ID3D12Resource* RsrcMngrDX12::GetTexture2DResource(
     const Texture2D* tex2D) const {
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())->second.resource;
@@ -307,7 +320,8 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
     ID3D12GraphicsCommandList* cmdList, Mesh* mesh) {
   auto target = pImpl->meshMap.find(mesh->GetInstanceID());
   if (target == pImpl->meshMap.end()) {
-    if (mesh->IsDirty()) mesh->UpdateVertexBuffer();
+    if (mesh->IsDirty())
+      mesh->UpdateVertexBuffer();
 
     auto vb_data = mesh->GetVertexBufferData();
     auto vb_count = (UINT)mesh->GetVertexBufferVertexCount();
@@ -545,7 +559,8 @@ ID3D12RootSignature* RsrcMngrDX12::GetRootSignature(size_t id) const {
   return pImpl->rootSignatureMap.find(id)->second;
 }
 
-size_t RsrcMngrDX12::RegisterPSO(const D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc) {
+size_t RsrcMngrDX12::RegisterPSO(
+    const D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc) {
   ID3D12PipelineState* pso;
   pImpl->device->CreateGraphicsPipelineState(desc, IID_PPV_ARGS(&pso));
   size_t ID = pImpl->PSOs.size();

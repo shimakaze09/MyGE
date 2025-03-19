@@ -4,6 +4,8 @@
 
 #include "HierarchySystem.h"
 
+#include "../PlayloadType.h"
+
 #include "../Components/Hierarchy.h"
 
 #include <MyGE/Core/Components/Name.h>
@@ -14,8 +16,6 @@
 using namespace My::MyGE;
 
 namespace My::MyGE::detail {
-static constexpr char PAYLOAD_ENTITY[] = "MY_HIERARCHY_ENTITY";
-
 bool HierarchyMovable(const MyECS::World* w, MyECS::Entity dst,
                       MyECS::Entity src) {
   if (dst == src)
@@ -48,7 +48,7 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e) {
                                "Entity (%d)", e.Idx());
 
   if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-    ImGui::SetDragDropPayload(PAYLOAD_ENTITY, &e, sizeof(MyECS::Entity));
+    ImGui::SetDragDropPayload(PlayloadType::ENTITY, &e, sizeof(MyECS::Entity));
     if (name)
       ImGui::Text("%s (%d)", name->value.c_str(), e.Idx());
     else
@@ -59,7 +59,7 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e) {
 
   if (ImGui::BeginDragDropTarget()) {
     if (const ImGuiPayload* payload =
-            ImGui::AcceptDragDropPayload(PAYLOAD_ENTITY)) {
+            ImGui::AcceptDragDropPayload(PlayloadType::ENTITY)) {
       IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
       auto payload_e = *(const MyECS::Entity*)payload->Data;
       if (HierarchyMovable(hierarchy->world, e, payload_e)) {
@@ -152,7 +152,7 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
 
             if (ImGui::BeginDragDropTarget()) {
               if (const ImGuiPayload* payload =
-                      ImGui::AcceptDragDropPayload(detail::PAYLOAD_ENTITY)) {
+                      ImGui::AcceptDragDropPayload(PlayloadType::ENTITY)) {
                 IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
                 auto payload_e = *(const MyECS::Entity*)payload->Data;
 
