@@ -21,13 +21,16 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
          MyECS::Singleton<Inspector> inspector) {
         if (!inspector->lock)
           inspector->target = hierarchy->select;
-        if (!w->entityMngr.Exist(inspector->target)) {
-          inspector->target = MyECS::Entity::Invalid();
-          inspector->lock = false;
-        }
 
         if (inspector->target.Valid()) {
-          w->AddCommand([inspector, world = hierarchy->world](MyECS::World*) {
+          w->AddCommand([inspector,
+                         world = hierarchy->world](MyECS::World*) mutable {
+            if (!world->entityMngr.Exist(inspector->target)) {
+              inspector->target = MyECS::Entity::Invalid();
+              inspector->lock = false;
+              return;
+            }
+
             if (ImGui::Begin("Inspector")) {
               if (ImGui::CollapsingHeader("[*] Attach Component")) {
                 ImGui::PushID("[*] Attach Component");

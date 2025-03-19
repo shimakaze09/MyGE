@@ -14,46 +14,79 @@
 using namespace My::MyGE;
 
 namespace My::MyGE::detail {
+static constexpr char PAYLOAD_ENTITY[] = "MY_HIERARCHY_ENTITY";
+
+bool HierarchyMovable(const MyECS::World* w, MyECS::Entity dst,
+                      MyECS::Entity src) {
+  if (dst == src)
+    return false;
+  else if (auto p = w->entityMngr.Get<Parent>(dst))
+    return HierarchyMovable(w, p->value, src);
+  else
+    return true;
+}
+
 void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e) {
   static constexpr ImGuiTreeNodeFlags nodeBaseFlags =
       ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
       ImGuiTreeNodeFlags_SpanAvailWidth;
 
+  auto children = hierarchy->world->entityMngr.Get<Children>(e);
+  auto name = hierarchy->world->entityMngr.Get<Name>(e);
+  bool isLeaf = !children || children->value.empty();
+
   ImGuiTreeNodeFlags nodeFlags = nodeBaseFlags;
   if (hierarchy->select == e)
     nodeFlags |= ImGuiTreeNodeFlags_Selected;
-
-  auto name = hierarchy->world->entityMngr.Get<Name>(e);
-  auto children = hierarchy->world->entityMngr.Get<Children>(e);
-
-  if (children) {
-    bool nodeOpen =
-        name ? ImGui::TreeNodeEx((void*)(intptr_t)e.Idx(), nodeFlags, "%s (%d)",
-                                 name->value.c_str(), e.Idx())
-             : ImGui::TreeNodeEx((void*)(intptr_t)e.Idx(), nodeFlags,
-                                 "Entity (%d)", e.Idx());
-
-    if (ImGui::IsItemClicked())
-      hierarchy->select = e;
-    if (ImGui::IsItemHovered())
-      hierarchy->hover = e;
-    if (nodeOpen) {
-      for (const auto& child : children->value)
-        HierarchyPrintEntity(hierarchy, child);
-      ImGui::TreePop();
-    }
-  } else {
+  if (isLeaf)
     nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+  bool nodeOpen =
+      name ? ImGui::TreeNodeEx((void*)(intptr_t)e.Idx(), nodeFlags, "%s (%d)",
+                               name->value.c_str(), e.Idx())
+           : ImGui::TreeNodeEx((void*)(intptr_t)e.Idx(), nodeFlags,
+                               "Entity (%d)", e.Idx());
+
+  if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+    ImGui::SetDragDropPayload(PAYLOAD_ENTITY, &e, sizeof(MyECS::Entity));
     if (name)
-      ImGui::TreeNodeEx((void*)(intptr_t)e.Idx(), nodeFlags, "%s (%d)",
-                        name->value.c_str(), e.Idx());
+      ImGui::Text("%s (%d)", name->value.c_str(), e.Idx());
     else
-      ImGui::TreeNodeEx((void*)(intptr_t)e.Idx(), nodeFlags, "Entity (%d)",
-                        e.Idx());
-    if (ImGui::IsItemClicked())
-      hierarchy->select = e;
-    if (ImGui::IsItemHovered())
-      hierarchy->hover = e;
+      ImGui::Text("Entity (%d)", e.Idx());
+
+    ImGui::EndDragDropSource();
+  }
+
+  if (ImGui::BeginDragDropTarget()) {
+    if (const ImGuiPayload* payload =
+            ImGui::AcceptDragDropPayload(PAYLOAD_ENTITY)) {
+      IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
+      auto payload_e = *(const MyECS::Entity*)payload->Data;
+      if (HierarchyMovable(hierarchy->world, e, payload_e)) {
+        auto [payload_e_p] =
+            hierarchy->world->entityMngr.Attach<Parent>(payload_e);
+        if (payload_e_p->value.Valid()) {
+          auto parentChildren =
+              hierarchy->world->entityMngr.Get<Children>(payload_e_p->value);
+          parentChildren->value.erase(payload_e);
+        }
+        payload_e_p->value = e;
+        auto [children] = hierarchy->world->entityMngr.Attach<Children>(e);
+        children->value.insert(payload_e);
+      }
+    }
+    ImGui::EndDragDropTarget();
+  }
+
+  if (ImGui::IsItemClicked())
+    hierarchy->select = e;
+  if (ImGui::IsItemHovered())
+    hierarchy->hover = e;
+
+  if (nodeOpen && !isLeaf) {
+    for (const auto& child : children->value)
+      HierarchyPrintEntity(hierarchy, child);
+    ImGui::TreePop();
   }
 }
 
@@ -72,7 +105,7 @@ void HierarchyDeleteEntity(MyECS::World* w, MyECS::Entity e) {
   if (auto p = w->entityMngr.Get<Parent>(e)) {
     auto e_p = p->value;
     auto children = w->entityMngr.Get<Children>(e_p);
-    children->value.erase(e_p);
+    children->value.erase(e);
   }
   detail::HierarchyDeleteEntityRecursively(w, e);
 }
@@ -116,6 +149,25 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
               ImGui::EndPopup();
             } else
               hierarchy->hover = MyECS::Entity::Invalid();
+
+            if (ImGui::BeginDragDropTarget()) {
+              if (const ImGuiPayload* payload =
+                      ImGui::AcceptDragDropPayload(detail::PAYLOAD_ENTITY)) {
+                IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
+                auto payload_e = *(const MyECS::Entity*)payload->Data;
+
+                if (auto payload_e_p =
+                        hierarchy->world->entityMngr.Get<Parent>(payload_e)) {
+                  auto parentChildren =
+                      hierarchy->world->entityMngr.Get<Children>(
+                          payload_e_p->value);
+                  parentChildren->value.erase(payload_e);
+                  hierarchy->world->entityMngr.Detach(
+                      payload_e, &MyECS::CmptType::Of<Parent>, 1);
+                }
+              }
+              ImGui::EndDragDropTarget();
+            }
 
             MyECS::ArchetypeFilter filter;
             filter.none = {MyECS::CmptType::Of<Parent>};
