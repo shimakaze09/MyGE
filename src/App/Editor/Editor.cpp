@@ -11,7 +11,7 @@
 #include "Systems/InspectorSystem.h"
 #include "Systems/ProjectViewerSystem.h"
 
-#include "CmptInsepctor.h"
+#include "InspectorRegistry.h"
 
 #include <MyGE/App/DX12App/DX12App.h>
 
@@ -81,6 +81,7 @@ class Editor : public My::MyGE::DX12App {
 
   void UpdateCamera();
 
+  void InitInspectorRegistry();
   void BuildWorld();
   void LoadTextures();
   void BuildShaders();
@@ -377,7 +378,7 @@ bool Editor::Initialize() {
   ImGui::GetIO().IniFilename = nullptr;
 
   My::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
-
+  InitInspectorRegistry();
   BuildWorld();
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
@@ -621,6 +622,7 @@ void Editor::Update() {
             std::make_unique<My::MyECS::EntityMngr>(world.entityMngr);
         world.entityMngr.Swap(*runningContext);
         gameState = GameState::Running;
+        My::MyGE::GameTimer::Instance().Reset();
         // break;
       case GameState::Running:
         world.Update();
@@ -660,11 +662,17 @@ void Editor::Update() {
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
 
         for (const auto& mat : meshRenderer->materials) {
+          if (!mat)
+            continue;
           for (const auto& [name, tex] : mat->texture2Ds) {
+            if (!tex)
+              continue;
             My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
                 My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
           }
           for (const auto& [name, tex] : mat->textureCubes) {
+            if (!tex)
+              continue;
             My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
                 My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
           }
@@ -675,10 +683,14 @@ void Editor::Update() {
   if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>();
       skybox && skybox->material) {
     for (const auto& [name, tex] : skybox->material->texture2Ds) {
+      if (!tex)
+        continue;
       My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
           My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
     }
     for (const auto& [name, tex] : skybox->material->textureCubes) {
+      if (!tex)
+        continue;
       My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
           My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
     }
@@ -810,8 +822,8 @@ void Editor::UpdateCamera() {
       c2w.decompose_quatenion();
 }
 
-void Editor::BuildWorld() {
-  My::MyGE::CmptInspector::Instance()
+void Editor::InitInspectorRegistry() {
+  My::MyGE::InspectorRegistry::Instance()
       .RegisterCmpts<
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
@@ -824,6 +836,8 @@ void Editor::BuildWorld() {
           My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal,
 
           My::MyGE::TestInspector>();
+
+  My::MyGE::InspectorRegistry::Instance().RegisterAssets<My::MyGE::Material>();
 
   editorWorld.systemMngr.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,

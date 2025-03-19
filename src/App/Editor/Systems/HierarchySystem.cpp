@@ -7,6 +7,7 @@
 #include "../PlayloadType.h"
 
 #include "../Components/Hierarchy.h"
+#include "../Components/Inspector.h"
 
 #include <MyGE/Core/Components/Name.h>
 #include <MyGE/Transform/Components/Components.h>
@@ -26,7 +27,8 @@ bool HierarchyMovable(const MyECS::World* w, MyECS::Entity dst,
     return true;
 }
 
-void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e) {
+void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e,
+                          Inspector* inspector) {
   static constexpr ImGuiTreeNodeFlags nodeBaseFlags =
       ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
       ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -78,14 +80,19 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e) {
     ImGui::EndDragDropTarget();
   }
 
-  if (ImGui::IsItemClicked())
+  if (ImGui::IsItemHovered() && ImGui::IsItemDeactivated()) {
     hierarchy->select = e;
+    if (inspector && !inspector->lock) {
+      inspector->mode = Inspector::Mode::Entity;
+      inspector->entity = e;
+    }
+  }
   if (ImGui::IsItemHovered())
     hierarchy->hover = e;
 
   if (nodeOpen && !isLeaf) {
     for (const auto& child : children->value)
-      HierarchyPrintEntity(hierarchy, child);
+      HierarchyPrintEntity(hierarchy, child, inspector);
     ImGui::TreePop();
   }
 }
@@ -169,11 +176,12 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
               ImGui::EndDragDropTarget();
             }
 
+            auto inspector = w->entityMngr.GetSingleton<Inspector>();
             MyECS::ArchetypeFilter filter;
             filter.none = {MyECS::CmptType::Of<Parent>};
             hierarchy->world->RunEntityJob(
                 [=](MyECS::Entity e) {
-                  detail::HierarchyPrintEntity(hierarchy, e);
+                  detail::HierarchyPrintEntity(hierarchy, e, inspector);
                 },
                 false, filter);
           }

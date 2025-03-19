@@ -18,3 +18,5 @@ struct Material {
   std::map<std::string, const TextureCube*> textureCubes;
 };
 }  // namespace My::MyGE
+
+#include "details/Material_AutoRefl.inl"

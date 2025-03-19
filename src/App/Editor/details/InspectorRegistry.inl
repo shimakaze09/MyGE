@@ -15,6 +15,7 @@
 
 #include <MyECS/Entity.h>
 
+#include <MyGE/Core/Components/Name.h>
 #include <MySTL/tuple.h>
 
 namespace My::MyGE::detail {
@@ -76,10 +77,10 @@ template <typename T>
 struct ColorTraits<rgba<T>> : ColorTraitsBase<T> {};
 
 template <typename Field, typename Value>
-void InspectVar(Field field, Value& var, CmptInspector::InspectContext ctx);
+void InspectVar(Field field, Value& var, InspectorRegistry::InspectContext ctx);
 
 template <typename Cmpt>
-void InspectCmpt(Cmpt* cmpt, CmptInspector::InspectContext ctx) {
+void InspectCmpt(Cmpt* cmpt, InspectorRegistry::InspectContext ctx) {
   if constexpr (HasDefinition<MySRefl::TypeInfo<Cmpt>>::value) {
     ImGui::PushID(MyECS::CmptType::Of<Cmpt>.HashCode());
     if (ImGui::CollapsingHeader(MySRefl::TypeInfo<Cmpt>::name.data())) {
@@ -93,9 +94,20 @@ void InspectCmpt(Cmpt* cmpt, CmptInspector::InspectContext ctx) {
   }
 }
 
+template <typename Asset>
+void InspectAsset(Asset* asset, InspectorRegistry::InspectContext ctx) {
+  if constexpr (HasDefinition<MySRefl::TypeInfo<Asset>>::value) {
+    MySRefl::TypeInfo<Asset>::ForEachVarOf(
+        *asset, [ctx](auto field, auto& var) { InspectVar(field, var, ctx); });
+  } else {
+    if (ctx.inspector.IsRegistered(typeid(Asset).hash_code()))
+      ctx.inspector.Visit(typeid(Asset).hash_code(), asset, ctx);
+  }
+}
+
 template <typename Field, typename UserType>
 void InspectUserType(Field field, UserType* obj,
-                     CmptInspector::InspectContext ctx) {
+                     InspectorRegistry::InspectContext ctx) {
   if constexpr (HasDefinition<MySRefl::TypeInfo<UserType>>::value) {
     if (ImGui::TreeNode(field.name.data())) {
       ImGui::PushID(GetID<UserType>());
@@ -110,7 +122,7 @@ void InspectUserType(Field field, UserType* obj,
 
 template <typename Field, typename Value>
 void InspectVar(Field field, const Value& var,
-                CmptInspector::InspectContext ctx) {
+                InspectorRegistry::InspectContext ctx) {
   if constexpr (std::is_same_v<Value, bool>) {
     ImGui::Button(var ? "true" : "false", &var);
     ImGui::SameLine();
@@ -125,8 +137,10 @@ void InspectVar(Field field, const Value& var,
     ImGui::SameLine();
     ImGui::Text(field.name.data());
   } else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
-    // TODO : drag, name
-    ImGui::BulletText("Entity %d", var.Idx());
+    if (auto name = ctx.world->entityMngr.Get<Name>(var))
+      ImGui::BulletText(name->value.c_str());
+    else
+      ImGui::BulletText("Entity (%d)", var.Idx());
   } else if constexpr (std::is_pointer_v<Value>) {
     ImGui::Text("(*)");
     ImGui::SameLine();
@@ -252,7 +266,8 @@ void InspectVar(Field field, const Value& var,
 }
 
 template <typename Field, typename Value>
-void InspectVar(Field field, Value& var, CmptInspector::InspectContext ctx) {
+void InspectVar(Field field, Value& var,
+                InspectorRegistry::InspectContext ctx) {
   //static_assert(!std::is_const_v<Value>);
   if constexpr (std::is_same_v<Value, bool>)
     ImGui::Checkbox(field.name.data(), &var);
@@ -279,8 +294,29 @@ void InspectVar(Field field, Value& var, CmptInspector::InspectContext ctx) {
   else if constexpr (std::is_same_v<Value, std::string>)
     ImGui::InputText(field.name.data(), &var);
   else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
-    // TODO : drag, name
-    ImGui::BulletText("Entity %d", var.Idx());
+    ImGui::Text("(*)", var.Idx());
+    ImGui::SameLine();
+    if (var.Valid()) {
+      if (auto name = ctx.world->entityMngr.Get<Name>(var))
+        ImGui::Button(name->value.c_str());
+      else {
+        std::string str =
+            std::string("Entity (") + std::to_string(var.Idx()) + ")";
+        ImGui::Button(str.c_str());
+      }
+    } else
+      ImGui::Button("None (Entity)");
+    if (ImGui::BeginDragDropTarget()) {
+      if (const ImGuiPayload* payload =
+              ImGui::AcceptDragDropPayload(PlayloadType::ENTITY)) {
+        IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
+        const auto& payload_e = *(MyECS::Entity*)payload->Data;
+        var = payload_e;
+      }
+      ImGui::EndDragDropTarget();
+    }
+    ImGui::SameLine();
+    ImGui::Text(field.name.data());
   } else if constexpr (std::is_enum_v<Value>) {
     if constexpr (HasDefinition<MySRefl::TypeInfo<Value>>::value) {
       std::string_view cur;
@@ -455,12 +491,19 @@ void InspectVar(Field field, Value& var, CmptInspector::InspectContext ctx) {
 
 namespace My::MyGE {
 template <typename... Cmpts>
-void CmptInspector::RegisterCmpts() {
-  (CmptInspector::Instance().RegisterCmpt(&detail::InspectCmpt<Cmpts>), ...);
+void InspectorRegistry::RegisterCmpts() {
+  (InspectorRegistry::Instance().RegisterCmpt(&detail::InspectCmpt<Cmpts>),
+   ...);
+}
+
+template <typename... Assets>
+void InspectorRegistry::RegisterAssets() {
+  (InspectorRegistry::Instance().RegisterAsset(&detail::InspectAsset<Assets>),
+   ...);
 }
 
 template <typename Func>
-void CmptInspector::RegisterCmpt(Func&& func) {
+void InspectorRegistry::RegisterCmpt(Func&& func) {
   using ArgList = FuncTraits_ArgList<Func>;
   static_assert(Length_v<ArgList> == 2);
   static_assert(std::is_same_v<At_t<ArgList, 1>, InspectContext>);
@@ -472,5 +515,20 @@ void CmptInspector::RegisterCmpt(Func&& func) {
                [f = std::forward<Func>(func)](void* cmpt, InspectContext ctx) {
                  f(reinterpret_cast<Cmpt*>(cmpt), ctx);
                });
+}
+
+template <typename Func>
+void InspectorRegistry::RegisterAsset(Func&& func) {
+  using ArgList = FuncTraits_ArgList<Func>;
+  static_assert(Length_v<ArgList> == 2);
+  static_assert(std::is_same_v<At_t<ArgList, 1>, InspectContext>);
+  using AssetPtr = At_t<ArgList, 0>;
+  static_assert(std::is_pointer_v<AssetPtr>);
+  using Asset = std::remove_pointer_t<AssetPtr>;
+  static_assert(!std::is_const_v<Asset>);
+  RegisterAsset(typeid(Asset), [f = std::forward<Func>(func)](
+                                   void* asset, InspectContext ctx) {
+    f(reinterpret_cast<Asset*>(asset), ctx);
+  });
 }
 }  // namespace My::MyGE

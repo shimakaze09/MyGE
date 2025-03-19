@@ -91,12 +91,22 @@ struct AssetMngr::Impl {
 #endif  // MY_MYGE_USE_ASSIMP
 
   std::map<xg::Guid, std::set<xg::Guid>> assetTree;
+
+  std::filesystem::path root{L".."};
 };
 
 AssetMngr::AssetMngr() : pImpl{new Impl} {}
 
 AssetMngr::~AssetMngr() {
   delete pImpl;
+}
+
+const std::filesystem::path& AssetMngr::GetRootPath() const noexcept {
+  return pImpl->root;
+}
+
+void AssetMngr::SetRootPath(std::filesystem::path path) {
+  pImpl->root = std::move(path);
 }
 
 bool AssetMngr::IsSupported(std::string_view ext) const noexcept {
@@ -162,6 +172,16 @@ const std::filesystem::path& AssetMngr::GetAssetPath(const void* ptr) const {
 
 const std::map<xg::Guid, std::set<xg::Guid>>& AssetMngr::GetAssetTree() const {
   return pImpl->assetTree;
+}
+
+const std::type_info& AssetMngr::GetAssetType(
+    const std::filesystem::path& path) const {
+  static const auto& ERROR = typeid(void);
+  auto target = pImpl->path2assert.find(path);
+  if (target == pImpl->path2assert.end())
+    return ERROR;
+
+  return target->second.typeinfo;
 }
 
 const std::filesystem::path& AssetMngr::GUIDToAssetPath(
@@ -233,7 +253,7 @@ xg::Guid AssetMngr::ImportAsset(const std::filesystem::path& path) {
   }
 
   auto dirPath = path.parent_path();
-  if (dirPath != L"..\\assets") {
+  if (dirPath != GetRootPath()) {
     auto dirGuid = ImportAsset(dirPath);
     pImpl->assetTree[dirGuid].insert(guid);
   } else

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <MyECS/Entity.h>
 #include <MyGM/MyGM.h>
 #include <MySRefl/MySRefl.h>
 
@@ -24,7 +25,7 @@ struct TestInspector {
   float v_float;
   double v_double;
   std::string v_string;
-  //Entity v_entity{ Entity::Invalid() };
+  MyECS::Entity v_entity{MyECS::Entity::Invalid()};
   //const HLSLFile* v_hlslFile;
   std::array<int, 3> v_array;
   std::array<std::array<float, 2>, 3> v_array2;
@@ -83,6 +84,7 @@ struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
       Field{"v_float", &My::MyGE::TestInspector::v_float},
       Field{"v_double", &My::MyGE::TestInspector::v_double},
       Field{"v_string", &My::MyGE::TestInspector::v_string},
+      Field{"v_entity", &My::MyGE::TestInspector::v_entity},
       Field{"v_array", &My::MyGE::TestInspector::v_array},
       Field{"v_array2", &My::MyGE::TestInspector::v_array2},
       Field{"v_bbox", &My::MyGE::TestInspector::v_bbox},
