@@ -1,3 +1,14 @@
+SET(libs "")
+SET(defines "")
+
+FIND_PACKAGE(assimp QUIET)
+IF (TARGET assimp::assimp)
+    LIST(APPEND libs assimp::assimp)
+    LIST(APPEND defines MY_MYGE_USE_ASSIMP)
+ELSE ()
+    MESSAGE(STATUS "[MyGE/Asset] not found assimp")
+ENDIF ()
+
 ADD_TARGET(
         MODE STATIC
         SOURCE
@@ -10,4 +21,7 @@ ADD_TARGET(
         My::MyGE__deps_tinyobjloader
         My::MyGE_Core
         My::MyGE_ScriptSystem
+        ${libs}
+        DEFINE_PRIVATE
+        ${defines}
 )

@@ -211,9 +211,10 @@ void ProjectViewerSystemPrintFolder(ProjectViewer* viewer) {
         id = hlslID.ptr;
       else if (ext == ".scene")
         id = sceneID.ptr;
-      else if (ext == ".obj")
+      else if (ext == ".obj" ||
+               ext == ".ply" && AssetMngr::Instance().IsSupported("ply")) {
         id = modelID.ptr;
-      else if (ext == ".texcube")
+      } else if (ext == ".texcube")
         id = texcubeID.ptr;
       else
         id = fileID.ptr;

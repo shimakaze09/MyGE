@@ -123,8 +123,7 @@ float4 PS(VertexOut pin) : SV_Target {
 	}
 	irradiance /= float(SAMPLE_NUM) * float(SAMPLE_NUM);
 	*/
-	
-	
+
 	/*
     const uint SAMPLE_NUM = 32u;
 	float delta = 1.0f / float(SAMPLE_NUM);
