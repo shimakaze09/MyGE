@@ -53,7 +53,9 @@
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
 #include <MyGE/ScriptSystem/LuaScript.h>
 
-#include <ULuaPP/ULuaPP.h>
+#include <MyLuaPP/MyLuaPP.h>
+
+#include <dxgidebug.h>
 
 using Microsoft::WRL::ComPtr;
 
@@ -118,7 +120,7 @@ class Editor : public My::MyGE::DX12App {
   ImGuiContext* mainImGuiCtx = nullptr;
   ImGuiContext* gameImGuiCtx = nullptr;
 
-  enum GameState {
+  enum class GameState {
     NotStart,
     Starting,
     Running,
@@ -300,17 +302,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
+  int rst;
   try {
     Editor theApp(hInstance);
     if (!theApp.Initialize())
       return 1;
 
-    int rst = theApp.Run();
-    return rst;
+    rst = theApp.Run();
   } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
-    return 1;
+    rst = 1;
   }
+
+#ifdef _DEBUG
+  ComPtr<IDXGIDebug> debug;
+  DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug));
+  debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
+#endif  // _DEBUG
+
+  return rst;
 }
 
 Editor::Editor(HINSTANCE hInstance) : DX12App(hInstance) {}
@@ -320,6 +330,7 @@ Editor::~Editor() {
     FlushCommandQueue();
 
   My::MyGE::ImGUIMngr::Instance().Clear();
+
   if (!gameRT_SRV.IsNull())
     My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
         std::move(gameRT_SRV));
@@ -332,6 +343,11 @@ Editor::~Editor() {
   if (!editorSceneRT_RTV.IsNull())
     My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         std::move(editorSceneRT_RTV));
+
+  if (gameState == GameState::Running) {
+    world.entityMngr.Swap(*runningContext);
+    runningContext.reset();
+  }
 }
 
 bool Editor::Initialize() {
@@ -574,16 +590,16 @@ void Editor::Update() {
     static std::string startStr = "start";
     if (ImGui::Button(startStr.c_str())) {
       switch (gameState) {
-        case Editor::NotStart:
+        case GameState::NotStart:
           startStr = "stop";
-          gameState = Editor::Starting;
+          gameState = GameState::Starting;
           break;
-        case Editor::Running:
+        case GameState::Running:
           startStr = "start";
-          gameState = Editor::Stopping;
+          gameState = GameState::Stopping;
           break;
-        case Editor::Starting:
-        case Editor::Stopping:
+        case GameState::Starting:
+        case GameState::Stopping:
         default:
           assert("error" && false);
           break;
@@ -597,25 +613,25 @@ void Editor::Update() {
     ImGui::NewFrame();  // game ctx
 
     switch (gameState) {
-      case Editor::NotStart:
+      case GameState::NotStart:
         break;
-      case Editor::Starting:
+      case GameState::Starting:
         runningContext =
             std::make_unique<My::MyECS::EntityMngr>(world.entityMngr);
         world.entityMngr.Swap(*runningContext);
-        gameState = Editor::Running;
+        gameState = GameState::Running;
         // break;
-      case Editor::Running:
+      case GameState::Running:
         world.Update();
         ImGui::Begin("in game");
         ImGui::Text(
             "This is some useful text.");  // Display some text (you can use a format strings too)
         ImGui::End();
         break;
-      case Editor::Stopping:
+      case GameState::Stopping:
         world.entityMngr.Swap(*runningContext);
         runningContext.reset();
-        gameState = Editor::NotStart;
+        gameState = GameState::NotStart;
         break;
       default:
         break;
@@ -633,7 +649,6 @@ void Editor::Update() {
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
 
-  // update mesh
   world.RunEntityJob(
       [&](const My::MyGE::MeshFilter* meshFilter,
           const My::MyGE::MeshRenderer* meshRenderer) {
@@ -655,6 +670,7 @@ void Editor::Update() {
         }
       },
       false);
+
   if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>()) {
     for (const auto& [name, tex] : skybox->material->texture2Ds) {
       My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(

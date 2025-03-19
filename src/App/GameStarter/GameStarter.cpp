@@ -16,6 +16,7 @@
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
 #include <MyGE/Core/Components/Name.h>
+#include <MyGE/Core/Components/Skybox.h>
 #include <MyGE/Core/Components/WorldTime.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/HLSLFile.h>
@@ -27,6 +28,7 @@
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Systems/WorldTimeSystem.h>
 #include <MyGE/Core/Texture2D.h>
+#include <MyGE/Core/TextureCube.h>
 
 #include <MyGE/Transform/Transform.h>
 
@@ -40,7 +42,7 @@
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
 #include <MyGE/ScriptSystem/LuaScript.h>
 
-#include <ULuaPP/ULuaPP.h>
+#include <MyLuaPP/MyLuaPP.h>
 
 using Microsoft::WRL::ComPtr;
 
@@ -294,8 +296,6 @@ bool GameStarter::Initialize() {
   BuildShaders();
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
-  //OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
-
   My::MyGE::IPipeline::InitDesc initDesc;
   initDesc.device = myDevice.Get();
   initDesc.rtFormat = GetBackBufferFormat();
@@ -326,6 +326,9 @@ void GameStarter::Update() {
   ImGui_ImplWin32_NewFrame_Context(gameImGuiCtx, {0, 0}, mClientWidth,
                                    mClientHeight);
   ImGui_ImplWin32_NewFrame_Shared();
+
+  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
+  upload.Begin();
 
   ImGui::SetCurrentContext(gameImGuiCtx);
   ImGui::NewFrame();
@@ -388,20 +391,40 @@ void GameStarter::Update() {
   cmdAlloc->Reset();
 
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
-  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
-  upload.Begin();
 
-  // update mesh
   world.RunEntityJob(
-      [&](const My::MyGE::MeshFilter* meshFilter) {
-        if (!meshFilter->mesh)
+      [&](const My::MyGE::MeshFilter* meshFilter,
+          const My::MyGE::MeshRenderer* meshRenderer) {
+        if (!meshFilter->mesh || meshRenderer->materials.empty())
           return;
 
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+
+        for (const auto& mat : meshRenderer->materials) {
+          for (const auto& [name, tex] : mat->texture2Ds) {
+            My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+          }
+          for (const auto& [name, tex] : mat->textureCubes) {
+            My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+          }
+        }
       },
       false);
+
+  if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>()) {
+    for (const auto& [name, tex] : skybox->material->texture2Ds) {
+      My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    }
+    for (const auto& [name, tex] : skybox->material->textureCubes) {
+      My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    }
+  }
 
   // commit upload, delete ...
   upload.End(myCmdQueue.Get());
@@ -511,7 +534,7 @@ void GameStarter::BuildWorld() {
   world.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-      My::MyGE::WorldTime, My::MyGE::Name,
+      My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
 
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -544,7 +567,7 @@ void GameStarter::BuildWorld() {
       .Register<
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-          My::MyGE::WorldTime,
+          My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
 
           // transform
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -568,16 +591,7 @@ void GameStarter::BuildWorld() {
   solLua.script(gameLuaScript->GetText());
 }
 
-void GameStarter::LoadTextures() {
-  auto tex2dGUIDs =
-      My::MyGE::AssetMngr::Instance().FindAssets(std::wregex{LR"(.*\.tex2d)"});
-  for (const auto& guid : tex2dGUIDs) {
-    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
-    My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
-  }
-}
+void GameStarter::LoadTextures() {}
 
 void GameStarter::BuildShaders() {
   auto& assetMngr = My::MyGE::AssetMngr::Instance();
