@@ -8,7 +8,7 @@
 
 namespace My::MyGE {
 struct Hierarchy {
-  const MyECS::World* world{nullptr};
+  MyECS::World* world{nullptr};
   MyECS::Entity select;
 };
 }  // namespace My::MyGE
