@@ -16,6 +16,7 @@ SET(components
         MeshRenderer
         WorldTime
         Skybox
+        Light
 )
 
 SET(refls "")

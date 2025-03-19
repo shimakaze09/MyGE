@@ -1,8 +1,45 @@
-struct DirectionalLight {
-	float3 L;
-	float _pad0;
+// 1. directional light
+// color
+// dir
+
+// 2. point light
+// color
+// position
+// range
+
+// 3. spot light
+// color
+// position
+// dir
+// range
+// cosHalfInnerSpotAngle : f0
+// cosHalfOuterSpotAngle : f1
+
+// 4. rect light
+// color
+// position
+// dir
+// horizontal
+// range
+// width  : f0
+// height : f1
+
+// 5. disk light
+// color
+// position
+// dir
+// range
+// radius : f0
+
+struct Light {
+	float3 color;
+	float range;
 	float3 dir;
-	float _pad1;
+	float f0;
+	float3 position;
+	float f1;
+	float3 horizontal;
+	float f2;
 };
 
 #define PI 3.1415926
@@ -21,13 +58,17 @@ SamplerState gSamplerPointWrap   : register(s0);
 SamplerState gSamplerLinearWrap  : register(s2);
 
 // Constant data that varies per frame.
-cbuffer cbLights : register(b0)
+cbuffer cbLightArray : register(b0)
 {
 	uint gDirectionalLightNum;
-	uint _g_cbLights_pad0;
-	uint _g_cbLights_pad1;
-	uint _g_cbLights_pad2;
-	DirectionalLight gDirectionalLights[4];
+	uint gPointLightNum;
+	uint gSpotLightNum;
+	uint gRectLightNum;
+	uint gDiskLightNum;
+	uint _g_cbLightArray_pad0;
+	uint _g_cbLightArray_pad1;
+	uint _g_cbLightArray_pad2;
+	Light gLights[16];
 };
 
 cbuffer cbPerCamera: register(b1)
@@ -91,9 +132,14 @@ float3 Fresnel(float3 F0, float cos_theta) {
 	return F0 + (1-F0)*x5;
 }
 
+float Pow2(float x) {
+	return x * x;
+}
+float Pow4(float x) {
+	return Pow2(Pow2(x));
+}
 float Pow5(float x) {
-	float x2 = x * x;
-	return x2 * x2 * x;
+	return Pow4(x) * x;
 }
 
 float3 SchlickFrR(float3 V, float3 N, float3 F0, float roughness) {
@@ -122,20 +168,39 @@ float GGX_D(float alpha, float3 N, float3 H) {
 	return step(0, cos_stheta) * alpha2 / denominator;
 }
 
+float Fwin(float d, float range) {
+	float falloff = max(0, 1 - Pow4(d / range));
+	return falloff * falloff;
+}
+
+float DirFwin(float3 x, float3 dir, float cosHalfInnerSpotAngle, float cosHalfOuterSpotAngle) {
+	float cosTheta = dot(x, dir);
+	if(cosTheta < cosHalfOuterSpotAngle)
+		return 0;
+	else if(cosTheta > cosHalfInnerSpotAngle)
+		return 1;
+	else{
+		float t = (cosTheta - cosHalfOuterSpotAngle) /
+			(cosHalfInnerSpotAngle - cosHalfOuterSpotAngle);
+		return Pow4(t);
+	}
+}
+
 float4 PS(VertexOut pin) : SV_Target
 {
     float4 data0 = gbuffer0.Sample(gSamplerPointWrap, pin.TexC);
     float4 data1 = gbuffer1.Sample(gSamplerPointWrap, pin.TexC);
     //float4 data2 = gbuffer2.Sample(gSamplerPointWrap, pin.TexC);
-    float  depth = gDepthStencil.Sample(gSamplerPointWrap, pin.TexC).r;
+    
+	float depth = gDepthStencil.Sample(gSamplerPointWrap, pin.TexC).r;
 	float4 posHC = float4(
-		2.f * (pin.TexC.x - 0.5f),
-		2.f * (pin.TexC.y - 0.5f),
+		2 * pin.TexC.x - 1,
+		1 - 2 * pin.TexC.y,
 		depth,
 		1.f
 	);
 	float4 posHW = mul(gInvViewProj, posHC);
-	float3 posW = posHW.xyz / posHC.w;
+	float3 posW = posHW.xyz / posHW.w;
 	
 	float3 albedo = data0.xyz;
 	float roughness = data0.w;
@@ -151,12 +216,13 @@ float4 PS(VertexOut pin) : SV_Target
 	float3 V = normalize(gEyePosW - posW);
 	float3 F0 = MetalWorkflow_F0(albedo, metalness);
 	
-	// dir light
-	for(uint i = 0u; i < gDirectionalLightNum; i++) {
-		float3 L = -gDirectionalLights[i].dir;
+	uint offset = 0u;
+	uint i;
+	for(i = offset; i < offset + gDirectionalLightNum; i++) {
+		float3 L = -gLights[i].dir;
 		float3 H = normalize(L + V);
 				
-		float cos_theta = dot(N, L);
+		float cos_theta = max(0, dot(N, L));
 		
 		float3 fr = Fresnel(F0, cos_theta);
 		float D = GGX_D(alpha, N, H);
@@ -167,10 +233,56 @@ float4 PS(VertexOut pin) : SV_Target
 		float3 specular = fr * D * G / (4 * max(dot(L, N)*dot(V, N), EPSILON));
 		
 		float3 brdf = diffuse + specular;
-		//Lo += brdf * gDirectionalLights[i].L * max(cos_theta, 0);
+		Lo += brdf * gLights[i].color * cos_theta;
+	}
+	offset += gDirectionalLightNum;
+	for(i = offset; i < offset + gPointLightNum; i++) {
+		float3 pixelToLight = gLights[i].position - posW;
+		float dist2 = dot(pixelToLight, pixelToLight);
+		float dist = sqrt(dist2);
+		float3 L = pixelToLight / dist;
+		float3 H = normalize(L + V);
+		
+		float cos_theta = max(0, dot(N, L));
+		
+		float3 fr = Fresnel(F0, cos_theta);
+		float D = GGX_D(alpha, N, H);
+		float G = GGX_G(alpha, L, V, N);
+				
+		float3 diffuse = (1 - fr) * (1 - metalness) * albedo / PI;
+				
+		float3 specular = fr * D * G / (4 * max(dot(L, N)*dot(V, N), EPSILON));
+		
+		float3 brdf = diffuse + specular;
+		float3 color = gLights[i].color * Fwin(dist, gLights[i].range) / (max(0.0001, dist2) * 4 * PI);
+		Lo += brdf * color * cos_theta;
+	}
+	offset += gPointLightNum;
+	for(i = offset; i < offset + gSpotLightNum; i++) {
+		float3 pixelToLight = gLights[i].position - posW;
+		float dist2 = dot(pixelToLight, pixelToLight);
+		float dist = sqrt(dist2);
+		float3 L = pixelToLight / dist;
+		float3 H = normalize(L + V);
+		
+		float cos_theta = max(0, dot(N, L));
+		
+		float3 fr = Fresnel(F0, cos_theta);
+		float D = GGX_D(alpha, N, H);
+		float G = GGX_G(alpha, L, V, N);
+				
+		float3 diffuse = (1 - fr) * (1 - metalness) * albedo / PI;
+				
+		float3 specular = fr * D * G / (4 * max(dot(L, N)*dot(V, N), EPSILON));
+		
+		float3 brdf = diffuse + specular;
+		float3 color = gLights[i].color
+		    * Fwin(dist, gLights[i].range)
+			* DirFwin(-L, gLights[i].dir, gLights[i].f0, gLights[i].f1)
+			/ (max(0.0001, dist2));
+		Lo += brdf * color * cos_theta;
 	}
 	
-	// ambient
 	float3 FrR = SchlickFrR(V, N, F0, roughness);
 	float3 kS = FrR;
 	float3 kD = (1 - metalness) * (float3(1, 1, 1) - kS);

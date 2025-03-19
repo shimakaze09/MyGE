@@ -24,6 +24,7 @@
 #include <MyGE/Asset/Serializer.h>
 
 #include <MyGE/Core/Components/Camera.h>
+#include <MyGE/Core/Components/Light.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
 #include <MyGE/Core/Components/Name.h>
@@ -671,7 +672,8 @@ void Editor::Update() {
       },
       false);
 
-  if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>()) {
+  if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>();
+      skybox && skybox->material) {
     for (const auto& [name, tex] : skybox->material->texture2Ds) {
       My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
           My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
@@ -814,6 +816,7 @@ void Editor::BuildWorld() {
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
           My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
+          My::MyGE::Light,
 
           // transform
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -833,7 +836,7 @@ void Editor::BuildWorld() {
   editorWorld.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-      My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
+      My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox, My::MyGE::Light,
 
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -867,7 +870,7 @@ void Editor::BuildWorld() {
   world.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-      My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
+      My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox, My::MyGE::Light,
 
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -910,6 +913,7 @@ void Editor::BuildWorld() {
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
           My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
+          My::MyGE::Light,
 
           // transform
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
