@@ -2,16 +2,19 @@
 // Created by Admin on 16/03/2025.
 //
 
-#include <MyDX12/UploadBuffer.h>
+#include "../common/d3dApp.h"
+
 #include <MyGE/Asset/AssetMngr.h>
+
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
-#include <MyGM/MyGM.h>
 
-#include "../common/d3dApp.h"
+#include <MyDX12/UploadBuffer.h>
+
+#include <MyGM/MyGM.h>
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -23,41 +26,54 @@ constexpr size_t ID_RootSignature_geometry = 0;
 constexpr size_t ID_RootSignature_screen = 1;
 constexpr size_t ID_RootSignature_defer_light = 2;
 
-struct ObjectConstants {
-  My::transformf World = My::transformf::eye();
-  My::transformf TexTransform = My::transformf::eye();
+struct GeometryObjectConstants {
+  My::transformf World;
 };
 
-struct PassConstants {
-  My::transformf View = My::transformf::eye();
-  My::transformf InvView = My::transformf::eye();
-  My::transformf Proj = My::transformf::eye();
-  My::transformf InvProj = My::transformf::eye();
-  My::transformf ViewProj = My::transformf::eye();
-  My::transformf InvViewProj = My::transformf::eye();
-  My::pointf3 EyePosW = {0.0f, 0.0f, 0.0f};
-  float cbPerObjectPad1 = 0.0f;
-  My::valf2 RenderTargetSize = {0.0f, 0.0f};
-  My::valf2 InvRenderTargetSize = {0.0f, 0.0f};
-  float NearZ = 0.0f;
-  float FarZ = 0.0f;
-  float TotalTime = 0.0f;
-  float DeltaTime = 0.0f;
+struct CameraConstants {
+  My::transformf View;
 
-  My::vecf4 AmbientLight = {0.0f, 0.0f, 0.0f, 1.0f};
+  My::transformf InvView;
 
-  // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-  // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-  // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS,
-  // NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS) are spot lights for a
-  // maximum of MaxLights per object.
-  Light Lights[MaxLights];
+  My::transformf Proj;
+
+  My::transformf InvProj;
+
+  My::transformf ViewProj;
+
+  My::transformf InvViewProj;
+
+  My::pointf3 EyePosW;
+  float _pad0;
+
+  My::valf2 RenderTargetSize;
+  My::valf2 InvRenderTargetSize;
+
+  float NearZ;
+  float FarZ;
+  float TotalTime;
+  float DeltaTime;
 };
 
-struct Vertex {
-  My::pointf3 Pos;
-  My::normalf Normal;
-  My::pointf2 TexC;
+struct GeometryMaterialConstants {
+  My::rgbf albedoFactor;
+  float roughnessFactor;
+  float metalnessFactor;
+};
+
+struct DirectionalLight {
+  My::rgbf L;
+  float _pad0;
+  My::vecf3 dir;
+  float _pad1;
+};
+
+struct LightingLights {
+  UINT diectionalLightNum;
+  UINT _pad0;
+  UINT _pad1;
+  UINT _pad2;
+  DirectionalLight directionalLights[4];
 };
 
 // Lightweight structure stores parameters to draw a shape.  This will
@@ -72,20 +88,18 @@ struct RenderItem {
 
   My::transformf TexTransform = My::transformf::eye();
 
-  // Dirty flag indicating the object data has changed and we need to update the
-  // constant buffer. Because we have an object cbuffer for each FrameResource,
-  // we have to apply the update to each FrameResource.  Thus, when we modify
-  // obect data we should set NumFramesDirty = gNumFrameResources so that each
-  // frame resource gets the update.
+  // Dirty flag indicating the object data has changed and we need to update the constant buffer.
+  // Because we have an object cbuffer for each FrameResource, we have to apply the
+  // update to each FrameResource.  Thus, when we modify obect data we should set
+  // NumFramesDirty = gNumFrameResources so that each frame resource gets the update.
   int NumFramesDirty = gNumFrameResources;
 
-  // Index into GPU constant buffer corresponding to the ObjectCB for this
-  // render item.
+  // Index into GPU constant buffer corresponding to the ObjectCB for this render item.
   UINT ObjCBIndex = -1;
 
   Material* Mat = nullptr;
   My::MyDX12::MeshGPUBuffer* Geo = nullptr;
-  // std::string Geo;
+  //std::string Geo;
 
   // Primitive topology.
   D3D12_PRIMITIVE_TOPOLOGY PrimitiveType =
@@ -117,14 +131,13 @@ class DeferApp : public D3DApp {
 
   void OnKeyboardInput();
   void UpdateCamera();
-  void AnimateMaterials();
   void UpdateObjectCBs();
   void UpdateMaterialCBs();
-  void UpdateMainPassCB();
+  void UpdateMainCameraCB();
+  void UpdateLightsCB();
 
   void LoadTextures();
   void BuildRootSignature();
-  void BuildDescriptorHeaps();
   void BuildShadersAndInputLayout();
   void BuildShapeGeometry();
   void BuildPSOs();
@@ -145,7 +158,7 @@ class DeferApp : public D3DApp {
   // Render items divided by PSO.
   std::vector<RenderItem*> mOpaqueRitems;
 
-  PassConstants mMainPassCB;
+  CameraConstants mMainCameraCB;
 
   My::pointf3 mEyePos = {0.0f, 0.0f, 0.0f};
   My::transformf mView = My::transformf::eye();
@@ -158,7 +171,7 @@ class DeferApp : public D3DApp {
   POINT mLastMousePos;
 
   // frame graph
-  // My::MyDX12::FG::RsrcMngr fgRsrcMngr;
+  //My::MyDX12::FG::RsrcMngr fgRsrcMngr;
   My::MyDX12::FG::Executor fgExecutor;
   My::MyFG::Compiler fgCompiler;
   My::MyFG::FrameGraph fg;
@@ -189,7 +202,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     DeferApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    if (!theApp.Initialize())
+      return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -204,11 +218,13 @@ DeferApp::DeferApp(HINSTANCE hInstance)
     : D3DApp(hInstance), fg{"frame graph"} {}
 
 DeferApp::~DeferApp() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 }
 
 bool DeferApp::Initialize() {
-  if (!D3DApp::Initialize()) return false;
+  if (!D3DApp::Initialize())
+    return false;
 
   frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
       gNumFrameResources, myDevice.raw.Get());
@@ -218,21 +234,19 @@ bool DeferApp::Initialize() {
   My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
                                                   1024, 1024, 1024, 1024);
 
-  // fgRsrcMngr.Init(myGCmdList, myDevice);
+  //fgRsrcMngr.Init(myGCmdList, myDevice);
 
   // Reset the command list to prep for initialization commands.
   ThrowIfFailed(myGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
-  // Get the increment size of a descriptor in this heap type.  This is hardware
-  // specific, so we have to query this information.
-  // mCbvSrvDescriptorSize =
-  // myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+  // Get the increment size of a descriptor in this heap type.  This is hardware specific,
+  // so we have to query this information.
+  //mCbvSrvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
 
   LoadTextures();
   BuildRootSignature();
-  BuildDescriptorHeaps();
   BuildShadersAndInputLayout();
   BuildShapeGeometry();
   BuildMaterials();
@@ -255,8 +269,7 @@ bool DeferApp::Initialize() {
 void DeferApp::OnResize() {
   D3DApp::OnResize();
 
-  // The window resized, so update the aspect ratio and recompute the projection
-  // matrix.
+  // The window resized, so update the aspect ratio and recompute the projection matrix.
   mProj = My::transformf::perspective(0.25f * My::PI<float>, AspectRatio(),
                                       1.0f, 1000.0f, 0.f);
 
@@ -280,10 +293,10 @@ void DeferApp::Update() {
   // If not, wait until the GPU has completed commands up to this fence point.
   frameRsrcMngr->BeginFrame();
 
-  AnimateMaterials();
   UpdateObjectCBs();
   UpdateMaterialCBs();
-  UpdateMainPassCB();
+  UpdateMainCameraCB();
+  UpdateLightsCB();
 }
 
 void DeferApp::Draw() {
@@ -293,13 +306,12 @@ void DeferApp::Draw() {
               "CommandAllocator");
 
   // Reuse the memory associated with command recording.
-  // We can only reset when the associated command lists have finished execution
-  // on the GPU.
+  // We can only reset when the associated command lists have finished execution on the GPU.
   ThrowIfFailed(cmdAlloc->Reset());
 
-  // A command list can be reset after it has been added to the command queue
-  // via ExecuteCommandList. Reusing the command list reuses memory.
-  // ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
+  // A command list can be reset after it has been added to the command queue via ExecuteCommandList.
+  // Reusing the command list reuses memory.
+  //ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
 
   fg.Clear();
   auto fgRsrcMngr =
@@ -318,10 +330,10 @@ void DeferApp::Draw() {
   auto gbPass = fg.RegisterPassNode(
       "GBuffer Pass", {}, {gbuffer0, gbuffer1, gbuffer2, depthstencil});
   /*auto debugPass = fg.AddPassNode(
-          "Debug",
-          { gbuffer1 },
-          { backbuffer }
-  );*/
+		"Debug",
+		{ gbuffer1 },
+		{ backbuffer }
+	);*/
   auto deferLightingPass = fg.RegisterPassNode(
       "Defer Lighting", {gbuffer0, gbuffer1, gbuffer2}, {backbuffer});
 
@@ -361,13 +373,11 @@ void DeferApp::Draw() {
       .RegisterPassRsrcs(gbPass, depthstencil, D3D12_RESOURCE_STATE_DEPTH_WRITE,
                          My::MyDX12::Desc::DSV::Basic(mDepthStencilFormat))
 
-      /*.RegisterPassRsrcs(debugPass, gbuffer1,
-      D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-              My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT))
+      /*.RegisterPassRsrcs(debugPass, gbuffer1, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT))
 
-      .RegisterPassRsrcs(debugPass, backbuffer,
-      D3D12_RESOURCE_STATE_RENDER_TARGET,
-              My::MyDX12::FG::RsrcImplDesc_RTV_Null{})*/
+		.RegisterPassRsrcs(debugPass, backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,
+			My::MyDX12::FG::RsrcImplDesc_RTV_Null{})*/
 
       .RegisterPassRsrcs(
           deferLightingPass, gbuffer0,
@@ -419,22 +429,21 @@ void DeferApp::Draw() {
         My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
             ID_RootSignature_geometry));
 
-    auto passCB =
+    auto cameraCB =
         frameRsrcMngr->GetCurrentFrameResource()
-            ->GetResource<My::MyDX12::ArrayUploadBuffer<PassConstants>>(
-                "gbPass constants")
+            ->GetResource<My::MyDX12::ArrayUploadBuffer<CameraConstants>>(
+                "camera constants")
             .GetResource();
-    cmdList->SetGraphicsRootConstantBufferView(4,
-                                               passCB->GetGPUVirtualAddress());
+    cmdList->SetGraphicsRootConstantBufferView(
+        5, cameraCB->GetGPUVirtualAddress());
 
     DrawRenderItems(cmdList, mOpaqueRitems);
   });
 
-  // fgExecutor.RegisterPassFunc(
+  //fgExecutor.RegisterPassFunc(
   //	debugPass,
-  //	[&](ID3D12GraphicsCommandList* cmdList, const
-  // My::MyDX12::FG::PassRsrcs& rsrcs) { 		auto heap =
-  // My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->GetDescriptorHeap();
+  //	[&](ID3D12GraphicsCommandList* cmdList, const My::MyDX12::FG::PassRsrcs& rsrcs) {
+  //		auto heap = My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->GetDescriptorHeap();
   //		cmdList->SetDescriptorHeaps(1, &heap);
   //		cmdList->RSSetViewports(1, &mScreenViewport);
   //		cmdList->RSSetScissorRects(1, &mScissorRect);
@@ -445,8 +454,7 @@ void DeferApp::Draw() {
   //		//cmdList->CopyResource(bb.resource, rt.resource);
 
   //		// Clear the render texture and depth buffer.
-  //		cmdList.ClearRenderTargetView(bb.cpuHandle,
-  // Colors::LightSteelBlue);
+  //		cmdList.ClearRenderTargetView(bb.cpuHandle, Colors::LightSteelBlue);
 
   //		// Specify the buffers we are going to render to.
   //		//cmdList.OMSetRenderTarget(bb.cpuHandle, ds.cpuHandle);
@@ -473,15 +481,13 @@ void DeferApp::Draw() {
         cmdList->RSSetViewports(1, &mScreenViewport);
         cmdList->RSSetScissorRects(1, &mScissorRect);
 
-        cmdList->SetPipelineState(
-            My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_defer_light));
         auto gb0 = rsrcs.find(gbuffer0)->second;
         auto gb1 = rsrcs.find(gbuffer1)->second;
         auto gb2 = rsrcs.find(gbuffer2)->second;
 
         auto bb = rsrcs.find(backbuffer)->second;
 
-        // cmdList->CopyResource(bb.resource, rt.resource);
+        //cmdList->CopyResource(bb.resource, rt.resource);
 
         // Clear the render texture and depth buffer.
         cmdList->ClearRenderTargetView(bb.cpuHandle, Colors::LightSteelBlue, 0,
@@ -494,7 +500,24 @@ void DeferApp::Draw() {
             My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
                 ID_RootSignature_defer_light));
 
+        cmdList->SetPipelineState(
+            My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_defer_light));
+
         cmdList->SetGraphicsRootDescriptorTable(0, gb0.gpuHandle);
+        auto lightsCB =
+            frameRsrcMngr->GetCurrentFrameResource()
+                ->GetResource<My::MyDX12::ArrayUploadBuffer<LightingLights>>(
+                    "lights")
+                .GetResource();
+        cmdList->SetGraphicsRootConstantBufferView(
+            1, lightsCB->GetGPUVirtualAddress());
+        auto cameraCB =
+            frameRsrcMngr->GetCurrentFrameResource()
+                ->GetResource<My::MyDX12::ArrayUploadBuffer<CameraConstants>>(
+                    "camera constants")
+                .GetResource();
+        cmdList->SetGraphicsRootConstantBufferView(
+            2, cameraCB->GetGPUVirtualAddress());
 
         cmdList->IASetVertexBuffers(0, 0, nullptr);
         cmdList->IASetIndexBuffer(nullptr);
@@ -516,7 +539,7 @@ void DeferApp::Draw() {
   //   ThrowIfFailed(myGCmdList->Close());
 
   //   // Add the command list to the queue for execution.
-  // myCmdQueue.Execute(myGCmdList.raw.Get());
+  //myCmdQueue.Execute(myGCmdList.raw.Get());
 
   // Swap the back and front buffers
   ThrowIfFailed(mSwapChain->Present(0, 0));
@@ -532,7 +555,9 @@ void DeferApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -574,20 +599,17 @@ void DeferApp::UpdateCamera() {
   mView = My::transformf::look_at(mEyePos, {0.f});
 }
 
-void DeferApp::AnimateMaterials() {}
-
 void DeferApp::UpdateObjectCBs() {
   auto& currObjectCB =
       frameRsrcMngr->GetCurrentFrameResource()
-          ->GetResource<My::MyDX12::ArrayUploadBuffer<ObjectConstants>>(
-              "ArrayUploadBuffer<ObjectConstants>");
+          ->GetResource<My::MyDX12::ArrayUploadBuffer<GeometryObjectConstants>>(
+              "ArrayUploadBuffer<GeometryObjectConstants>");
   for (auto& e : mAllRitems) {
     // Only update the cbuffer data if the constants have changed.
     // This needs to be tracked per frame resource.
     if (e->NumFramesDirty > 0) {
-      ObjectConstants objConstants;
+      GeometryObjectConstants objConstants;
       objConstants.World = e->World;
-      objConstants.TexTransform = e->TexTransform;
 
       currObjectCB.Set(e->ObjCBIndex, objConstants);
 
@@ -600,21 +622,20 @@ void DeferApp::UpdateObjectCBs() {
 void DeferApp::UpdateMaterialCBs() {
   auto& currMaterialCB =
       frameRsrcMngr->GetCurrentFrameResource()
-          ->GetResource<My::MyDX12::ArrayUploadBuffer<MaterialConstants>>(
-              "ArrayUploadBuffer<MaterialConstants>");
+          ->GetResource<
+              My::MyDX12::ArrayUploadBuffer<GeometryMaterialConstants>>(
+              "ArrayUploadBuffer<GeometryMaterialConstants>");
   for (auto& e : mMaterials) {
-    // Only update the cbuffer data if the constants have changed.  If the
-    // cbuffer data changes, it needs to be updated for each FrameResource.
+    // Only update the cbuffer data if the constants have changed.  If the cbuffer
+    // data changes, it needs to be updated for each FrameResource.
     Material* mat = e.second.get();
     if (mat->NumFramesDirty > 0) {
       XMMATRIX matTransform = XMLoadFloat4x4(&mat->MatTransform);
 
-      MaterialConstants matConstants;
-      matConstants.DiffuseAlbedo = mat->DiffuseAlbedo;
-      matConstants.FresnelR0 = mat->FresnelR0;
-      matConstants.Roughness = mat->Roughness;
-      XMStoreFloat4x4(&matConstants.MatTransform,
-                      XMMatrixTranspose(matTransform));
+      GeometryMaterialConstants matConstants;
+      matConstants.albedoFactor = {1.f};
+      matConstants.metalnessFactor = 1.f;
+      matConstants.roughnessFactor = 1.f;
 
       currMaterialCB.Set(mat->MatCBIndex, matConstants);
 
@@ -624,34 +645,45 @@ void DeferApp::UpdateMaterialCBs() {
   }
 }
 
-void DeferApp::UpdateMainPassCB() {
-  mMainPassCB.View = mView;
-  mMainPassCB.InvView = mMainPassCB.View.inverse();
-  mMainPassCB.Proj = mProj;
-  mMainPassCB.InvProj = mMainPassCB.Proj.inverse();
-  mMainPassCB.ViewProj = mMainPassCB.Proj * mMainPassCB.View;
-  mMainPassCB.InvViewProj = mMainPassCB.InvView * mMainPassCB.InvProj;
-  mMainPassCB.EyePosW = mEyePos;
-  mMainPassCB.RenderTargetSize = {mClientWidth, mClientHeight};
-  mMainPassCB.InvRenderTargetSize = {1.0f / mClientWidth, 1.0f / mClientHeight};
+void DeferApp::UpdateMainCameraCB() {
+  mMainCameraCB.View = mView;
+  mMainCameraCB.InvView = mMainCameraCB.View.inverse();
+  mMainCameraCB.Proj = mProj;
+  mMainCameraCB.InvProj = mMainCameraCB.Proj.inverse();
+  mMainCameraCB.ViewProj = mMainCameraCB.Proj * mMainCameraCB.View;
+  mMainCameraCB.InvViewProj = mMainCameraCB.InvView * mMainCameraCB.InvProj;
+  mMainCameraCB.EyePosW = mEyePos;
+  mMainCameraCB.RenderTargetSize = {mClientWidth, mClientHeight};
+  mMainCameraCB.InvRenderTargetSize = {1.0f / mClientWidth,
+                                       1.0f / mClientHeight};
 
-  mMainPassCB.NearZ = 1.0f;
-  mMainPassCB.FarZ = 1000.0f;
-  mMainPassCB.TotalTime = My::MyGE::GameTimer::Instance().TotalTime();
-  mMainPassCB.DeltaTime = My::MyGE::GameTimer::Instance().DeltaTime();
-  mMainPassCB.AmbientLight = {0.25f, 0.25f, 0.35f, 1.0f};
-  mMainPassCB.Lights[0].Direction = {0.57735f, -0.57735f, 0.57735f};
-  mMainPassCB.Lights[0].Strength = {0.6f, 0.6f, 0.6f};
-  mMainPassCB.Lights[1].Direction = {-0.57735f, -0.57735f, 0.57735f};
-  mMainPassCB.Lights[1].Strength = {0.3f, 0.3f, 0.3f};
-  mMainPassCB.Lights[2].Direction = {0.0f, -0.707f, -0.707f};
-  mMainPassCB.Lights[2].Strength = {0.15f, 0.15f, 0.15f};
+  mMainCameraCB.NearZ = 1.0f;
+  mMainCameraCB.FarZ = 1000.0f;
+  mMainCameraCB.TotalTime = My::MyGE::GameTimer::Instance().TotalTime();
+  mMainCameraCB.DeltaTime = My::MyGE::GameTimer::Instance().DeltaTime();
 
-  auto& currPassCB =
+  auto& cameraCB =
       frameRsrcMngr->GetCurrentFrameResource()
-          ->GetResource<My::MyDX12::ArrayUploadBuffer<PassConstants>>(
-              "gbPass constants");
-  currPassCB.Set(0, mMainPassCB);
+          ->GetResource<My::MyDX12::ArrayUploadBuffer<CameraConstants>>(
+              "camera constants");
+  cameraCB.Set(0, mMainCameraCB);
+}
+
+void DeferApp::UpdateLightsCB() {
+  LightingLights lights;
+  lights.diectionalLightNum = 3;
+  lights.directionalLights[0].L = {6.f};
+  lights.directionalLights[0].dir = {0.57735f, -0.57735f, 0.57735f};
+  lights.directionalLights[1].L = {3.f};
+  lights.directionalLights[1].dir = {-0.57735f, -0.57735f, 0.57735f};
+  lights.directionalLights[2].L = {1.5f};
+  lights.directionalLights[2].dir = {0.0f, -0.707f, -0.707f};
+
+  auto& lightsCB =
+      frameRsrcMngr->GetCurrentFrameResource()
+          ->GetResource<My::MyDX12::ArrayUploadBuffer<LightingLights>>(
+              "lights");
+  lightsCB.Set(0, lights);
 }
 
 void DeferApp::LoadTextures() {
@@ -718,9 +750,9 @@ void DeferApp::BuildRootSignature() {
     slotRootParameter[0].InitAsDescriptorTable(1, &texRange0);
     slotRootParameter[1].InitAsDescriptorTable(1, &texRange1);
     slotRootParameter[2].InitAsDescriptorTable(1, &texRange2);
-    slotRootParameter[3].InitAsConstantBufferView(0);
-    slotRootParameter[4].InitAsConstantBufferView(1);
-    slotRootParameter[5].InitAsConstantBufferView(2);
+    slotRootParameter[3].InitAsConstantBufferView(0);  // obj
+    slotRootParameter[4].InitAsConstantBufferView(1);  // mat
+    slotRootParameter[5].InitAsConstantBufferView(2);  // cam
 
     auto staticSamplers =
         My::MyGE::RsrcMngrDX12::Instance().GetStaticSamplers();
@@ -763,21 +795,20 @@ void DeferApp::BuildRootSignature() {
     texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);
 
     // Root parameter can be a table, root descriptor or root constants.
-    CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+    CD3DX12_ROOT_PARAMETER slotRootParameter[3];
 
     // Perfomance TIP: Order from most frequent to least frequent.
     slotRootParameter[0].InitAsDescriptorTable(1, &texTable,
                                                D3D12_SHADER_VISIBILITY_PIXEL);
-    slotRootParameter[1].InitAsConstantBufferView(0);
-    slotRootParameter[2].InitAsConstantBufferView(1);
-    slotRootParameter[3].InitAsConstantBufferView(2);
+    slotRootParameter[1].InitAsConstantBufferView(0);  // lights
+    slotRootParameter[2].InitAsConstantBufferView(1);  // camera
 
     auto staticSamplers =
         My::MyGE::RsrcMngrDX12::Instance().GetStaticSamplers();
 
     // A root signature is an array of root parameters.
     CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
-        4, slotRootParameter, (UINT)staticSamplers.size(),
+        3, slotRootParameter, (UINT)staticSamplers.size(),
         staticSamplers.data(),
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
@@ -785,8 +816,6 @@ void DeferApp::BuildRootSignature() {
         ID_RootSignature_defer_light, &rootSigDesc);
   }
 }
-
-void DeferApp::BuildDescriptorHeaps() {}
 
 void DeferApp::BuildShadersAndInputLayout() {
   std::filesystem::path hlslScreenPath = "../assets/shaders/Screen.hlsl";
@@ -911,17 +940,22 @@ void DeferApp::BuildFrameResources() {
 
     fr->RegisterResource("CommandAllocator", allocator);
 
-    fr->RegisterResource("gbPass constants",
-                         My::MyDX12::ArrayUploadBuffer<PassConstants>{
+    fr->RegisterResource("camera constants",
+                         My::MyDX12::ArrayUploadBuffer<CameraConstants>{
                              myDevice.raw.Get(), 1, true});
 
-    fr->RegisterResource("ArrayUploadBuffer<MaterialConstants>",
-                         My::MyDX12::ArrayUploadBuffer<MaterialConstants>{
-                             myDevice.raw.Get(), mMaterials.size(), true});
+    fr->RegisterResource(
+        "ArrayUploadBuffer<GeometryMaterialConstants>",
+        My::MyDX12::ArrayUploadBuffer<GeometryMaterialConstants>{
+            myDevice.raw.Get(), mMaterials.size(), true});
 
-    fr->RegisterResource("ArrayUploadBuffer<ObjectConstants>",
-                         My::MyDX12::ArrayUploadBuffer<ObjectConstants>{
+    fr->RegisterResource("ArrayUploadBuffer<GeometryObjectConstants>",
+                         My::MyDX12::ArrayUploadBuffer<GeometryObjectConstants>{
                              myDevice.raw.Get(), mAllRitems.size(), true});
+
+    fr->RegisterResource("lights",
+                         My::MyDX12::ArrayUploadBuffer<LightingLights>{
+                             myDevice.raw.Get(), 1, true});
 
     auto fgRsrcMngr = std::make_shared<My::MyDX12::FG::RsrcMngr>();
     fr->RegisterResource("FrameGraphRsrcMngr", fgRsrcMngr);
@@ -961,25 +995,27 @@ void DeferApp::BuildRenderItems() {
   mAllRitems.push_back(std::move(boxRitem));
 
   // All the render items are opaque.
-  for (auto& e : mAllRitems) mOpaqueRitems.push_back(e.get());
+  for (auto& e : mAllRitems)
+    mOpaqueRitems.push_back(e.get());
 }
 
 void DeferApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList,
                                const std::vector<RenderItem*>& ritems) {
-  UINT objCBByteSize =
-      My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+  UINT objCBByteSize = My::MyDX12::Util::CalcConstantBufferByteSize(
+      sizeof(GeometryObjectConstants));
   UINT matCBByteSize =
       My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(MaterialConstants));
 
   auto objectCB =
       frameRsrcMngr->GetCurrentFrameResource()
-          ->GetResource<My::MyDX12::ArrayUploadBuffer<ObjectConstants>>(
-              "ArrayUploadBuffer<ObjectConstants>")
+          ->GetResource<My::MyDX12::ArrayUploadBuffer<GeometryObjectConstants>>(
+              "ArrayUploadBuffer<GeometryObjectConstants>")
           .GetResource();
   auto matCB =
       frameRsrcMngr->GetCurrentFrameResource()
-          ->GetResource<My::MyDX12::ArrayUploadBuffer<MaterialConstants>>(
-              "ArrayUploadBuffer<MaterialConstants>")
+          ->GetResource<
+              My::MyDX12::ArrayUploadBuffer<GeometryMaterialConstants>>(
+              "ArrayUploadBuffer<GeometryMaterialConstants>")
           .GetResource();
 
   // For each render item...
@@ -999,7 +1035,7 @@ void DeferApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList,
     cmdList->SetGraphicsRootDescriptorTable(1, ri->Mat->RoughnessSrvGpuHandle);
     cmdList->SetGraphicsRootDescriptorTable(2, ri->Mat->MetalnessSrvGpuHandle);
     cmdList->SetGraphicsRootConstantBufferView(3, objCBAddress);
-    cmdList->SetGraphicsRootConstantBufferView(5, matCBAddress);
+    cmdList->SetGraphicsRootConstantBufferView(4, matCBAddress);
 
     cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation,
                                   ri->BaseVertexLocation, 0);

@@ -461,7 +461,8 @@ void ImGUIApp::Update() {
   world.RunEntityJob(
       [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
       camFilter);
-  pipeline->BeginFrame(world, gameCameras);
+  assert(gameCameras.size() == 1);  // now only support 1 camera
+  pipeline->BeginFrame(world, gameCameras.front());
 }
 
 void ImGUIApp::Draw() {

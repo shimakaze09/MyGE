@@ -2,8 +2,15 @@
 // Created by Admin on 16/03/2025.
 //
 
-#include <MyDX12/FrameResourceMngr.h>
+#include <MyGE/Render/DX12/StdPipeline.h>
+
+#include <MyGE/Core/ShaderMngr.h>
+#include <MyGE/Render/DX12/MeshLayoutMngr.h>
+#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
+
 #include <MyGE/Asset/AssetMngr.h>
+
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
@@ -12,17 +19,16 @@
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
-#include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
-#include <MyGE/Render/DX12/MeshLayoutMngr.h>
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
-#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
-#include <MyGE/Render/DX12/StdPipeline.h>
+
 #include <MyGE/Transform/Transform.h>
+
 #include <MyGE/_deps/imgui/imgui.h>
 #include <MyGE/_deps/imgui/imgui_impl_dx12.h>
 #include <MyGE/_deps/imgui/imgui_impl_win32.h>
+
+#include <MyDX12/FrameResourceMngr.h>
 
 using namespace My::MyGE;
 using namespace My;
@@ -45,54 +51,57 @@ struct StdPipeline::Impl {
   static constexpr size_t ID_RootSignature_screen = 1;
   static constexpr size_t ID_RootSignature_defer_light = 2;
 
-  struct ObjectConstants {
-    My::transformf World = My::transformf::eye();
-    My::transformf TexTransform = My::transformf::eye();
+  struct GeometryObjectConstants {
+    My::transformf World;
   };
 
-  struct PassConstants {
-    My::transformf View = My::transformf::eye();
-    My::transformf InvView = My::transformf::eye();
-    My::transformf Proj = My::transformf::eye();
-    My::transformf InvProj = My::transformf::eye();
-    My::transformf ViewProj = My::transformf::eye();
-    My::transformf InvViewProj = My::transformf::eye();
-    My::pointf3 EyePosW = {0.0f, 0.0f, 0.0f};
-    float cbPerObjectPad1 = 0.0f;
-    My::valf2 RenderTargetSize = {0.0f, 0.0f};
-    My::valf2 InvRenderTargetSize = {0.0f, 0.0f};
-    float NearZ = 0.0f;
-    float FarZ = 0.0f;
-    float TotalTime = 0.0f;
-    float DeltaTime = 0.0f;
+  struct CameraConstants {
+    My::transformf View;
 
-    My::vecf4 AmbientLight = {0.0f, 0.0f, 0.0f, 1.0f};
+    My::transformf InvView;
 
-    // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point
-    // lights; indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS,
-    // NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS) are spot lights for a
-    // maximum of MaxLights per object.
-    struct Light {
-      My::rgbf Strength = {0.5f, 0.5f, 0.5f};
-      float FalloffStart = 1.0f;                  // point/spot light only
-      My::vecf3 Direction = {0.0f, -1.0f, 0.0f};  // directional/spot light only
-      float FalloffEnd = 10.0f;                   // point/spot light only
-      My::pointf3 Position = {0.0f, 0.0f, 0.0f};  // point/spot light only
-      float SpotPower = 64.0f;                    // spot light only
-    };
+    My::transformf Proj;
 
-    Light Lights[16];
+    My::transformf InvProj;
+
+    My::transformf ViewProj;
+
+    My::transformf InvViewProj;
+
+    My::pointf3 EyePosW;
+    float _pad0;
+
+    My::valf2 RenderTargetSize;
+    My::valf2 InvRenderTargetSize;
+
+    float NearZ;
+    float FarZ;
+    float TotalTime;
+    float DeltaTime;
   };
 
-  struct MatConstants {
+  struct GeometryMaterialConstants {
     My::rgbf albedoFactor;
     float roughnessFactor;
+    float metalnessFactor;
+  };
+
+  struct DirectionalLight {
+    rgbf L;
+    float _pad0;
+    vecf3 dir;
+    float _pad1;
+  };
+
+  struct LightingLights {
+    UINT diectionalLightNum;
+    UINT _pad0;
+    UINT _pad1;
+    UINT _pad2;
+    DirectionalLight directionalLights[4];
   };
 
   struct RenderContext {
-    size_t numCameras;
-
     struct Object {
       const Mesh* mesh{nullptr};
       size_t submeshIdx{static_cast<size_t>(-1)};
@@ -133,7 +142,7 @@ struct StdPipeline::Impl {
 
   void UpdateRenderContext(const MyECS::World& world);
   void UpdateShaderCBs(const ResizeData& resizeData, const MyECS::World& world,
-                       const std::vector<CameraData>& camera);
+                       const CameraData& cameraData);
   void Render(const ResizeData& resizeData, ID3D12Resource* rtb);
   void DrawObjects(ID3D12GraphicsCommandList*);
 };
@@ -175,9 +184,9 @@ void StdPipeline::Impl::BuildRootSignature() {
     slotRootParameter[0].InitAsDescriptorTable(1, &texRange0);
     slotRootParameter[1].InitAsDescriptorTable(1, &texRange1);
     slotRootParameter[2].InitAsDescriptorTable(1, &texRange2);
-    slotRootParameter[3].InitAsConstantBufferView(0);
-    slotRootParameter[4].InitAsConstantBufferView(1);
-    slotRootParameter[5].InitAsConstantBufferView(2);
+    slotRootParameter[3].InitAsConstantBufferView(0);  // object
+    slotRootParameter[4].InitAsConstantBufferView(1);  // material
+    slotRootParameter[5].InitAsConstantBufferView(2);  // camera
 
     auto staticSamplers = RsrcMngrDX12::Instance().GetStaticSamplers();
 
@@ -215,23 +224,22 @@ void StdPipeline::Impl::BuildRootSignature() {
   }
   {  // defer lighting
     CD3DX12_DESCRIPTOR_RANGE texTable;
-    texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);
+    texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);  // gbuffers
 
     // Root parameter can be a table, root descriptor or root constants.
-    CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+    CD3DX12_ROOT_PARAMETER slotRootParameter[3];
 
     // Perfomance TIP: Order from most frequent to least frequent.
     slotRootParameter[0].InitAsDescriptorTable(1, &texTable,
                                                D3D12_SHADER_VISIBILITY_PIXEL);
-    slotRootParameter[1].InitAsConstantBufferView(0);
-    slotRootParameter[2].InitAsConstantBufferView(1);
-    slotRootParameter[3].InitAsConstantBufferView(2);
+    slotRootParameter[1].InitAsConstantBufferView(0);  // lights
+    slotRootParameter[2].InitAsConstantBufferView(1);  // camera
 
     auto staticSamplers = RsrcMngrDX12::Instance().GetStaticSamplers();
 
     // A root signature is an array of root parameters.
     CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
-        4, slotRootParameter, (UINT)staticSamplers.size(),
+        3, slotRootParameter, (UINT)staticSamplers.size(),
         staticSamplers.data(),
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
@@ -251,19 +259,6 @@ void StdPipeline::Impl::BuildPSOs() {
   screenPsoDesc.DepthStencilState.StencilEnable = false;
   ID_PSO_screen = RsrcMngrDX12::Instance().RegisterPSO(&screenPsoDesc);
 
-  /*auto geometryPsoDesc = My::MyDX12::Desc::PSO::MRT(
-                RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_geometry),
-                mInputLayout.data(), (UINT)mInputLayout.size(),
-                RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader),
-                RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader),
-                3,
-                DXGI_FORMAT_R32G32B32A32_FLOAT,
-                initDesc.depthStencilFormat
-        );
-        geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
-        ID_PSO_geometry =
-     RsrcMngrDX12::Instance().RegisterPSO(&geometryPsoDesc);*/
-
   auto deferLightingPsoDesc = My::MyDX12::Desc::PSO::Basic(
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_defer_light),
       nullptr, 0, RsrcMngrDX12::Instance().GetShaderByteCode_vs(deferShader),
@@ -280,9 +275,9 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
   size_t layoutID = MeshLayoutMngr::Instance().GetMeshLayoutID(mesh);
   auto target = PSOIDMap.find(layoutID);
   if (target == PSOIDMap.end()) {
-    auto [uv, normal, tangent, color] =
-        MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
-    if (!uv || !normal) return static_cast<size_t>(-1);  // not support
+    //auto [uv, normal, tangent, color] = MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
+    //if (!uv || !normal)
+    //	return static_cast<size_t>(-1); // not support
 
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
@@ -335,76 +330,88 @@ void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
       filter, false);
 }
 
-void StdPipeline::Impl::UpdateShaderCBs(
-    const ResizeData& resizeData, const MyECS::World& world,
-    const std::vector<CameraData>& cameras) {
+void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData,
+                                        const MyECS::World& world,
+                                        const CameraData& cameraData) {
   auto& shaderCBMngr =
       frameRsrcMngr.GetCurrentFrameResource()
           ->GetResource<My::MyGE::ShaderCBMngrDX12>("ShaderCBMngrDX12");
 
-  renderContext.numCameras = cameras.size();
+  {  // defer lighting
+    LightingLights lights;
+    lights.diectionalLightNum = 3;
+    lights.directionalLights[0].L = {6.f};
+    lights.directionalLights[0].dir = {0.57735f, -0.57735f, 0.57735f};
+    lights.directionalLights[1].L = {3.f};
+    lights.directionalLights[1].dir = {-0.57735f, -0.57735f, 0.57735f};
+    lights.directionalLights[2].L = {1.5f};
+    lights.directionalLights[2].dir = {0.0f, -0.707f, -0.707f};
 
+    auto buffer = shaderCBMngr.GetBuffer(deferShader);
+    buffer->FastReserve(
+        My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(LightingLights)));
+    buffer->Set(0, &lights, sizeof(LightingLights));
+  }
+
+  {  // camera
+    auto buffer = shaderCBMngr.GetCommonBuffer();
+    buffer->FastReserve(
+        My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(CameraConstants)));
+
+    auto cmptCamera =
+        cameraData.world.entityMngr.Get<Camera>(cameraData.entity);
+    auto cmptW2L =
+        cameraData.world.entityMngr.Get<WorldToLocal>(cameraData.entity);
+    auto cmptTranslation =
+        cameraData.world.entityMngr.Get<Translation>(cameraData.entity);
+    CameraConstants cbPerCamera;
+    cbPerCamera.View = cmptW2L->value;
+    cbPerCamera.InvView = cbPerCamera.View.inverse();
+    cbPerCamera.Proj = cmptCamera->prjectionMatrix;
+    cbPerCamera.InvProj = cbPerCamera.Proj.inverse();
+    cbPerCamera.ViewProj = cbPerCamera.Proj * cbPerCamera.View;
+    cbPerCamera.InvViewProj = cbPerCamera.InvView * cbPerCamera.InvProj;
+    cbPerCamera.EyePosW = cmptTranslation->value.as<pointf3>();
+    cbPerCamera.RenderTargetSize = {resizeData.width, resizeData.height};
+    cbPerCamera.InvRenderTargetSize = {1.0f / resizeData.width,
+                                       1.0f / resizeData.height};
+
+    cbPerCamera.NearZ = cmptCamera->clippingPlaneMin;
+    cbPerCamera.FarZ = cmptCamera->clippingPlaneMax;
+    cbPerCamera.TotalTime = My::MyGE::GameTimer::Instance().TotalTime();
+    cbPerCamera.DeltaTime = My::MyGE::GameTimer::Instance().DeltaTime();
+
+    buffer->Set(0, &cbPerCamera, sizeof(CameraConstants));
+  }
+
+  // geometry
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
+    for (const auto& [mat, objects] : mat2objects)
+      objectNum += objects.size();
     if (shader->shaderName == "StdPipeline/Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
-      buffer->Reserve(
-          cameras.size() * My::MyDX12::Util::CalcConstantBufferByteSize(
-                               sizeof(PassConstants)) +
+      buffer->FastReserve(
           mat2objects.size() * My::MyDX12::Util::CalcConstantBufferByteSize(
-                                   sizeof(MatConstants)) +
+                                   sizeof(GeometryMaterialConstants)) +
           objectNum * My::MyDX12::Util::CalcConstantBufferByteSize(
-                          sizeof(ObjectConstants)));
+                          sizeof(GeometryObjectConstants)));
       size_t offset = 0;
-      for (size_t i = 0; i < cameras.size(); i++) {
-        const auto& camData = cameras[i];
-        auto cmptCamera = camData.world.entityMngr.Get<Camera>(camData.entity);
-        auto cmptW2L =
-            camData.world.entityMngr.Get<WorldToLocal>(camData.entity);
-        auto cmptTranslation =
-            camData.world.entityMngr.Get<Translation>(camData.entity);
-        PassConstants passCB;
-        passCB.View = cmptW2L->value;
-        passCB.InvView = passCB.View.inverse();
-        passCB.Proj = cmptCamera->prjectionMatrix;
-        passCB.InvProj = passCB.Proj.inverse();
-        passCB.ViewProj = passCB.Proj * passCB.View;
-        passCB.InvViewProj = passCB.InvView * passCB.InvProj;
-        passCB.EyePosW = cmptTranslation->value.as<pointf3>();
-        passCB.RenderTargetSize = {resizeData.width, resizeData.height};
-        passCB.InvRenderTargetSize = {1.0f / resizeData.width,
-                                      1.0f / resizeData.height};
-
-        passCB.NearZ = cmptCamera->clippingPlaneMin;
-        passCB.FarZ = cmptCamera->clippingPlaneMax;
-        passCB.TotalTime = My::MyGE::GameTimer::Instance().TotalTime();
-        passCB.DeltaTime = My::MyGE::GameTimer::Instance().DeltaTime();
-        passCB.AmbientLight = {0.25f, 0.25f, 0.35f, 1.0f};
-        passCB.Lights[0].Direction = {0.57735f, -0.57735f, 0.57735f};
-        passCB.Lights[0].Strength = {0.6f, 0.6f, 0.6f};
-        passCB.Lights[1].Direction = {-0.57735f, -0.57735f, 0.57735f};
-        passCB.Lights[1].Strength = {0.3f, 0.3f, 0.3f};
-        passCB.Lights[2].Direction = {0.0f, -0.707f, -0.707f};
-        passCB.Lights[2].Strength = {0.15f, 0.15f, 0.15f};
-        buffer->Set(0, &passCB, sizeof(PassConstants));
-        offset +=
-            My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(PassConstants));
-      }
       for (const auto& [mat, objects] : mat2objects) {
-        MatConstants matC;
+        GeometryMaterialConstants matC;
         matC.albedoFactor = {1.f};
         matC.roughnessFactor = 1.f;
-        buffer->Set(offset, &matC, sizeof(MatConstants));
-        offset +=
-            My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(MatConstants));
+        matC.metalnessFactor = 1.f;
+        buffer->Set(offset, &matC, sizeof(GeometryMaterialConstants));
+        offset += My::MyDX12::Util::CalcConstantBufferByteSize(
+            sizeof(GeometryMaterialConstants));
         for (const auto& object : objects) {
-          ObjectConstants objectConstants;
-          objectConstants.TexTransform = My::transformf::eye();
+          GeometryObjectConstants objectConstants;
           objectConstants.World = object.l2w;
-          buffer->Set(offset, &objectConstants, sizeof(ObjectConstants));
+          buffer->Set(offset, &objectConstants,
+                      sizeof(GeometryObjectConstants));
           offset += My::MyDX12::Util::CalcConstantBufferByteSize(
-              sizeof(ObjectConstants));
+              sizeof(GeometryObjectConstants));
         }
       }
     }
@@ -444,9 +451,8 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   D3D12_RESOURCE_DESC dsDesc = MyDX12::Desc::RSRC::Basic(
       D3D12_RESOURCE_DIMENSION_TEXTURE2D, width, (UINT)height,
       DXGI_FORMAT_R24G8_TYPELESS,
-      // Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer
-      // to read from the depth buffer.  Therefore, because we need to create
-      // two views to the same resource:
+      // Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer to read from
+      // the depth buffer.  Therefore, because we need to create two views to the same resource:
       //   1. SRV format: DXGI_FORMAT_R24_UNORM_X8_TYPELESS
       //   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
       // we need to create the depth buffer resource with a typeless format.
@@ -540,17 +546,14 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
             RsrcMngrDX12::Instance().GetRootSignature(
                 Impl::ID_RootSignature_geometry));
 
-        auto passCB = frameRsrcMngr.GetCurrentFrameResource()
-                          ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
-                          .GetBuffer(geomrtryShader)
-                          ->GetResource();
-
-        constexpr UINT passCBByteSize =
-            My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(PassConstants));
-        size_t offset = passCBByteSize * 0;  // not support multi camera now
+        auto cbPerCamera =
+            frameRsrcMngr.GetCurrentFrameResource()
+                ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
+                .GetCommonBuffer()
+                ->GetResource();
 
         cmdList->SetGraphicsRootConstantBufferView(
-            4, passCB->GetGPUVirtualAddress() + offset);
+            5, cbPerCamera->GetGPUVirtualAddress());
 
         DrawObjects(cmdList);
       });
@@ -565,15 +568,13 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->RSSetViewports(1, &resizeData.screenViewport);
         cmdList->RSSetScissorRects(1, &resizeData.scissorRect);
 
-        cmdList->SetPipelineState(
-            RsrcMngrDX12::Instance().GetPSO(ID_PSO_defer_light));
         auto gb0 = rsrcs.find(gbuffer0)->second;
         auto gb1 = rsrcs.find(gbuffer1)->second;
         auto gb2 = rsrcs.find(gbuffer2)->second;
 
         auto bb = rsrcs.find(rt)->second;
 
-        // cmdList->CopyResource(bb.resource, rt.resource);
+        //cmdList->CopyResource(bb.resource, rt.resource);
 
         // Clear the render texture and depth buffer.
         cmdList->ClearRenderTargetView(bb.cpuHandle, DirectX::Colors::Black, 0,
@@ -585,8 +586,25 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->SetGraphicsRootSignature(
             RsrcMngrDX12::Instance().GetRootSignature(
                 Impl::ID_RootSignature_defer_light));
+        cmdList->SetPipelineState(
+            RsrcMngrDX12::Instance().GetPSO(ID_PSO_defer_light));
 
         cmdList->SetGraphicsRootDescriptorTable(0, gb0.gpuHandle);
+
+        auto cbLights = frameRsrcMngr.GetCurrentFrameResource()
+                            ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
+                            .GetBuffer(deferShader)
+                            ->GetResource();
+        cmdList->SetGraphicsRootConstantBufferView(
+            1, cbLights->GetGPUVirtualAddress());
+
+        auto cbPerCamera =
+            frameRsrcMngr.GetCurrentFrameResource()
+                ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
+                .GetCommonBuffer()
+                ->GetResource();
+        cmdList->SetGraphicsRootConstantBufferView(
+            2, cbPerCamera->GetGPUVirtualAddress());
 
         cmdList->IASetVertexBuffers(0, 0, nullptr);
         cmdList->IASetIndexBuffer(nullptr);
@@ -606,12 +624,10 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
 }
 
 void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
-  constexpr UINT passCBByteSize =
-      My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(PassConstants));
-  constexpr UINT matCBByteSize =
-      My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(MatConstants));
-  constexpr UINT objCBByteSize =
-      My::MyDX12::Util::CalcConstantBufferByteSize(sizeof(ObjectConstants));
+  constexpr UINT matCBByteSize = My::MyDX12::Util::CalcConstantBufferByteSize(
+      sizeof(GeometryMaterialConstants));
+  constexpr UINT objCBByteSize = My::MyDX12::Util::CalcConstantBufferByteSize(
+      sizeof(GeometryObjectConstants));
 
   auto& shaderCBMngr =
       frameRsrcMngr.GetCurrentFrameResource()
@@ -622,7 +638,7 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
   const auto& mat2objects =
       renderContext.objectMap.find(geomrtryShader)->second;
 
-  size_t offset = passCBByteSize * renderContext.numCameras;
+  size_t offset = 0;
   for (const auto& [mat, objects] : mat2objects) {
     // For each render item...
     size_t objIdx = 0;
@@ -657,7 +673,7 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
       cmdList->SetGraphicsRootDescriptorTable(1, roughnessHandle);
       cmdList->SetGraphicsRootDescriptorTable(2, matalnessHandle);
       cmdList->SetGraphicsRootConstantBufferView(3, objCBAddress);
-      cmdList->SetGraphicsRootConstantBufferView(5, matCBAddress);
+      cmdList->SetGraphicsRootConstantBufferView(4, matCBAddress);
 
       cmdList->SetPipelineState(
           RsrcMngrDX12::Instance().GetPSO(GetGeometryPSO_ID(object.mesh)));
@@ -672,10 +688,12 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() { delete pImpl; }
+StdPipeline::~StdPipeline() {
+  delete pImpl;
+}
 
 void StdPipeline::BeginFrame(const MyECS::World& world,
-                             const std::vector<CameraData>& cameras) {
+                             const CameraData& cameraData) {
   // collect some cpu data
   pImpl->UpdateRenderContext(world);
 
@@ -685,7 +703,7 @@ void StdPipeline::BeginFrame(const MyECS::World& world,
   pImpl->frameRsrcMngr.BeginFrame();
 
   // cpu -> gpu
-  pImpl->UpdateShaderCBs(GetResizeData(), world, cameras);
+  pImpl->UpdateShaderCBs(GetResizeData(), world, cameraData);
 }
 
 void StdPipeline::Render(ID3D12Resource* rt) {

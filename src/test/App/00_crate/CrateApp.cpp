@@ -2,17 +2,20 @@
 // Created by Admin on 16/03/2025.
 //
 
-#include <DirectXMath.h>
-#include <MyDX12/UploadBuffer.h>
+#include "../common/d3dApp.h"
+
 #include <MyGE/Asset/AssetMngr.h>
+
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
-#include <MyGM/MyGM.h>
 
-#include "../common/d3dApp.h"
+#include <MyDX12/UploadBuffer.h>
+
+#include <DirectXMath.h>
+#include <MyGM/MyGM.h>
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -46,9 +49,8 @@ struct PassConstants {
 
   // Indices [0, NUM_DIR_LIGHTS) are directional lights;
   // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-  // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS,
-  // NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS) are spot lights for a
-  // maximum of MaxLights per object.
+  // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
+  // are spot lights for a maximum of MaxLights per object.
   Light Lights[MaxLights];
 };
 
@@ -70,20 +72,18 @@ struct RenderItem {
 
   My::transformf TexTransform = My::transformf::eye();
 
-  // Dirty flag indicating the object data has changed and we need to update the
-  // constant buffer. Because we have an object cbuffer for each FrameResource,
-  // we have to apply the update to each FrameResource.  Thus, when we modify
-  // obect data we should set NumFramesDirty = gNumFrameResources so that each
-  // frame resource gets the update.
+  // Dirty flag indicating the object data has changed and we need to update the constant buffer.
+  // Because we have an object cbuffer for each FrameResource, we have to apply the
+  // update to each FrameResource.  Thus, when we modify obect data we should set
+  // NumFramesDirty = gNumFrameResources so that each frame resource gets the update.
   int NumFramesDirty = gNumFrameResources;
 
-  // Index into GPU constant buffer corresponding to the ObjectCB for this
-  // render item.
+  // Index into GPU constant buffer corresponding to the ObjectCB for this render item.
   UINT ObjCBIndex = -1;
 
   Material* Mat = nullptr;
   My::MyDX12::MeshGPUBuffer* Geo = nullptr;
-  // std::string Geo;
+  //std::string Geo;
 
   // Primitive topology.
   D3D12_PRIMITIVE_TOPOLOGY PrimitiveType =
@@ -133,22 +133,21 @@ class DeferApp : public D3DApp {
                        const std::vector<RenderItem*>& ritems);
 
  private:
-  // UINT mCbvSrvDescriptorSize = 0;
+  //UINT mCbvSrvDescriptorSize = 0;
 
-  // ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
+  //ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
 
-  // ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
+  //ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
   My::MyDX12::DescriptorHeapAllocation mSrvDescriptorHeap;
 
-  // std::unordered_map<std::string,
-  // std::unique_ptr<My::MyDX12::MeshGeometry>> mGeometries;
+  //std::unordered_map<std::string, std::unique_ptr<My::MyDX12::MeshGeometry>> mGeometries;
   std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
   std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
-  // std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
+  //std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
 
   std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
-  // ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
+  //ComPtr<ID3D12PipelineState> mOpaquePSO = nullptr;
 
   // List of all the render items.
   std::vector<std::unique_ptr<RenderItem>> mAllRitems;
@@ -169,7 +168,7 @@ class DeferApp : public D3DApp {
   POINT mLastMousePos;
 
   // frame graph
-  // My::MyDX12::FG::RsrcMngr fgRsrcMngr;
+  //My::MyDX12::FG::RsrcMngr fgRsrcMngr;
   My::MyDX12::FG::Executor fgExecutor;
   My::MyFG::Compiler fgCompiler;
   My::MyFG::FrameGraph fg;
@@ -193,7 +192,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     DeferApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    if (!theApp.Initialize())
+      return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -208,11 +208,13 @@ DeferApp::DeferApp(HINSTANCE hInstance)
     : D3DApp(hInstance), fg{"frame graph"} {}
 
 DeferApp::~DeferApp() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 }
 
 bool DeferApp::Initialize() {
-  if (!D3DApp::Initialize()) return false;
+  if (!D3DApp::Initialize())
+    return false;
 
   frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
       gNumFrameResources, myDevice.raw.Get());
@@ -225,10 +227,9 @@ bool DeferApp::Initialize() {
   // Reset the command list to prep for initialization commands.
   ThrowIfFailed(myGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
-  // Get the increment size of a descriptor in this heap type.  This is hardware
-  // specific, so we have to query this information.
-  // mCbvSrvDescriptorSize =
-  // myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+  // Get the increment size of a descriptor in this heap type.  This is hardware specific,
+  // so we have to query this information.
+  //mCbvSrvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
 
@@ -257,8 +258,7 @@ bool DeferApp::Initialize() {
 void DeferApp::OnResize() {
   D3DApp::OnResize();
 
-  // The window resized, so update the aspect ratio and recompute the projection
-  // matrix
+  // The window resized, so update the aspect ratio and recompute the projection matrix
   mProj = My::transformf::perspective(0.25f * My::PI<float>, AspectRatio(),
                                       1.0f, 1000.0f, 0.f);
 
@@ -295,18 +295,16 @@ void DeferApp::Draw() {
               "CommandAllocator");
 
   // Reuse the memory associated with command recording.
-  // We can only reset when the associated command lists have finished execution
-  // on the GPU.
+  // We can only reset when the associated command lists have finished execution on the GPU.
   ThrowIfFailed(cmdAlloc->Reset());
 
-  // A command list can be reset after it has been added to the command queue
-  // via ExecuteCommandList. Reusing the command list reuses memory.
-  // ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(),
-  // My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_opaque)));
+  // A command list can be reset after it has been added to the command queue via ExecuteCommandList.
+  // Reusing the command list reuses memory.
+  //ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_opaque)));
 
   /*myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->GetDescriptorHeap());
-  myGCmdList->RSSetViewports(1, &mScreenViewport);
-  myGCmdList->RSSetScissorRects(1, &mScissorRect);*/
+	myGCmdList->RSSetViewports(1, &mScreenViewport);
+	myGCmdList->RSSetScissorRects(1, &mScissorRect);*/
 
   fg.Clear();
   auto fgRsrcMngr =
@@ -390,7 +388,7 @@ void DeferApp::Draw() {
   //   ThrowIfFailed(myGCmdList->Close());
 
   //   // Add the command list to the queue for execution.
-  // myCmdQueue.Execute(myGCmdList.raw.Get());
+  //myCmdQueue.Execute(myGCmdList.raw.Get());
 
   // Swap the back and front buffers
   ThrowIfFailed(mSwapChain->Present(0, 0));
@@ -399,8 +397,7 @@ void DeferApp::Draw() {
   //// Advance the fence value to mark commands up to this fence point.
   //// Add an instruction to the command queue to set a new fence point.
   //// Because we are on the GPU timeline, the new fence point won't be
-  //// set until the GPU finishes processing all the commands prior to this
-  /// Signal().
+  //// set until the GPU finishes processing all the commands prior to this Signal().
   frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
 }
 
@@ -411,7 +408,9 @@ void DeferApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void DeferApp::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void DeferApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -466,11 +465,10 @@ void DeferApp::UpdateObjectCBs() {
     if (e->NumFramesDirty > 0) {
       ObjectConstants objConstants;
       /*XMMATRIX world = XMLoadFloat4x4(&e->World);
-      XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
+			XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
 
-      XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
-      XMStoreFloat4x4(&objConstants.TexTransform,
-      XMMatrixTranspose(texTransform));*/
+			XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
+			XMStoreFloat4x4(&objConstants.TexTransform, XMMatrixTranspose(texTransform));*/
       objConstants.World = e->World;
       objConstants.TexTransform = e->TexTransform;
 
@@ -488,8 +486,8 @@ void DeferApp::UpdateMaterialCBs() {
           ->GetResource<My::MyDX12::ArrayUploadBuffer<MaterialConstants>>(
               "ArrayUploadBuffer<MaterialConstants>");
   for (auto& e : mMaterials) {
-    // Only update the cbuffer data if the constants have changed.  If the
-    // cbuffer data changes, it needs to be updated for each FrameResource.
+    // Only update the cbuffer data if the constants have changed.  If the cbuffer
+    // data changes, it needs to be updated for each FrameResource.
     Material* mat = e.second.get();
     if (mat->NumFramesDirty > 0) {
       XMMATRIX matTransform = XMLoadFloat4x4(&mat->MatTransform);
@@ -567,8 +565,7 @@ void DeferApp::BuildRootSignature() {
   // Perfomance TIP: Order from most frequent to least frequent.
   slotRootParameter[0].InitAsDescriptorTable(1, &texTable,
                                              D3D12_SHADER_VISIBILITY_PIXEL);
-  // slotRootParameter[0].InitAsShaderResourceView(0, 0,
-  // D3D12_SHADER_VISIBILITY_PIXEL);
+  //slotRootParameter[0].InitAsShaderResourceView(0, 0, D3D12_SHADER_VISIBILITY_PIXEL);
   slotRootParameter[1].InitAsConstantBufferView(0);
   slotRootParameter[2].InitAsConstantBufferView(1);
   slotRootParameter[3].InitAsConstantBufferView(2);
@@ -696,7 +693,8 @@ void DeferApp::BuildRenderItems() {
   mAllRitems.push_back(std::move(boxRitem));
 
   // All the render items are opaque.
-  for (auto& e : mAllRitems) mOpaqueRitems.push_back(e.get());
+  for (auto& e : mAllRitems)
+    mOpaqueRitems.push_back(e.get());
 }
 
 void DeferApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList,
@@ -731,8 +729,7 @@ void DeferApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList,
         matCB->GetGPUVirtualAddress() + ri->Mat->MatCBIndex * matCBByteSize;
 
     cmdList->SetGraphicsRootDescriptorTable(0, ri->Mat->DiffuseSrvGpuHandle);
-    // cmdList->SetGraphicsRootShaderResourceView(0,
-    // mTextures["woodCrate"]->Resource->GetGPUVirtualAddress());
+    //cmdList->SetGraphicsRootShaderResourceView(0, mTextures["woodCrate"]->Resource->GetGPUVirtualAddress());
     cmdList->SetGraphicsRootConstantBufferView(1, objCBAddress);
     cmdList->SetGraphicsRootConstantBufferView(3, matCBAddress);
 
