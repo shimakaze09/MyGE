@@ -9,12 +9,15 @@
 - [ ] IO (mouse, keyboard) component
 - [ ] fix warnings
 - [ ] complex container inspect
+    - [x] vector, deque, list, forwarad_list
+    - [ ] set, map
 - [ ] euler rotation component / system
 - [ ] improve image API
 - [ ] editor roamer
 - [ ] improve inspector UI
 - [ ] improve pipeline
 - [ ] enum inspect
+- [ ] replace traits with std::begin, etc.
 
 ## Bugs
 

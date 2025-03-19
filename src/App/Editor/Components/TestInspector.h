@@ -33,9 +33,9 @@ struct TestInspector {
   rgbf v_rgb;
   rgbaf v_rgba;
   std::vector<std::string> v_vector{"abc", "edf"};
-  //std::deque<size_t> v_deque;
-  //std::forward_list<size_t> v_forward_list;
-  //std::list<size_t> v_list;
+  std::deque<size_t> v_deque;
+  std::forward_list<size_t> v_forward_list;
+  std::list<size_t> v_list;
   //std::set<size_t> v_set;
   //std::multiset<size_t> v_multiset;
   //std::unordered_set<size_t> v_unordered_set;
@@ -90,9 +90,11 @@ struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
       Field{"v_rgb", &My::MyGE::TestInspector::v_rgb},
       Field{"v_rgba", &My::MyGE::TestInspector::v_rgba},
       Field{"v_vector", &My::MyGE::TestInspector::v_vector},
+      Field{"v_deque", &My::MyGE::TestInspector::v_deque},
+      Field{"v_list", &My::MyGE::TestInspector::v_list},
+      Field{"v_forward_list", &My::MyGE::TestInspector::v_forward_list},
       Field{"v_map", &My::MyGE::TestInspector::v_map},
       Field{"v_tuple", &My::MyGE::TestInspector::v_tuple},
       Field{"v_pair", &My::MyGE::TestInspector::v_pair},
-      Field{"v_enum", &My::MyGE::TestInspector::v_enum},
-  };
+      Field{"v_enum", &My::MyGE::TestInspector::v_enum}};
 };
