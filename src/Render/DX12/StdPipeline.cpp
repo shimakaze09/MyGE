@@ -67,6 +67,7 @@ struct StdPipeline::Impl {
 
   struct GeometryObjectConstants {
     transformf World;
+    transformf InvWorld;
   };
 
   struct CameraConstants {
@@ -141,9 +142,6 @@ struct StdPipeline::Impl {
     // irradiance map srv : 0
     // prefilter map rtv  : 1
     // BRDF LUT           : 2
-    // black              : 3
-    // black              : 4
-    // black              : 5
     MyDX12::DescriptorHeapAllocation SRVDH;
   };
 
@@ -399,23 +397,26 @@ void StdPipeline::Impl::BuildRootSignature() {
     texRange1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
     CD3DX12_DESCRIPTOR_RANGE texRange2;
     texRange2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
+    CD3DX12_DESCRIPTOR_RANGE texRange3;
+    texRange3.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
 
     // Root parameter can be a table, root descriptor or root constants.
-    CD3DX12_ROOT_PARAMETER slotRootParameter[6];
+    CD3DX12_ROOT_PARAMETER slotRootParameter[7];
 
-    // Perfomance TIP: Order from most frequent to least frequent.
+    // Performance TIP: Order from most frequent to least frequent.
     slotRootParameter[0].InitAsDescriptorTable(1, &texRange0);
     slotRootParameter[1].InitAsDescriptorTable(1, &texRange1);
     slotRootParameter[2].InitAsDescriptorTable(1, &texRange2);
-    slotRootParameter[3].InitAsConstantBufferView(0);  // object
-    slotRootParameter[4].InitAsConstantBufferView(1);  // material
-    slotRootParameter[5].InitAsConstantBufferView(2);  // camera
+    slotRootParameter[3].InitAsDescriptorTable(1, &texRange3);
+    slotRootParameter[4].InitAsConstantBufferView(0);  // object
+    slotRootParameter[5].InitAsConstantBufferView(1);  // material
+    slotRootParameter[6].InitAsConstantBufferView(2);  // camera
 
     auto staticSamplers = RsrcMngrDX12::Instance().GetStaticSamplers();
 
     // A root signature is an array of root parameters.
     CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
-        6, slotRootParameter, (UINT)staticSamplers.size(),
+        7, slotRootParameter, (UINT)staticSamplers.size(),
         staticSamplers.data(),
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
@@ -791,6 +792,7 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData,
         for (const auto& object : objects) {
           GeometryObjectConstants objectConstants;
           objectConstants.World = object.l2w;
+          objectConstants.InvWorld = objectConstants.World.inverse();
           buffer->Set(offset, &objectConstants,
                       sizeof(GeometryObjectConstants));
           offset += MyDX12::Util::CalcConstantBufferByteSize(
@@ -963,7 +965,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
                            ->GetResource();
 
     cmdList->SetGraphicsRootConstantBufferView(
-        5, cbPerCamera->GetGPUVirtualAddress());
+        6, cbPerCamera->GetGPUVirtualAddress());
 
     DrawObjects(cmdList);
   });
@@ -1271,17 +1273,21 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
       auto albedo = mat->texture2Ds.find("gAlbedoMap")->second;
       auto roughness = mat->texture2Ds.find("gRoughnessMap")->second;
       auto metalness = mat->texture2Ds.find("gMetalnessMap")->second;
+      auto normalmap = mat->texture2Ds.find("gNormalMap")->second;
       auto albedoHandle =
           MyGE::RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(albedo);
       auto roughnessHandle =
           MyGE::RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(roughness);
       auto matalnessHandle =
           MyGE::RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(metalness);
+      auto normalHandle =
+          MyGE::RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(normalmap);
       cmdList->SetGraphicsRootDescriptorTable(0, albedoHandle);
       cmdList->SetGraphicsRootDescriptorTable(1, roughnessHandle);
       cmdList->SetGraphicsRootDescriptorTable(2, matalnessHandle);
-      cmdList->SetGraphicsRootConstantBufferView(3, objCBAddress);
-      cmdList->SetGraphicsRootConstantBufferView(4, matCBAddress);
+      cmdList->SetGraphicsRootDescriptorTable(3, normalHandle);
+      cmdList->SetGraphicsRootConstantBufferView(4, objCBAddress);
+      cmdList->SetGraphicsRootConstantBufferView(5, matCBAddress);
 
       cmdList->SetPipelineState(
           RsrcMngrDX12::Instance().GetPSO(GetGeometryPSO_ID(object.mesh)));

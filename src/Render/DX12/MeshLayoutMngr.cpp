@@ -40,11 +40,11 @@ std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayoutMngr::GenerateDesc(bool uv,
   }
 
   if (tangent) {
-    rst.push_back({"TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offset,
+    rst.push_back({"TENGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offset,
                    D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0});
-    offset += 16;
+    offset += 12;
   } else {
-    rst.push_back({"TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,
+    rst.push_back({"TENGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,
                    D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0});
   }
 
@@ -62,7 +62,7 @@ std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayoutMngr::GenerateDesc(bool uv,
 
 void MeshLayoutMngr::Init() {
   layoutMap.reserve(0b1111);
-  for (size_t ID = 0; ID < 0b1111; ID++) {
+  for (size_t ID = 0; ID <= 0b1111; ID++) {
     auto [uv, normal, tangent, color] = DecodeMeshLayoutID(ID);
     layoutMap.emplace(ID, GenerateDesc(uv, normal, tangent, color));
   }

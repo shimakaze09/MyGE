@@ -44,6 +44,11 @@ class Mesh : public Object {
   void SetSubMeshCount(size_t num);
   void SetSubMesh(size_t index, SubMeshDescriptor desc);
 
+  // must editable
+  void GenNormals();
+  void GenUV();
+  void GenTangents();
+
   void SetToNonEditable() noexcept { isEditable = false; }
 
   bool IsDirty() const noexcept { return dirty; }
