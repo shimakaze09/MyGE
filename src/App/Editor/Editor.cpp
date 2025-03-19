@@ -53,7 +53,7 @@
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
 #include <MyGE/ScriptSystem/LuaScript.h>
 
-#include <MyLuaPP/MyLuaPP.h>
+#include <ULuaPP/ULuaPP.h>
 
 using Microsoft::WRL::ComPtr;
 
@@ -452,6 +452,9 @@ void Editor::Update() {
                                    gameHeight);
   ImGui_ImplWin32_NewFrame_Shared();
 
+  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
+  upload.Begin();
+
   ImGui::SetCurrentContext(mainImGuiCtx);
   ImGui::NewFrame();  // main ctx
 
@@ -628,20 +631,40 @@ void Editor::Update() {
   cmdAlloc->Reset();
 
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
-  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
-  upload.Begin();
 
   // update mesh
   world.RunEntityJob(
-      [&](const My::MyGE::MeshFilter* meshFilter) {
-        if (!meshFilter->mesh)
+      [&](const My::MyGE::MeshFilter* meshFilter,
+          const My::MyGE::MeshRenderer* meshRenderer) {
+        if (!meshFilter->mesh || meshRenderer->materials.empty())
           return;
 
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+
+        for (const auto& mat : meshRenderer->materials) {
+          for (const auto& [name, tex] : mat->texture2Ds) {
+            My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+          }
+          for (const auto& [name, tex] : mat->textureCubes) {
+            My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+          }
+        }
       },
       false);
+  if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>()) {
+    for (const auto& [name, tex] : skybox->material->texture2Ds) {
+      My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    }
+    for (const auto& [name, tex] : skybox->material->textureCubes) {
+      My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    }
+  }
 
   // commit upload, delete ...
   upload.End(myCmdQueue.Get());
@@ -894,8 +917,8 @@ void Editor::BuildWorld() {
 }
 
 void Editor::LoadTextures() {
-  auto tex2dGUIDs =
-      My::MyGE::AssetMngr::Instance().FindAssets(std::wregex{LR"(.*\.tex2d)"});
+  auto tex2dGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+      std::wregex{LR"(\.\.\\assets\\_internal\\.*\.tex2d)"});
   for (const auto& guid : tex2dGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
@@ -904,7 +927,7 @@ void Editor::LoadTextures() {
   }
 
   auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
-      std::wregex{LR"(.*\.texcube)"});
+      std::wregex{LR"(\.\.\\assets\\_internal\\.*\.texcube)"});
   for (const auto& guid : texcubeGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
