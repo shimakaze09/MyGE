@@ -11,7 +11,7 @@
 
 namespace My::MyGE {
 struct Texture2D;
-struct TextureCube;
+class TextureCube;
 struct Shader;
 class Mesh;
 

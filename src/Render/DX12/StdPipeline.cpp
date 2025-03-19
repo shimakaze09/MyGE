@@ -736,6 +736,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
                                                   rsrcs) {
     if (!renderContext.skybox.ptr)
       return;
+
     cmdList->SetGraphicsRootSignature(RsrcMngrDX12::Instance().GetRootSignature(
         Impl::ID_RootSignature_skybox));
     cmdList->SetPipelineState(RsrcMngrDX12::Instance().GetPSO(ID_PSO_skybox));
