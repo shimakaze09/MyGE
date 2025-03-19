@@ -11,6 +11,6 @@ struct My::MySRefl::TypeInfo<My::MyGE::Skybox>
   static constexpr AttrList attrs = {};
  
   static constexpr FieldList fields = {
-    Field{"texcube", &My::MyGE::Skybox::texcube},
+    Field{"material", &My::MyGE::Skybox::material},
 };
 };

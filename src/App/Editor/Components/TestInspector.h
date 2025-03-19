@@ -8,6 +8,8 @@
 #include <MySRefl/MySRefl.h>
 
 namespace My::MyGE {
+enum class TestEnum { A, B, C };
+
 struct TestInspector {
   bool v_bool;
   uint8_t v_uint8;
@@ -47,8 +49,21 @@ struct TestInspector {
   std::pair<size_t, bool> v_pair;
   //std::vector<Entity> v_vector_entity;
   //UserType v_usertype;
+  TestEnum v_enum{TestEnum::B};
 };
 }  // namespace My::MyGE
+
+template <>
+struct My::MySRefl::TypeInfo<My::MyGE::TestEnum>
+    : My::MySRefl::TypeInfoBase<My::MyGE::TestEnum> {
+  static constexpr AttrList attrs = {};
+
+  static constexpr FieldList fields = {
+      Field{"A", My::MyGE::TestEnum::A},
+      Field{"B", My::MyGE::TestEnum::B},
+      Field{"C", My::MyGE::TestEnum::C},
+  };
+};
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
@@ -65,12 +80,9 @@ struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
       Field{"v_int16", &My::MyGE::TestInspector::v_int16},
       Field{"v_int32", &My::MyGE::TestInspector::v_int32},
       Field{"v_int64", &My::MyGE::TestInspector::v_int64},
-      //Field{"v_nullptr", &My::MyGE::TestInspector::v_nullptr},
       Field{"v_float", &My::MyGE::TestInspector::v_float},
       Field{"v_double", &My::MyGE::TestInspector::v_double},
       Field{"v_string", &My::MyGE::TestInspector::v_string},
-      //Field{"v_entity", &My::MyGE::TestInspector::v_entity},
-      //Field{"v_hlslFile", &My::MyGE::TestInspector::v_hlslFile},
       Field{"v_array", &My::MyGE::TestInspector::v_array},
       Field{"v_array2", &My::MyGE::TestInspector::v_array2},
       Field{"v_bbox", &My::MyGE::TestInspector::v_bbox},
@@ -78,20 +90,9 @@ struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
       Field{"v_rgb", &My::MyGE::TestInspector::v_rgb},
       Field{"v_rgba", &My::MyGE::TestInspector::v_rgba},
       Field{"v_vector", &My::MyGE::TestInspector::v_vector},
-      //Field{"v_deque", &My::MyGE::TestInspector::v_deque},
-      //Field{"v_forward_list", &My::MyGE::TestInspector::v_forward_list},
-      //Field{"v_list", &My::MyGE::TestInspector::v_list},
-      //Field{"v_set", &My::MyGE::TestInspector::v_set},
-      //Field{"v_multiset", &My::MyGE::TestInspector::v_multiset},
-      //Field{"v_unordered_set", &My::MyGE::TestInspector::v_unordered_set},
-      //Field{"v_unordered_multiset", &My::MyGE::TestInspector::v_unordered_multiset},
       Field{"v_map", &My::MyGE::TestInspector::v_map},
-      //Field{"v_multimap", &My::MyGE::TestInspector::v_multimap},
-      //Field{"v_unordered_map", &My::MyGE::TestInspector::v_unordered_map},
-      //Field{"v_unordered_multimap", &My::MyGE::TestInspector::v_unordered_multimap},
       Field{"v_tuple", &My::MyGE::TestInspector::v_tuple},
       Field{"v_pair", &My::MyGE::TestInspector::v_pair},
-      //Field{"v_vector_entity", &My::MyGE::TestInspector::v_vector_entity},
-      //Field{"v_usertype", &My::MyGE::TestInspector::v_usertype},
+      Field{"v_enum", &My::MyGE::TestInspector::v_enum},
   };
 };

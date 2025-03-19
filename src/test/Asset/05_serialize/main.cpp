@@ -21,6 +21,8 @@ struct UserType1 {
   UserType0 usertype0;
 };
 
+enum class Color { RED, GREEN, BLUE };
+
 struct A {
   bool v_bool;
   uint8_t v_uint8;
@@ -60,6 +62,7 @@ struct A {
   UserType1 v_usertype1;
   std::variant<std::string, size_t> v_variant0;
   std::variant<std::string, size_t> v_variant1;
+  Color v_enum;
 };
 
 template <>
@@ -105,6 +108,7 @@ struct My::MySRefl::TypeInfo<A> : My::MySRefl::TypeInfoBase<A> {
       Field{"v_usertype1", &A::v_usertype1},
       Field{"v_variant0", &A::v_variant0},
       Field{"v_variant1", &A::v_variant1},
+      Field{"v_enum", &A::v_enum},
   };
 };
 
@@ -176,6 +180,7 @@ int main() {
   a->v_pair = {0, false};
   a->v_variant0 = "string";
   a->v_variant1 = static_cast<size_t>(1);
+  a->v_enum = Color::GREEN;
 
   auto [e2] = w.entityMngr.Create();
   auto [e3] = w.entityMngr.Create();
