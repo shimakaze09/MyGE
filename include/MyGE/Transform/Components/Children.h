@@ -6,11 +6,11 @@
 
 #include <MyECS/Entity.h>
 
-#include <vector>
+#include <set>
 
 namespace My::MyGE {
 struct Children {
-  std::vector<MyECS::Entity> value;
+  std::set<MyECS::Entity> value;
 };
 }  // namespace My::MyGE
 

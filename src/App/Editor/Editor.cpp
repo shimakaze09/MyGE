@@ -630,6 +630,9 @@ void Editor::Update() {
   // update mesh
   world.RunEntityJob(
       [&](const My::MyGE::MeshFilter* meshFilter) {
+        if (!meshFilter->mesh)
+          return;
+
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
       },

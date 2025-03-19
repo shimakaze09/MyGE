@@ -2,15 +2,8 @@
 // Created by Admin on 16/03/2025.
 //
 
-#include <MyGE/Render/DX12/StdPipeline.h>
-
-#include <MyGE/Core/ShaderMngr.h>
-#include <MyGE/Render/DX12/MeshLayoutMngr.h>
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
-#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
-
+#include <MyDX12/FrameResourceMngr.h>
 #include <MyGE/Asset/AssetMngr.h>
-
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
@@ -19,16 +12,17 @@
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
+#include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
-
+#include <MyGE/Render/DX12/MeshLayoutMngr.h>
+#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
+#include <MyGE/Render/DX12/StdPipeline.h>
 #include <MyGE/Transform/Transform.h>
-
 #include <MyGE/_deps/imgui/imgui.h>
 #include <MyGE/_deps/imgui/imgui_impl_dx12.h>
 #include <MyGE/_deps/imgui/imgui_impl_win32.h>
-
-#include <MyDX12/FrameResourceMngr.h>
 
 using namespace My::MyGE;
 using namespace My;
@@ -75,9 +69,10 @@ struct StdPipeline::Impl {
     My::vecf4 AmbientLight = {0.0f, 0.0f, 0.0f, 1.0f};
 
     // Indices [0, NUM_DIR_LIGHTS) are directional lights;
-    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point lights;
-    // indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS)
-    // are spot lights for a maximum of MaxLights per object.
+    // indices [NUM_DIR_LIGHTS, NUM_DIR_LIGHTS+NUM_POINT_LIGHTS) are point
+    // lights; indices [NUM_DIR_LIGHTS+NUM_POINT_LIGHTS,
+    // NUM_DIR_LIGHTS+NUM_POINT_LIGHT+NUM_SPOT_LIGHTS) are spot lights for a
+    // maximum of MaxLights per object.
     struct Light {
       My::rgbf Strength = {0.5f, 0.5f, 0.5f};
       float FalloffStart = 1.0f;                  // point/spot light only
@@ -117,8 +112,8 @@ struct StdPipeline::Impl {
   MyDX12::FrameResourceMngr frameRsrcMngr;
 
   My::MyDX12::FG::Executor fgExecutor;
-  My::UFG::Compiler fgCompiler;
-  My::UFG::FrameGraph fg;
+  My::MyFG::Compiler fgCompiler;
+  My::MyFG::FrameGraph fg;
 
   My::MyGE::Shader* screenShader;
   My::MyGE::Shader* geomrtryShader;
@@ -257,16 +252,17 @@ void StdPipeline::Impl::BuildPSOs() {
   ID_PSO_screen = RsrcMngrDX12::Instance().RegisterPSO(&screenPsoDesc);
 
   /*auto geometryPsoDesc = My::MyDX12::Desc::PSO::MRT(
-		RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_geometry),
-		mInputLayout.data(), (UINT)mInputLayout.size(),
-		RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader),
-		RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader),
-		3,
-		DXGI_FORMAT_R32G32B32A32_FLOAT,
-		initDesc.depthStencilFormat
-	);
-	geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
-	ID_PSO_geometry = RsrcMngrDX12::Instance().RegisterPSO(&geometryPsoDesc);*/
+                RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_geometry),
+                mInputLayout.data(), (UINT)mInputLayout.size(),
+                RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader),
+                RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader),
+                3,
+                DXGI_FORMAT_R32G32B32A32_FLOAT,
+                initDesc.depthStencilFormat
+        );
+        geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
+        ID_PSO_geometry =
+     RsrcMngrDX12::Instance().RegisterPSO(&geometryPsoDesc);*/
 
   auto deferLightingPsoDesc = My::MyDX12::Desc::PSO::Basic(
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_defer_light),
@@ -286,8 +282,7 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
   if (target == PSOIDMap.end()) {
     auto [uv, normal, tangent, color] =
         MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
-    if (!uv || !normal)
-      return static_cast<size_t>(-1);  // not support
+    if (!uv || !normal) return static_cast<size_t>(-1);  // not support
 
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
@@ -351,8 +346,7 @@ void StdPipeline::Impl::UpdateShaderCBs(
 
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects)
-      objectNum += objects.size();
+    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
     if (shader->shaderName == "StdPipeline/Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
       buffer->Reserve(
@@ -450,8 +444,9 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   D3D12_RESOURCE_DESC dsDesc = MyDX12::Desc::RSRC::Basic(
       D3D12_RESOURCE_DIMENSION_TEXTURE2D, width, (UINT)height,
       DXGI_FORMAT_R24G8_TYPELESS,
-      // Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer to read from
-      // the depth buffer.  Therefore, because we need to create two views to the same resource:
+      // Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer
+      // to read from the depth buffer.  Therefore, because we need to create
+      // two views to the same resource:
       //   1. SRV format: DXGI_FORMAT_R24_UNORM_X8_TYPELESS
       //   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
       // we need to create the depth buffer resource with a typeless format.
@@ -578,7 +573,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
 
         auto bb = rsrcs.find(rt)->second;
 
-        //cmdList->CopyResource(bb.resource, rt.resource);
+        // cmdList->CopyResource(bb.resource, rt.resource);
 
         // Clear the render texture and depth buffer.
         cmdList->ClearRenderTargetView(bb.cpuHandle, DirectX::Colors::Black, 0,
@@ -677,9 +672,7 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() {
-  delete pImpl;
-}
+StdPipeline::~StdPipeline() { delete pImpl; }
 
 void StdPipeline::BeginFrame(const MyECS::World& world,
                              const std::vector<CameraData>& cameras) {
