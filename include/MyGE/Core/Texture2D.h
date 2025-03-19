@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <string>
-
 #include "Texture.h"
 
 namespace My::MyGE {

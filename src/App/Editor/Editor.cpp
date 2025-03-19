@@ -27,6 +27,7 @@
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
 #include <MyGE/Core/Components/Name.h>
+#include <MyGE/Core/Components/Skybox.h>
 #include <MyGE/Core/Components/WorldTime.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/HLSLFile.h>
@@ -38,6 +39,7 @@
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Systems/WorldTimeSystem.h>
 #include <MyGE/Core/Texture2D.h>
+#include <MyGE/Core/TextureCube.h>
 
 #include <MyGE/Transform/Transform.h>
 
@@ -772,7 +774,7 @@ void Editor::BuildWorld() {
       .RegisterCmpts<
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-          My::MyGE::WorldTime, My::MyGE::Name,
+          My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
 
           // transform
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -792,7 +794,7 @@ void Editor::BuildWorld() {
   editorWorld.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-      My::MyGE::WorldTime, My::MyGE::Name,
+      My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
 
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -826,7 +828,7 @@ void Editor::BuildWorld() {
   world.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-      My::MyGE::WorldTime, My::MyGE::Name,
+      My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
 
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -868,7 +870,7 @@ void Editor::BuildWorld() {
       .Register<
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
-          My::MyGE::WorldTime, My::MyGE::Name,
+          My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
 
           // transform
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -899,6 +901,15 @@ void Editor::LoadTextures() {
     My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
         My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
         My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
+  }
+
+  auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+      std::wregex{LR"(.*\.texcube)"});
+  for (const auto& guid : texcubeGUIDs) {
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(path));
   }
 }
 

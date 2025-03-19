@@ -146,16 +146,18 @@ bool DX12App::InitDirect3D() {
   ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&mdxgiFactory)));
 
   // Try to create hardware device.
+  // maybe thorw execption internal
+  // https://github.com/Meith/DX12/issues/1
   HRESULT hardwareResult =
       D3D12CreateDevice(nullptr,  // default adapter
-                        D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&myDevice.raw));
+                        D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&myDevice.raw));
 
   // Fallback to WARP device.
   if (FAILED(hardwareResult)) {
     ComPtr<IDXGIAdapter> pWarpAdapter;
     ThrowIfFailed(mdxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));
 
-    ThrowIfFailed(D3D12CreateDevice(pWarpAdapter.Get(), D3D_FEATURE_LEVEL_11_0,
+    ThrowIfFailed(D3D12CreateDevice(pWarpAdapter.Get(), D3D_FEATURE_LEVEL_12_0,
                                     IID_PPV_ARGS(&myDevice.raw)));
   }
 

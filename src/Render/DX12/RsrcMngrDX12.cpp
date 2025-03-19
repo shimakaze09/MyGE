@@ -2,12 +2,14 @@
 // Created by Admin on 16/03/2025.
 //
 
+#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
 #include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Texture2D.h>
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+#include <MyGE/Core/TextureCube.h>
 
 #include <iostream>
 #include <unordered_map>
@@ -18,6 +20,11 @@ using namespace std;
 
 struct RsrcMngrDX12::Impl {
   struct Texture2DGPUData {
+    ID3D12Resource* resource;
+    MyDX12::DescriptorHeapAllocation allocationSRV;
+  };
+
+  struct TextureCubeGPUData {
     ID3D12Resource* resource;
     MyDX12::DescriptorHeapAllocation allocationSRV;
   };
@@ -39,6 +46,7 @@ struct RsrcMngrDX12::Impl {
   MyDX12::ResourceDeleteBatch deleteBatch;
 
   unordered_map<size_t, Texture2DGPUData> texture2DMap;
+  unordered_map<size_t, TextureCubeGPUData> textureCubeMap;
   unordered_map<size_t, RenderTargetGPUData> renderTargetMap;
   unordered_map<size_t, ShaderCompileData> shaderMap;
 
@@ -125,6 +133,12 @@ void RsrcMngrDX12::Clear() {
     tex.resource->Release();
   }
 
+  for (auto& [name, tex] : pImpl->textureCubeMap) {
+    MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
+        move(tex.allocationSRV));
+    tex.resource->Release();
+  }
+
   for (auto& [name, tex] : pImpl->renderTargetMap) {
     MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
         move(tex.allocationSRV));
@@ -144,6 +158,7 @@ void RsrcMngrDX12::Clear() {
   delete pImpl->upload;
 
   pImpl->texture2DMap.clear();
+  pImpl->textureCubeMap.clear();
   pImpl->renderTargetMap.clear();
   pImpl->meshMap.clear();
   pImpl->rootSignatureMap.clear();
@@ -161,23 +176,21 @@ MyDX12::ResourceDeleteBatch& RsrcMngrDX12::GetDeleteBatch() const {
   return pImpl->deleteBatch;
 }
 
-// RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
+//RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
 //	DirectX::ResourceUploadBatch& upload,
 //	size_t id,
 //	wstring_view filename)
 //{
 //	return RegisterDDSTextureArrayFromFile(upload, id, &filename, 1);
-// }
+//}
 //
-// RsrcMngrDX12&
-// RsrcMngrDX12::RegisterDDSTextureArrayFromFile(DirectX::ResourceUploadBatch&
-// upload, 	size_t id, const wstring_view* filenameArr, UINT num)
+//RsrcMngrDX12& RsrcMngrDX12::RegisterDDSTextureArrayFromFile(DirectX::ResourceUploadBatch& upload,
+//	size_t id, const wstring_view* filenameArr, UINT num)
 //{
 //	Impl::Texture tex;
 //	tex.resources.resize(num);
 //
-//	tex.allocationSRV =
-//MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(num);
+//	tex.allocationSRV = MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(num);
 //
 //	for (UINT i = 0; i < num; i++) {
 //		bool isCubeMap;
@@ -194,17 +207,15 @@ MyDX12::ResourceDeleteBatch& RsrcMngrDX12::GetDeleteBatch() const {
 //		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc =
 //			isCubeMap ?
 //			MyDX12::Desc::SRV::TexCube(tex.resources[i]->GetDesc().Format)
-//			:
-//MyDX12::Desc::SRV::Tex2D(tex.resources[i]->GetDesc().Format);
+//			: MyDX12::Desc::SRV::Tex2D(tex.resources[i]->GetDesc().Format);
 //
-//		pImpl->device->CreateShaderResourceView(tex.resources[i],
-//&srvDesc, tex.allocationSRV.GetCpuHandle(i));
+//		pImpl->device->CreateShaderResourceView(tex.resources[i], &srvDesc, tex.allocationSRV.GetCpuHandle(i));
 //	}
 //
 //	pImpl->textureMap.emplace(id, move(tex));
 //
 //	return *this;
-// }
+//}
 
 RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
     DirectX::ResourceUploadBatch& upload, const Texture2D* tex2D) {
@@ -228,7 +239,8 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
   D3D12_SUBRESOURCE_DATA data;
   data.pData = tex2D->image->data;
   data.RowPitch = tex2D->image->width * tex2D->image->channel * sizeof(float);
-  data.SlicePitch = tex2D->image->height * data.RowPitch;
+  data.SlicePitch = tex2D->image->height *
+                    data.RowPitch;  // this field is useless for texture 2d
 
   DirectX::CreateTextureFromMemory(
       pImpl->device, upload, tex2D->image->width.get(),
@@ -239,22 +251,67 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
       tex.resource, &MyDX12::Desc::SRV::Tex2D(tex.resource->GetDesc().Format),
       tex.allocationSRV.GetCpuHandle(static_cast<uint32_t>(0)));
 
-  pImpl->texture2DMap.emplace(tex2D->GetInstanceID(), move(tex));
   pImpl->texture2DMap.emplace_hint(
       target, std::make_pair(tex2D->GetInstanceID(), move(tex)));
 
   return *this;
 }
 
-// RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2DArray(
+RsrcMngrDX12& RsrcMngrDX12::RegisterTextureCube(
+    DirectX::ResourceUploadBatch& upload, const TextureCube* texcube) {
+  auto target = pImpl->textureCubeMap.find(texcube->GetInstanceID());
+  if (target != pImpl->textureCubeMap.end())
+    return *this;
+
+  Impl::TextureCubeGPUData tex;
+
+  tex.allocationSRV =
+      MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(
+          static_cast<uint32_t>(1));
+
+  constexpr DXGI_FORMAT channelMap[] = {
+      DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT,
+      DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT,
+      DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
+      DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT,
+  };
+
+  size_t w = texcube->images.front()->width;
+  size_t h = texcube->images.front()->height;
+  size_t c = texcube->images.front()->channel;
+
+  std::array<D3D12_SUBRESOURCE_DATA, 6> datas;
+  for (size_t i = 0; i < datas.size(); i++) {
+    datas[i].pData = texcube->images[i]->data;
+    datas[i].RowPitch =
+        texcube->images[i]->width * texcube->images[i]->channel * sizeof(float);
+    datas[i].SlicePitch =
+        texcube->images[i]->height *
+        datas[i].RowPitch;  // this field is useless for texture 2d
+  }
+
+  MyDX12::Util::CreateTexture2DArrayFromMemory(pImpl->device, upload, w, h, 6,
+                                               channelMap[c - 1], datas.data(),
+                                               &tex.resource);
+
+  pImpl->device->CreateShaderResourceView(
+      tex.resource, &MyDX12::Desc::SRV::TexCube(tex.resource->GetDesc().Format),
+      tex.allocationSRV.GetCpuHandle(static_cast<uint32_t>(0)));
+
+  pImpl->textureCubeMap.emplace_hint(
+      target, std::make_pair(texcube->GetInstanceID(), move(tex)));
+
+  return *this;
+}
+
+//RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2DArray(
 //	DirectX::ResourceUploadBatch& upload,
 //	size_t id, const Texture2D** tex2Ds, size_t num)
 //{
 //	Impl::Texture tex;
 //	tex.resources.resize(num);
 //
-//	tex.allocationSRV =
-//MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(static_cast<uint32_t>(num));
+//	tex.allocationSRV = MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(static_cast<uint32_t>(num));
 //
 //	constexpr DXGI_FORMAT channelMap[] = {
 //		DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT,
@@ -266,9 +323,8 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
 //	for (size_t i = 0; i < num; i++) {
 //		D3D12_SUBRESOURCE_DATA data;
 //		data.pData = tex2Ds[i]->image->data;
-//		data.RowPitch = tex2Ds[i]->image->width *
-//tex2Ds[i]->image->channel * sizeof(float); 		data.SlicePitch =
-//tex2Ds[i]->image->height * data.RowPitch;
+//		data.RowPitch = tex2Ds[i]->image->width * tex2Ds[i]->image->channel * sizeof(float);
+//		data.SlicePitch = tex2Ds[i]->image->height * data.RowPitch;
 //
 //		DirectX::CreateTextureFromMemory(
 //			pImpl->device,
@@ -290,7 +346,7 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
 //	pImpl->textureMap.emplace(id, move(tex));
 //
 //	return *this;
-// }
+//}
 
 D3D12_CPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTexture2DSrvCpuHandle(
     const Texture2D* tex2D) const {
@@ -309,10 +365,26 @@ ID3D12Resource* RsrcMngrDX12::GetTexture2DResource(
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())->second.resource;
 }
 
-// MyDX12::DescriptorHeapAllocation& RsrcMngrDX12::GetTextureRtvs(const
-// Texture2D* tex2D) const { 	return
-//pImpl->textureMap.find(tex2D->GetInstanceID())->second.allocationRTV;
-// }
+D3D12_CPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTextureCubeSrvCpuHandle(
+    const TextureCube* texCube) const {
+  return pImpl->textureCubeMap.find(texCube->GetInstanceID())
+      ->second.allocationSRV.GetCpuHandle(0);
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTextureCubeSrvGpuHandle(
+    const TextureCube* texCube) const {
+  return pImpl->textureCubeMap.find(texCube->GetInstanceID())
+      ->second.allocationSRV.GetGpuHandle(0);
+}
+
+ID3D12Resource* RsrcMngrDX12::GetTextureCubeResource(
+    const TextureCube* texCube) const {
+  return pImpl->textureCubeMap.find(texCube->GetInstanceID())->second.resource;
+}
+
+//MyDX12::DescriptorHeapAllocation& RsrcMngrDX12::GetTextureRtvs(const Texture2D* tex2D) const {
+//	return pImpl->textureMap.find(tex2D->GetInstanceID())->second.allocationRTV;
+//}
 
 MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
     DirectX::ResourceUploadBatch& upload,
@@ -360,7 +432,7 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
               mesh->GetIndices().data(), (UINT)mesh->GetIndices().size(),
               DXGI_FORMAT_R32_UINT);
         }
-        // else
+        //else
         //	;// do nothing
       } else {
         if (mesh->IsDirty()) {
@@ -380,18 +452,6 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
   }
   return pImpl->meshMap.find(mesh->GetInstanceID())->second;
 }
-
-// MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterDynamicMesh(
-//	size_t id,
-//	const void* vb_data, UINT vb_count, UINT vb_stride,
-//	const void* ib_data, UINT ib_count, DXGI_FORMAT ib_format)
-//{
-//	auto& meshGeo = pImpl->meshMap[id];
-//	meshGeo.InitBuffer(pImpl->device,
-//		vb_data, vb_count, vb_stride,
-//		ib_data, ib_count, ib_format);
-//	return meshGeo;
-// }
 
 MyDX12::MeshGPUBuffer& RsrcMngrDX12::GetMeshGPUBuffer(const Mesh* mesh) const {
   return pImpl->meshMap.find(mesh->GetInstanceID())->second;
@@ -422,14 +482,12 @@ const ID3DBlob* RsrcMngrDX12::GetShaderByteCode_ps(const Shader* shader) const {
       ->second.psByteCode.Get();
 }
 
-// RsrcMngrDX12& RsrcMngrDX12::RegisterRenderTexture2D(size_t id, UINT width,
-// UINT height, DXGI_FORMAT format) { 	Impl::Texture tex;
+//RsrcMngrDX12& RsrcMngrDX12::RegisterRenderTexture2D(size_t id, UINT width, UINT height, DXGI_FORMAT format) {
+//	Impl::Texture tex;
 //	tex.resources.resize(1);
 //
-//	tex.allocationSRV =
-//MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
-//	tex.allocationRTV =
-//MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
+//	tex.allocationSRV = MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+//	tex.allocationRTV = MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
 //
 //	// create resource
 //	D3D12_RESOURCE_DESC texDesc;
@@ -463,21 +521,19 @@ const ID3DBlob* RsrcMngrDX12::GetShaderByteCode_ps(const Shader* shader) const {
 //	rtvDesc.Format = format;
 //	rtvDesc.Texture2D.MipSlice = 0;
 //	rtvDesc.Texture2D.PlaneSlice = 0; // ?
-//	pImpl->device->CreateRenderTargetView(tex.resources[0], &rtvDesc,
-//tex.allocationRTV.GetCpuHandle());
+//	pImpl->device->CreateRenderTargetView(tex.resources[0], &rtvDesc, tex.allocationRTV.GetCpuHandle());
 //
 //	pImpl->textureMap.emplace(id, move(tex));
 //
 //	return *this;
-// }
+//}
 //
-// RsrcMngrDX12& RsrcMngrDX12::RegisterRenderTextureCube(size_t id, UINT size,
-// DXGI_FORMAT format) { 	Impl::Texture tex; 	tex.resources.resize(1);
+//RsrcMngrDX12& RsrcMngrDX12::RegisterRenderTextureCube(size_t id, UINT size, DXGI_FORMAT format) {
+//	Impl::Texture tex;
+//	tex.resources.resize(1);
 //
-//	tex.allocationSRV =
-//MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
-//	tex.allocationRTV =
-//MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(6);
+//	tex.allocationSRV = MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+//	tex.allocationRTV = MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(6);
 //
 //	// create resource
 //	D3D12_RESOURCE_DESC texDesc;
@@ -517,19 +573,17 @@ const ID3DBlob* RsrcMngrDX12::GetShaderByteCode_ps(const Shader* shader) const {
 //		rtvDesc.Texture2DArray.PlaneSlice = 0;
 //		rtvDesc.Texture2DArray.FirstArraySlice = i;
 //		rtvDesc.Texture2DArray.ArraySize = 1;
-//		pImpl->device->CreateRenderTargetView(tex.resources[0],
-//&rtvDesc, tex.allocationRTV.GetCpuHandle(i));
+//		pImpl->device->CreateRenderTargetView(tex.resources[0], &rtvDesc, tex.allocationRTV.GetCpuHandle(i));
 //	}
 //
 //	pImpl->textureMap.emplace(id, move(tex));
 //
 //	return *this;
-// }
+//}
 
 RsrcMngrDX12& RsrcMngrDX12::RegisterRootSignature(
     size_t id, const D3D12_ROOT_SIGNATURE_DESC* desc) {
-  // create a root signature with a single slot which points to a descriptor
-  // range consisting of a single constant buffer
+  // create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
   ID3DBlob* serializedRootSig = nullptr;
   ID3DBlob* errorBlob = nullptr;
 

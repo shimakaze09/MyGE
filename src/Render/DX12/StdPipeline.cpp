@@ -14,6 +14,7 @@
 #include <MyGE/Core/Components/Camera.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
+#include <MyGE/Core/Components/Skybox.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
@@ -21,6 +22,7 @@
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
 #include <MyGE/Core/Texture2D.h>
+#include <MyGE/Core/TextureCube.h>
 
 #include <MyGE/Transform/Transform.h>
 
@@ -46,10 +48,12 @@ struct StdPipeline::Impl {
 
   size_t ID_PSO_defer_light;
   size_t ID_PSO_screen;
+  size_t ID_PSO_skybox;
 
   static constexpr size_t ID_RootSignature_geometry = 0;
   static constexpr size_t ID_RootSignature_screen = 1;
   static constexpr size_t ID_RootSignature_defer_light = 2;
+  static constexpr size_t ID_RootSignature_skybox = 3;
 
   struct GeometryObjectConstants {
     My::transformf World;
@@ -112,6 +116,8 @@ struct StdPipeline::Impl {
     std::unordered_map<const Shader*,
                        std::unordered_map<const Material*, std::vector<Object>>>
         objectMap;
+
+    D3D12_GPU_DESCRIPTOR_HANDLE skybox;
   };
 
   const InitDesc initDesc;
@@ -121,12 +127,13 @@ struct StdPipeline::Impl {
   MyDX12::FrameResourceMngr frameRsrcMngr;
 
   My::MyDX12::FG::Executor fgExecutor;
-  My::MyFG::Compiler fgCompiler;
-  My::MyFG::FrameGraph fg;
+  My::UFG::Compiler fgCompiler;
+  My::UFG::FrameGraph fg;
 
   My::MyGE::Shader* screenShader;
   My::MyGE::Shader* geomrtryShader;
   My::MyGE::Shader* deferShader;
+  My::MyGE::Shader* skyboxShader;
 
   std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
@@ -166,6 +173,7 @@ void StdPipeline::Impl::BuildShadersAndInputLayout() {
   screenShader = ShaderMngr::Instance().Get("StdPipeline/Screen");
   geomrtryShader = ShaderMngr::Instance().Get("StdPipeline/Geometry");
   deferShader = ShaderMngr::Instance().Get("StdPipeline/Defer Lighting");
+  skyboxShader = ShaderMngr::Instance().Get("StdPipeline/Skybox");
 }
 
 void StdPipeline::Impl::BuildRootSignature() {
@@ -222,6 +230,31 @@ void StdPipeline::Impl::BuildRootSignature() {
     RsrcMngrDX12::Instance().RegisterRootSignature(ID_RootSignature_screen,
                                                    &rootSigDesc);
   }
+
+  {  // skybox
+    CD3DX12_DESCRIPTOR_RANGE texTable;
+    texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+
+    // Root parameter can be a table, root descriptor or root constants.
+    CD3DX12_ROOT_PARAMETER slotRootParameter[2];
+
+    // Perfomance TIP: Order from most frequent to least frequent.
+    slotRootParameter[0].InitAsDescriptorTable(1, &texTable,
+                                               D3D12_SHADER_VISIBILITY_PIXEL);
+    slotRootParameter[1].InitAsConstantBufferView(0);  // camera
+
+    auto staticSamplers = RsrcMngrDX12::Instance().GetStaticSamplers();
+
+    // A root signature is an array of root parameters.
+    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
+        2, slotRootParameter, (UINT)staticSamplers.size(),
+        staticSamplers.data(),
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+    RsrcMngrDX12::Instance().RegisterRootSignature(ID_RootSignature_skybox,
+                                                   &rootSigDesc);
+  }
+
   {  // defer lighting
     CD3DX12_DESCRIPTOR_RANGE texTable;
     texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);  // gbuffers
@@ -258,6 +291,18 @@ void StdPipeline::Impl::BuildPSOs() {
   screenPsoDesc.DepthStencilState.DepthEnable = false;
   screenPsoDesc.DepthStencilState.StencilEnable = false;
   ID_PSO_screen = RsrcMngrDX12::Instance().RegisterPSO(&screenPsoDesc);
+
+  auto skyboxPsoDesc = My::MyDX12::Desc::PSO::Basic(
+      RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_skybox),
+      nullptr, 0, RsrcMngrDX12::Instance().GetShaderByteCode_vs(skyboxShader),
+      RsrcMngrDX12::Instance().GetShaderByteCode_ps(skyboxShader),
+      initDesc.rtFormat, DXGI_FORMAT_D24_UNORM_S8_UINT);
+  skyboxPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
+  skyboxPsoDesc.DepthStencilState.DepthEnable = true;
+  skyboxPsoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+  skyboxPsoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+  skyboxPsoDesc.DepthStencilState.StencilEnable = false;
+  ID_PSO_skybox = RsrcMngrDX12::Instance().RegisterPSO(&skyboxPsoDesc);
 
   auto deferLightingPsoDesc = My::MyDX12::Desc::PSO::Basic(
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_defer_light),
@@ -328,6 +373,12 @@ void StdPipeline::Impl::UpdateRenderContext(const MyECS::World& world) {
         }
       },
       filter, false);
+
+  if (auto ptr = world.entityMngr.GetSingleton<Skybox>(); ptr && ptr->texcube)
+    renderContext.skybox =
+        RsrcMngrDX12::Instance().GetTextureCubeSrvGpuHandle(ptr->texcube);
+  else
+    renderContext.skybox.ptr = 0;
 }
 
 void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData,
@@ -441,12 +492,15 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   auto gbuffer0 = fg.RegisterResourceNode("GBuffer0");
   auto gbuffer1 = fg.RegisterResourceNode("GBuffer1");
   auto gbuffer2 = fg.RegisterResourceNode("GBuffer2");
-  auto rt = fg.RegisterResourceNode("Render Target");
+  auto rt0 = fg.RegisterResourceNode("Render Target 0");
+  auto rt1 = fg.RegisterResourceNode("Render Target 1");
+  fg.RegisterMoveNode(rt1, rt0);
   auto depthstencil = fg.RegisterResourceNode("Depth Stencil");
   auto gbPass = fg.RegisterPassNode(
       "GBuffer Pass", {}, {gbuffer0, gbuffer1, gbuffer2, depthstencil});
   auto deferLightingPass = fg.RegisterPassNode(
-      "Defer Lighting", {gbuffer0, gbuffer1, gbuffer2}, {rt});
+      "Defer Lighting", {gbuffer0, gbuffer1, gbuffer2}, {rt0});
+  auto skyboxPass = fg.RegisterPassNode("Skybox", {depthstencil}, {rt1});
 
   D3D12_RESOURCE_DESC dsDesc = MyDX12::Desc::RSRC::Basic(
       D3D12_RESOURCE_DIMENSION_TEXTURE2D, width, (UINT)height,
@@ -483,7 +537,8 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
            {gbuffer2,
             My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT)}})
 
-      .RegisterImportedRsrc(rt, {rtb, D3D12_RESOURCE_STATE_PRESENT})
+      .RegisterImportedRsrc(rt0, {rtb, D3D12_RESOURCE_STATE_PRESENT})
+      //.RegisterImportedRsrc(rt1, { rtb, D3D12_RESOURCE_STATE_PRESENT })
 
       .RegisterPassRsrcs(gbPass, gbuffer0, D3D12_RESOURCE_STATE_RENDER_TARGET,
                          My::MyDX12::FG::RsrcImplDesc_RTV_Null{})
@@ -506,9 +561,14 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
           deferLightingPass, gbuffer2,
           D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
           My::MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT))
-
-      .RegisterPassRsrcs(deferLightingPass, rt,
+      .RegisterPassRsrcs(deferLightingPass, rt0,
                          D3D12_RESOURCE_STATE_RENDER_TARGET,
+                         My::MyDX12::FG::RsrcImplDesc_RTV_Null{})
+
+      .RegisterPassRsrcs(skyboxPass, depthstencil,
+                         D3D12_RESOURCE_STATE_DEPTH_READ,
+                         My::MyDX12::Desc::DSV::Basic(dsFormat))
+      .RegisterPassRsrcs(skyboxPass, rt1, D3D12_RESOURCE_STATE_RENDER_TARGET,
                          My::MyDX12::FG::RsrcImplDesc_RTV_Null{});
 
   fgExecutor.RegisterPassFunc(
@@ -572,16 +632,16 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         auto gb1 = rsrcs.find(gbuffer1)->second;
         auto gb2 = rsrcs.find(gbuffer2)->second;
 
-        auto bb = rsrcs.find(rt)->second;
+        auto rt = rsrcs.find(rt0)->second;
 
         //cmdList->CopyResource(bb.resource, rt.resource);
 
         // Clear the render texture and depth buffer.
-        cmdList->ClearRenderTargetView(bb.cpuHandle, DirectX::Colors::Black, 0,
+        cmdList->ClearRenderTargetView(rt.cpuHandle, DirectX::Colors::Black, 0,
                                        nullptr);
 
         // Specify the buffers we are going to render to.
-        cmdList->OMSetRenderTargets(1, &bb.cpuHandle, false, nullptr);
+        cmdList->OMSetRenderTargets(1, &rt.cpuHandle, false, nullptr);
 
         cmdList->SetGraphicsRootSignature(
             RsrcMngrDX12::Instance().GetRootSignature(
@@ -611,6 +671,49 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         cmdList->DrawInstanced(6, 1, 0, 0);
       });
+
+  fgExecutor.RegisterPassFunc(skyboxPass, [&](ID3D12GraphicsCommandList*
+                                                  cmdList,
+                                              const My::MyDX12::FG::PassRsrcs&
+                                                  rsrcs) {
+    if (!renderContext.skybox.ptr)
+      return;
+    cmdList->SetGraphicsRootSignature(RsrcMngrDX12::Instance().GetRootSignature(
+        Impl::ID_RootSignature_skybox));
+    cmdList->SetPipelineState(RsrcMngrDX12::Instance().GetPSO(ID_PSO_skybox));
+
+    auto heap = My::MyDX12::DescriptorHeapMngr::Instance()
+                    .GetCSUGpuDH()
+                    ->GetDescriptorHeap();
+    cmdList->SetDescriptorHeaps(1, &heap);
+    cmdList->RSSetViewports(1, &resizeData.screenViewport);
+    cmdList->RSSetScissorRects(1, &resizeData.scissorRect);
+
+    auto rt = rsrcs.find(rt1)->second;
+    auto ds = rsrcs.find(depthstencil)->second;
+
+    //cmdList->CopyResource(bb.resource, rt.resource);
+
+    // Clear the render texture and depth buffer.
+    //cmdList->ClearRenderTargetView(rt.cpuHandle, DirectX::Colors::Black, 0, nullptr);
+
+    // Specify the buffers we are going to render to.
+    cmdList->OMSetRenderTargets(1, &rt.cpuHandle, false, &ds.cpuHandle);
+
+    cmdList->SetGraphicsRootDescriptorTable(0, renderContext.skybox);
+
+    auto cbPerCamera = frameRsrcMngr.GetCurrentFrameResource()
+                           ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
+                           .GetCommonBuffer()
+                           ->GetResource();
+    cmdList->SetGraphicsRootConstantBufferView(
+        1, cbPerCamera->GetGPUVirtualAddress());
+
+    cmdList->IASetVertexBuffers(0, 0, nullptr);
+    cmdList->IASetIndexBuffer(nullptr);
+    cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    cmdList->DrawInstanced(36, 1, 0, 0);
+  });
 
   static bool flag{false};
   if (!flag) {
