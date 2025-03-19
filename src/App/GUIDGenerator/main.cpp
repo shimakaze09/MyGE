@@ -2,7 +2,7 @@
 // Created by Admin on 19/03/2025.
 //
 
-#include <MyGE/_deps/crossguid/guid.hpp>
+#include <_deps/crossguid/guid.hpp>
 
 #include <iostream>
 

@@ -26,9 +26,9 @@
 
 #include <MyGE/Transform/Transform.h>
 
-#include <MyGE/_deps/imgui/imgui.h>
-#include <MyGE/_deps/imgui/imgui_impl_dx12.h>
-#include <MyGE/_deps/imgui/imgui_impl_win32.h>
+#include <_deps/imgui/imgui.h>
+#include <_deps/imgui/imgui_impl_dx12.h>
+#include <_deps/imgui/imgui_impl_win32.h>
 
 #include <MyDX12/FrameResourceMngr.h>
 

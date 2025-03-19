@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <MyGE/_deps/crossguid/guid.hpp>
+#include <_deps/crossguid/guid.hpp>
 
 namespace My::MyGE {
 struct ProjectViewer {

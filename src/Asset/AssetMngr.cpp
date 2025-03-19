@@ -16,7 +16,7 @@
 #include <MyGE/Core/TextureCube.h>
 #include <MyGE/ScriptSystem/LuaScript.h>
 
-#include <MyGE/_deps/tinyobjloader/tiny_obj_loader.h>
+#include <_deps/tinyobjloader/tiny_obj_loader.h>
 
 #include <MySRefl/MySRefl.h>
 

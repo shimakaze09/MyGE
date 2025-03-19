@@ -8,8 +8,8 @@
 
 #include <MyGE/Asset/AssetMngr.h>
 
-#include <MyGE/_deps/imgui/imgui.h>
-#include <MyGE/_deps/imgui/misc/cpp/imgui_stdlib.h>
+#include <_deps/imgui/imgui.h>
+#include <_deps/imgui/misc/cpp/imgui_stdlib.h>
 
 #include <MyGE/Core/Traits.h>
 

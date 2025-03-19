@@ -330,10 +330,10 @@ void DeferApp::Draw() {
                             {CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT})
       .RegisterImportedRsrc(depthstencil, {mDepthStencilBuffer.Get(),
                                            D3D12_RESOURCE_STATE_DEPTH_WRITE})
-      .RegisterPassRsrcs(pass, backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,
-                         My::MyDX12::FG::RsrcImplDesc_RTV_Null{})
-      .RegisterPassRsrcs(pass, depthstencil, D3D12_RESOURCE_STATE_DEPTH_WRITE,
-                         dsvDesc);
+      .RegisterPassRsrc(pass, backbuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,
+                        My::MyDX12::FG::RsrcImplDesc_RTV_Null{})
+      .RegisterPassRsrc(pass, depthstencil, D3D12_RESOURCE_STATE_DEPTH_WRITE,
+                        dsvDesc);
 
   fgExecutor.RegisterPassFunc(
       pass, [&](ID3D12GraphicsCommandList* cmdList,
@@ -352,16 +352,17 @@ void DeferApp::Draw() {
             My::MyGE::RsrcMngrDX12::Instance().GetPSO(ID_PSO_opaque));
 
         // Clear the back buffer and depth buffer.
-        cmdList->ClearRenderTargetView(bb.cpuHandle, Colors::LightSteelBlue, 0,
-                                       nullptr);
+        cmdList->ClearRenderTargetView(bb.info.null_info_rtv.cpuHandle,
+                                       Colors::LightSteelBlue, 0, nullptr);
         cmdList->ClearDepthStencilView(
-            ds.cpuHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-            1.f, 0, 0, nullptr);
+            ds.info.desc2info_dsv.at(dsvDesc).cpuHandle,
+            D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.f, 0, 0,
+            nullptr);
 
         // Specify the buffers we are going to render to.
-        std::array rts{bb.cpuHandle};
-        cmdList->OMSetRenderTargets(rts.size(), rts.data(), false,
-                                    &ds.cpuHandle);
+        cmdList->OMSetRenderTargets(
+            1, &bb.info.null_info_rtv.cpuHandle, false,
+            &ds.info.desc2info_dsv.at(dsvDesc).cpuHandle);
 
         // myGCmdList.SetDescriptorHeaps(mSrvDescriptorHeap.Get());
 

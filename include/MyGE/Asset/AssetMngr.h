@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../_deps/crossguid/guid.hpp"
+#include  <_deps/crossguid/guid.hpp>
 
 namespace My::MyGE {
 // ref: https://docs.unity3d.com/ScriptReference/AssetDatabase.html

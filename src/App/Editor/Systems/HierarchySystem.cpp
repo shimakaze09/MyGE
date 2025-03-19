@@ -11,7 +11,7 @@
 #include <MyGE/Core/Components/Name.h>
 #include <MyGE/Transform/Components/Components.h>
 
-#include <MyGE/_deps/imgui/imgui.h>
+#include <_deps/imgui/imgui.h>
 
 using namespace My::MyGE;
 
