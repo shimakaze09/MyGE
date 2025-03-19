@@ -17,6 +17,7 @@ SET(components
         WorldTime
         Skybox
         Light
+        Input
 )
 
 SET(refls "")

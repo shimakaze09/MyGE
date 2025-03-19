@@ -24,6 +24,7 @@
 #include <MyGE/Asset/Serializer.h>
 
 #include <MyGE/Core/Components/Camera.h>
+#include <MyGE/Core/Components/Input.h>
 #include <MyGE/Core/Components/Light.h>
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
@@ -38,6 +39,7 @@
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
+#include <MyGE/Core/Systems/InputSystem.h>
 #include <MyGE/Core/Systems/WorldTimeSystem.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Core/TextureCube.h>
@@ -890,7 +892,7 @@ void Editor::InitInspectorRegistry() {
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
           My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
-          My::MyGE::Light,
+          My::MyGE::Light, My::MyGE::Input,
 
           // transform
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -898,7 +900,6 @@ void Editor::InitInspectorRegistry() {
           My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal,
 
           My::MyGE::TestInspector>();
-
   My::MyGE::InspectorRegistry::Instance().RegisterAssets<My::MyGE::Material>();
 }
 
@@ -907,7 +908,7 @@ void Editor::BuildWorld() {
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
-      My::MyGE::WorldTimeSystem,
+      My::MyGE::WorldTimeSystem, My::MyGE::InputSystem,
 
       My::MyGE::HierarchySystem, My::MyGE::InspectorSystem,
       My::MyGE::ProjectViewerSystem>();
@@ -915,6 +916,7 @@ void Editor::BuildWorld() {
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
       My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox, My::MyGE::Light,
+      My::MyGE::Input,
 
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -944,11 +946,12 @@ void Editor::BuildWorld() {
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
-      My::MyGE::WorldTimeSystem>();
+      My::MyGE::WorldTimeSystem, My::MyGE::InputSystem>();
   world.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
       My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox, My::MyGE::Light,
+      My::MyGE::Input,
 
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -964,34 +967,12 @@ void Editor::BuildWorld() {
     name->value = "Test Inspector";
   }
 
-  /*world.entityMngr.Create<My::MyGE::WorldTime>();
-
-	auto e0 = world.entityMngr.Create<
-		My::MyGE::LocalToWorld,
-		My::MyGE::WorldToLocal,
-		My::MyGE::Camera,
-		My::MyGE::Translation,
-		My::MyGE::Rotation
-	>();
-	cam = std::get<My::MyECS::Entity>(e0);
-
-	auto quadMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>("../assets/models/quad.obj");
-	auto dynamicCube = world.entityMngr.Create<
-		My::MyGE::LocalToWorld,
-		My::MyGE::MeshFilter,
-		My::MyGE::MeshRenderer,
-		My::MyGE::Translation,
-		My::MyGE::Rotation,
-		My::MyGE::Scale
-	>();
-	std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;*/
-
   My::MyGE::Serializer::Instance()
       .Register<
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
           My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
-          My::MyGE::Light,
+          My::MyGE::Light, My::MyGE::Input,
 
           // transform
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
@@ -1003,6 +984,9 @@ void Editor::BuildWorld() {
   auto scene = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Scene>(
       L"..\\assets\\scenes\\Game.scene");
   My::MyGE::Serializer::Instance().ToWorld(&world, scene->GetText());
+  {  // input
+    world.entityMngr.Create<My::MyGE::Input>();
+  }
   OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
 
   auto mainLua = My::MyGE::LuaCtxMngr::Instance().Register(&world)->Main();

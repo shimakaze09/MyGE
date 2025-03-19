@@ -9,7 +9,7 @@
 #include <functional>
 #include <unordered_map>
 
-using namespace My::DustEngine;
+using namespace My::MyGE;
 
 struct InspectorRegistry::Impl {
   Visitor<void(void*, InspectContext)> inspector;

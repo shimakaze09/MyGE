@@ -7,4 +7,6 @@ ADD_TARGET(
         INC_PRIVATE
         "${PROJECT_SOURCE_DIR}/include/_deps/imgui"
         "${PROJECT_SOURCE_DIR}/include/_deps/imgui/misc/cpp"
+        LIB
+        My::MyGM_core
 )
