@@ -403,7 +403,7 @@ void StdPipeline::Impl::BuildRootSignature() {
     // Root parameter can be a table, root descriptor or root constants.
     CD3DX12_ROOT_PARAMETER slotRootParameter[7];
 
-    // Performance TIP: Order from most frequent to least frequent.
+    // Perfomance TIP: Order from most frequent to least frequent.
     slotRootParameter[0].InitAsDescriptorTable(1, &texRange0);
     slotRootParameter[1].InitAsDescriptorTable(1, &texRange1);
     slotRootParameter[2].InitAsDescriptorTable(1, &texRange2);
@@ -523,25 +523,29 @@ void StdPipeline::Impl::BuildRootSignature() {
   {  // defer lighting
     CD3DX12_DESCRIPTOR_RANGE gbufferRange;
     gbufferRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0);  // gbuffers
+    CD3DX12_DESCRIPTOR_RANGE ds;
+    ds.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);  // depth, stencil
     CD3DX12_DESCRIPTOR_RANGE IBLRange;  // irradiance, prefilter, BRDF LUT
-    IBLRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 3);
+    IBLRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 4);
 
     // Root parameter can be a table, root descriptor or root constants.
-    CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+    CD3DX12_ROOT_PARAMETER slotRootParameter[5];
 
     // Perfomance TIP: Order from most frequent to least frequent.
     slotRootParameter[0].InitAsDescriptorTable(1, &gbufferRange,
                                                D3D12_SHADER_VISIBILITY_PIXEL);
-    slotRootParameter[1].InitAsDescriptorTable(1, &IBLRange,
+    slotRootParameter[1].InitAsDescriptorTable(1, &ds,
                                                D3D12_SHADER_VISIBILITY_PIXEL);
-    slotRootParameter[2].InitAsConstantBufferView(0);  // lights
-    slotRootParameter[3].InitAsConstantBufferView(1);  // camera
+    slotRootParameter[2].InitAsDescriptorTable(1, &IBLRange,
+                                               D3D12_SHADER_VISIBILITY_PIXEL);
+    slotRootParameter[3].InitAsConstantBufferView(0);  // lights
+    slotRootParameter[4].InitAsConstantBufferView(1);  // camera
 
     auto staticSamplers = RsrcMngrDX12::Instance().GetStaticSamplers();
 
     // A root signature is an array of root parameters.
     CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
-        4, slotRootParameter, (UINT)staticSamplers.size(),
+        5, slotRootParameter, (UINT)staticSamplers.size(),
         staticSamplers.data(),
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
@@ -600,10 +604,13 @@ void StdPipeline::Impl::BuildPSOs() {
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_defer_light),
       nullptr, 0, RsrcMngrDX12::Instance().GetShaderByteCode_vs(deferShader),
       RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferShader),
-      DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_UNKNOWN);
+      DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT);
   deferLightingPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
-  deferLightingPsoDesc.DepthStencilState.DepthEnable = false;
-  deferLightingPsoDesc.DepthStencilState.StencilEnable = false;
+  deferLightingPsoDesc.DepthStencilState.DepthEnable = true;
+  deferLightingPsoDesc.DepthStencilState.DepthWriteMask =
+      D3D12_DEPTH_WRITE_MASK_ZERO;
+  deferLightingPsoDesc.DepthStencilState.DepthFunc =
+      D3D12_COMPARISON_FUNC_GREATER;
   ID_PSO_defer_light =
       RsrcMngrDX12::Instance().RegisterPSO(&deferLightingPsoDesc);
 
@@ -825,10 +832,10 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   auto gbuffer0 = fg.RegisterResourceNode("GBuffer0");
   auto gbuffer1 = fg.RegisterResourceNode("GBuffer1");
   auto gbuffer2 = fg.RegisterResourceNode("GBuffer2");
-  auto lightedRT = fg.RegisterResourceNode("lighted RT");
-  auto fullRT = fg.RegisterResourceNode("full RT");
-  auto presentedRT = fg.RegisterResourceNode("Present RT");
-  fg.RegisterMoveNode(fullRT, lightedRT);
+  auto lightedRT = fg.RegisterResourceNode("Lighted");
+  auto resultRT = fg.RegisterResourceNode("Result");
+  auto presentedRT = fg.RegisterResourceNode("Present");
+  fg.RegisterMoveNode(resultRT, lightedRT);
   auto depthstencil = fg.RegisterResourceNode("Depth Stencil");
   auto irradianceMap = fg.RegisterResourceNode("Irradiance Map");
   auto prefilterMap = fg.RegisterResourceNode("PreFilter Map");
@@ -836,12 +843,12 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
       "GBuffer Pass", {}, {gbuffer0, gbuffer1, gbuffer2, depthstencil});
   auto iblPass = fg.RegisterPassNode("IBL", {}, {irradianceMap, prefilterMap});
   auto deferLightingPass = fg.RegisterPassNode(
-      "Defer Lighting", {gbuffer0, gbuffer1, gbuffer2, irradianceMap},
+      "Defer Lighting",
+      {gbuffer0, gbuffer1, gbuffer2, depthstencil, irradianceMap, prefilterMap},
       {lightedRT});
-  auto skyboxPass =
-      fg.RegisterPassNode("Skybox", {depthstencil, prefilterMap}, {fullRT});
+  auto skyboxPass = fg.RegisterPassNode("Skybox", {depthstencil}, {resultRT});
   auto postprocessPass =
-      fg.RegisterPassNode("Post Process", {fullRT}, {presentedRT});
+      fg.RegisterPassNode("Post Process", {resultRT}, {presentedRT});
 
   D3D12_RESOURCE_DESC dsDesc = MyDX12::Desc::RSRC::Basic(
       D3D12_RESOURCE_DIMENSION_TEXTURE2D, width, (UINT)height,
@@ -859,6 +866,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   dsClear.DepthStencil.Stencil = 0;
 
   auto srvDesc = MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT);
+  auto dsSrvDesc = MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
   auto dsvDesc = MyDX12::Desc::DSV::Basic(dsFormat);
   auto rsrcType = MyDX12::FG::RsrcType::RT2D(
       DXGI_FORMAT_R32G32B32A32_FLOAT, width, height, DirectX::Colors::Black);
@@ -873,7 +881,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
       .RegisterTemporalRsrc(gbuffer2, rsrcType)
       .RegisterTemporalRsrc(depthstencil, {dsClear, dsDesc})
       .RegisterTemporalRsrc(lightedRT, rsrcType)
-      .RegisterTemporalRsrc(fullRT, rsrcType)
+      .RegisterTemporalRsrc(resultRT, rsrcType)
 
       .RegisterRsrcTable(
           {{gbuffer0, srvDesc}, {gbuffer1, srvDesc}, {gbuffer2, srvDesc}})
@@ -906,19 +914,24 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
                         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, srvDesc)
       .RegisterPassRsrc(deferLightingPass, gbuffer2,
                         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, srvDesc)
+      .RegisterPassRsrcState(deferLightingPass, depthstencil,
+                             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
+                                 D3D12_RESOURCE_STATE_DEPTH_READ)
+      .RegisterPassRsrcImplDesc(deferLightingPass, depthstencil, dsvDesc)
+      .RegisterPassRsrcImplDesc(deferLightingPass, depthstencil, dsSrvDesc)
       .RegisterPassRsrcState(deferLightingPass, irradianceMap,
+                             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+      .RegisterPassRsrcState(deferLightingPass, prefilterMap,
                              D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
       .RegisterPassRsrc(deferLightingPass, lightedRT,
                         D3D12_RESOURCE_STATE_RENDER_TARGET, rtvNull)
 
       .RegisterPassRsrc(skyboxPass, depthstencil,
                         D3D12_RESOURCE_STATE_DEPTH_READ, dsvDesc)
-      .RegisterPassRsrcState(skyboxPass, prefilterMap,
-                             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-      .RegisterPassRsrc(skyboxPass, fullRT, D3D12_RESOURCE_STATE_RENDER_TARGET,
-                        rtvNull)
+      .RegisterPassRsrc(skyboxPass, resultRT,
+                        D3D12_RESOURCE_STATE_RENDER_TARGET, rtvNull)
 
-      .RegisterPassRsrc(postprocessPass, fullRT,
+      .RegisterPassRsrc(postprocessPass, resultRT,
                         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, srvDesc)
       .RegisterPassRsrc(postprocessPass, presentedRT,
                         D3D12_RESOURCE_STATE_RENDER_TARGET, rtvNull);
@@ -1093,6 +1106,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         auto gb0 = rsrcs.at(gbuffer0);
         auto gb1 = rsrcs.at(gbuffer1);
         auto gb2 = rsrcs.at(gbuffer2);
+        auto ds = rsrcs.find(depthstencil)->second;
 
         auto rt = rsrcs.at(lightedRT);
 
@@ -1103,8 +1117,9 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
                                        DirectX::Colors::Black, 0, nullptr);
 
         // Specify the buffers we are going to render to.
-        cmdList->OMSetRenderTargets(1, &rt.info.null_info_rtv.cpuHandle, false,
-                                    nullptr);
+        cmdList->OMSetRenderTargets(
+            1, &rt.info.null_info_rtv.cpuHandle, false,
+            &ds.info.desc2info_dsv.at(dsvDesc).cpuHandle);
 
         cmdList->SetGraphicsRootSignature(
             RsrcMngrDX12::Instance().GetRootSignature(
@@ -1114,21 +1129,23 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
 
         cmdList->SetGraphicsRootDescriptorTable(
             0, gb0.info.desc2info_srv.at(srvDesc).gpuHandle);
+        cmdList->SetGraphicsRootDescriptorTable(
+            1, ds.info.desc2info_srv.at(dsSrvDesc).gpuHandle);
 
         // irradiance, prefilter, BRDF LUT
         if (renderContext.skybox.ptr == defaultSkybox.ptr)
           cmdList->SetGraphicsRootDescriptorTable(
-              1, defaultIBLSRVDH.GetGpuHandle());
+              2, defaultIBLSRVDH.GetGpuHandle());
         else
           cmdList->SetGraphicsRootDescriptorTable(
-              1, iblData->SRVDH.GetGpuHandle());
+              2, iblData->SRVDH.GetGpuHandle());
 
         auto cbLights = frameRsrcMngr.GetCurrentFrameResource()
                             ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
                             .GetBuffer(deferShader)
                             ->GetResource();
         cmdList->SetGraphicsRootConstantBufferView(
-            2, cbLights->GetGPUVirtualAddress());
+            3, cbLights->GetGPUVirtualAddress());
 
         auto cbPerCamera =
             frameRsrcMngr.GetCurrentFrameResource()
@@ -1136,7 +1153,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
                 .GetCommonBuffer()
                 ->GetResource();
         cmdList->SetGraphicsRootConstantBufferView(
-            3, cbPerCamera->GetGPUVirtualAddress());
+            4, cbPerCamera->GetGPUVirtualAddress());
 
         cmdList->IASetVertexBuffers(0, 0, nullptr);
         cmdList->IASetIndexBuffer(nullptr);
@@ -1164,7 +1181,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->RSSetViewports(1, &resizeData.screenViewport);
         cmdList->RSSetScissorRects(1, &resizeData.scissorRect);
 
-        auto rt = rsrcs.find(fullRT)->second;
+        auto rt = rsrcs.find(resultRT)->second;
         auto ds = rsrcs.find(depthstencil)->second;
 
         // Specify the buffers we are going to render to.
@@ -1205,7 +1222,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->RSSetScissorRects(1, &resizeData.scissorRect);
 
         auto rt = rsrcs.find(presentedRT)->second;
-        auto img = rsrcs.find(fullRT)->second;
+        auto img = rsrcs.find(resultRT)->second;
 
         // Clear the render texture and depth buffer.
         cmdList->ClearRenderTargetView(rt.info.null_info_rtv.cpuHandle,
