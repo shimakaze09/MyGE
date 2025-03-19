@@ -32,7 +32,7 @@ template <typename T>
 struct HasDefinition : HasDefinitionHelper<void, T> {};
 
 template <typename T>
-struct HasTypeInfo : HasDefinition<Ubpa::USRefl::TypeInfo<T>> {};
+struct HasTypeInfo : HasDefinition<My::MySRefl::TypeInfo<T>> {};
 
 template <typename T>
 constexpr size_t GetID() noexcept {
