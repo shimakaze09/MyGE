@@ -36,7 +36,8 @@ class IPipeline {
 
   // data : cpu -> gpu
   // run in update
-  virtual void BeginFrame(const MyECS::World& world, const std::vector<CameraData>& cameras) = 0;
+  virtual void BeginFrame(const MyECS::World& world,
+                          const CameraData& cameraData) = 0;
   // run in draw
   virtual void Render(ID3D12Resource* rt) = 0;
   // run at the end of draw

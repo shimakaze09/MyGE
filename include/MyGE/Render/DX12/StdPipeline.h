@@ -14,11 +14,12 @@ class StdPipeline final : public IPipeline {
 
   // data : cpu -> gpu
   // run in update
-  virtual void BeginFrame(const MyECS::World&) override;
+  virtual void BeginFrame(const MyECS::World&,
+                          const CameraData& cameraData) override;
 
   // run in draw
   virtual void Render(ID3D12Resource* rt) override;
- 
+
   // run at the end of draw
   virtual void EndFrame() override;
 
