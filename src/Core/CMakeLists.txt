@@ -44,6 +44,8 @@ ADD_TARGET(
         INC
         "${PROJECT_SOURCE_DIR}/include"
         LIB
+        My::MySTL_core
+        My::MySRefl_core
         My::MyGM_core
         My::MyDP_core
         My::MyECS_core
