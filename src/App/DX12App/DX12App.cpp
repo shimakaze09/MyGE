@@ -21,6 +21,7 @@ DX12App::~DX12App() {
         std::move(swapchainRTVCpuDH));
 
   My::MyGE::RsrcMngrDX12::Instance().Clear();
+  My::MyGE::DescriptorHeapMngr::Instance().Clear();
 }
 
 LRESULT CALLBACK DX12App::MainWndProc(HWND hwnd, UINT msg, WPARAM wParam,
