@@ -16,6 +16,7 @@ namespace My::MyGE {
 struct Material;
 struct Shader;
 class ShaderCBMngrDX12;
+struct RenderState;
 
 class PipelineBase {
  public:
@@ -72,7 +73,12 @@ class PipelineBase {
   static void SetGraphicsRoot_CBV_SRV(
       ID3D12GraphicsCommandList* cmdList, ShaderCBMngrDX12& shaderCBMngr,
       const ShaderCBDesc& shaderCBDescconst, const Material* material,
-      const std::map<std::string_view, D3D12_GPU_VIRTUAL_ADDRESS>& commonCBs);
+      const std::map<std::string_view, D3D12_GPU_VIRTUAL_ADDRESS>& commonCBs,
+      const std::map<std::string_view, D3D12_GPU_DESCRIPTOR_HANDLE>&
+          commonSRVs);
+
+  static void SetPSODescForRenderState(D3D12_GRAPHICS_PIPELINE_STATE_DESC&,
+                                       const RenderState&);
 
  protected:
   virtual void Impl_Resize() = 0;

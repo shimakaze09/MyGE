@@ -12,6 +12,7 @@ struct My::MySRefl::TypeInfo<My::MyGE::ShaderPass>
   static constexpr FieldList fields = {
       Field{"vertexName", &My::MyGE::ShaderPass::vertexName},
       Field{"fragmentName", &My::MyGE::ShaderPass::fragmentName},
+      Field{"renderState", &My::MyGE::ShaderPass::renderState},
       Field{"tags", &My::MyGE::ShaderPass::tags},
   };
 };

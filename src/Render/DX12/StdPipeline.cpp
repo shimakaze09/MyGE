@@ -1,4 +1,3 @@
-
 #include <MyGE/Render/DX12/StdPipeline.h>
 
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
@@ -112,7 +111,7 @@ struct StdPipeline::Impl {
     };
   };
 
-  struct ShaderLightArray {
+  struct LightArray {
     static constexpr size_t size = 16;
 
     UINT diectionalLightNum;
@@ -171,12 +170,15 @@ struct StdPipeline::Impl {
         shaderCBDescMap;
 
     D3D12_GPU_DESCRIPTOR_HANDLE skybox;
-    ShaderLightArray lights;
+    LightArray lights;
 
     // common
     size_t cameraOffset = 0;
-    size_t objectOffset =
+    size_t lightOffset =
         MyDX12::Util::CalcConstantBufferByteSize(sizeof(CameraConstants));
+    size_t objectOffset =
+        MyDX12::Util::CalcConstantBufferByteSize(sizeof(CameraConstants)) +
+        MyDX12::Util::CalcConstantBufferByteSize(sizeof(LightArray));
 
     struct EntityData {
       valf<16> l2w;
@@ -191,9 +193,12 @@ struct StdPipeline::Impl {
 
   static constexpr char StdPipeline_cbPerObject[] = "StdPipeline_cbPerObject";
   static constexpr char StdPipeline_cbPerCamera[] = "StdPipeline_cbPerCamera";
+  static constexpr char StdPipeline_cbLightArray[] = "StdPipeline_cbLightArray";
+  static constexpr char StdPipeline_srvIBL[] = "StdPipeline_IrradianceMap";
 
   const std::set<std::string_view> commonCBs{StdPipeline_cbPerObject,
-                                             StdPipeline_cbPerCamera};
+                                             StdPipeline_cbPerCamera,
+                                             StdPipeline_cbLightArray};
 
   RenderContext renderContext;
   D3D12_GPU_DESCRIPTOR_HANDLE defaultSkybox;
@@ -221,16 +226,37 @@ struct StdPipeline::Impl {
   void BuildShaders();
   void BuildPSOs();
 
-  size_t GetDeferPSO_ID(const Shader* shader, size_t passIdx, const Mesh* mesh);
-  std::unordered_map<
-      size_t, std::unordered_map<size_t, std::unordered_map<size_t, size_t>>>
-      PSOIDMap;  // shader ID -> pass Index -> layout ID -> PSO ID
+  size_t GetPSO_ID(const Shader* shader, size_t passIdx, const Mesh* mesh,
+                   size_t rtNum, DXGI_FORMAT rtFormat);
+
+  struct PSODesc {
+    PSODesc() { memset(this, 0, sizeof(PSODesc)); }
+
+    size_t shaderID;
+    size_t passIndex;
+    size_t layoutID;
+    size_t rtNum;
+    DXGI_FORMAT rtFormat;
+
+    bool operator==(const PSODesc& rhs) const noexcept {
+      return MyDX12::FG::detail::bitwise_equal(*this, rhs);
+    }
+  };
+
+  struct PSODescHasher {
+    size_t operator()(const PSODesc& desc) const noexcept {
+      return MyDX12::FG::detail::hash_of(desc);
+    }
+  };
+
+  std::unordered_map<PSODesc, size_t, PSODescHasher> PSOIDMap;
 
   void UpdateRenderContext(const std::vector<const MyECS::World*>& worlds);
   void UpdateShaderCBs(const ResizeData& resizeData,
                        const CameraData& cameraData);
   void Render(const ResizeData& resizeData, ID3D12Resource* rtb);
-  void DrawObjects(ID3D12GraphicsCommandList*);
+  void DrawObjects(ID3D12GraphicsCommandList*, std::string_view lightMode,
+                   size_t rtNum, DXGI_FORMAT rtFormat);
 };
 
 StdPipeline::Impl::~Impl() {
@@ -486,25 +512,33 @@ void StdPipeline::Impl::BuildPSOs() {
   }
 }
 
-size_t StdPipeline::Impl::GetDeferPSO_ID(const Shader* shader, size_t passIdx,
-                                         const Mesh* mesh) {
+size_t StdPipeline::Impl::GetPSO_ID(const Shader* shader, size_t passIdx,
+                                    const Mesh* mesh, size_t rtNum,
+                                    DXGI_FORMAT rtFormat) {
   size_t layoutID = MeshLayoutMngr::Instance().GetMeshLayoutID(mesh);
-  auto& PSOs = PSOIDMap[shader->GetInstanceID()][passIdx];
-  auto target = PSOs.find(layoutID);
-  if (target == PSOs.end()) {
+  PSODesc psoDesc;
+  psoDesc.layoutID = layoutID;
+  psoDesc.shaderID = shader->GetInstanceID();
+  psoDesc.passIndex = passIdx;
+  psoDesc.rtNum = rtNum;
+  psoDesc.rtFormat = rtFormat;
+
+  auto target = PSOIDMap.find(psoDesc);
+  if (target == PSOIDMap.end()) {
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
 
-    auto geometryPsoDesc = MyDX12::Desc::PSO::MRT(
+    auto desc = MyDX12::Desc::PSO::MRT(
         RsrcMngrDX12::Instance().GetShaderRootSignature(shader), layout.data(),
         (UINT)layout.size(),
         RsrcMngrDX12::Instance().GetShaderByteCode_vs(shader, passIdx),
-        RsrcMngrDX12::Instance().GetShaderByteCode_ps(shader, passIdx), 3,
-        DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT);
-    geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
-    size_t ID_PSO_geometry =
-        RsrcMngrDX12::Instance().RegisterPSO(&geometryPsoDesc);
-    target = PSOs.emplace_hint(target, std::pair{layoutID, ID_PSO_geometry});
+        RsrcMngrDX12::Instance().GetShaderByteCode_ps(shader, passIdx),
+        (UINT)rtNum, rtFormat, DXGI_FORMAT_D24_UNORM_S8_UINT);
+    desc.RasterizerState.FrontCounterClockwise = TRUE;
+    PipelineBase::SetPSODescForRenderState(desc,
+                                           shader->passes[passIdx].renderState);
+    size_t psoID = RsrcMngrDX12::Instance().RegisterPSO(&desc);
+    target = PSOIDMap.emplace_hint(target, std::pair{psoDesc, psoID});
   }
   return target->second;
 }
@@ -581,11 +615,11 @@ void StdPipeline::Impl::UpdateRenderContext(
   }
 
   {  // light
-    std::array<ShaderLight, ShaderLightArray::size> dirLights;
-    std::array<ShaderLight, ShaderLightArray::size> pointLights;
-    std::array<ShaderLight, ShaderLightArray::size> spotLights;
-    std::array<ShaderLight, ShaderLightArray::size> rectLights;
-    std::array<ShaderLight, ShaderLightArray::size> diskLights;
+    std::array<ShaderLight, LightArray::size> dirLights;
+    std::array<ShaderLight, LightArray::size> pointLights;
+    std::array<ShaderLight, LightArray::size> spotLights;
+    std::array<ShaderLight, LightArray::size> rectLights;
+    std::array<ShaderLight, LightArray::size> diskLights;
     renderContext.lights.diectionalLightNum = 0;
     renderContext.lights.pointLightNum = 0;
     renderContext.lights.spotLightNum = 0;
@@ -728,20 +762,15 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData,
       frameRsrcMngr.GetCurrentFrameResource()
           ->GetResource<MyGE::ShaderCBMngrDX12>("ShaderCBMngrDX12");
 
-  {  // defer lighting
-    auto buffer = shaderCBMngr.GetBuffer(deferLightingShader);
-    buffer->FastReserve(
-        MyDX12::Util::CalcConstantBufferByteSize(sizeof(ShaderLightArray)));
-    buffer->Set(0, &renderContext.lights, sizeof(ShaderLightArray));
-  }
-
-  {  // camera, objects
+  {  // camera, lights, objects
     auto buffer = shaderCBMngr.GetCommonBuffer();
     buffer->FastReserve(
         MyDX12::Util::CalcConstantBufferByteSize(sizeof(CameraConstants)) +
+        MyDX12::Util::CalcConstantBufferByteSize(sizeof(LightArray)) +
         renderContext.entity2data.size() *
             MyDX12::Util::CalcConstantBufferByteSize(sizeof(ObjectConstants)));
 
+    // camera
     auto cmptCamera =
         cameraData.world.entityMngr.Get<Camera>(cameraData.entity);
     auto cmptW2L =
@@ -768,6 +797,11 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData,
     buffer->Set(renderContext.cameraOffset, &cbPerCamera,
                 sizeof(CameraConstants));
 
+    // light array
+    buffer->Set(renderContext.lightOffset, &renderContext.lights,
+                sizeof(LightArray));
+
+    // objects
     size_t offset = renderContext.objectOffset;
     for (auto& [idx, data] : renderContext.entity2data) {
       ObjectConstants objectConstants;
@@ -812,23 +846,30 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   auto gbuffer0 = fg.RegisterResourceNode("GBuffer0");
   auto gbuffer1 = fg.RegisterResourceNode("GBuffer1");
   auto gbuffer2 = fg.RegisterResourceNode("GBuffer2");
-  auto lightedRT = fg.RegisterResourceNode("Lighted");
-  auto resultRT = fg.RegisterResourceNode("Result");
+  auto deferLightedRT = fg.RegisterResourceNode("Defer Lighted");
+  auto deferLightedSkyRT = fg.RegisterResourceNode("Defer Lighted with Sky");
+  auto sceneRT = fg.RegisterResourceNode("Scene");
   auto presentedRT = fg.RegisterResourceNode("Present");
-  fg.RegisterMoveNode(resultRT, lightedRT);
-  auto depthstencil = fg.RegisterResourceNode("Depth Stencil");
+  fg.RegisterMoveNode(deferLightedSkyRT, deferLightedRT);
+  fg.RegisterMoveNode(sceneRT, deferLightedSkyRT);
+  auto deferDS = fg.RegisterResourceNode("Defer Depth Stencil");
+  auto forwardDS = fg.RegisterResourceNode("Forward Depth Stencil");
+  fg.RegisterMoveNode(forwardDS, deferDS);
   auto irradianceMap = fg.RegisterResourceNode("Irradiance Map");
   auto prefilterMap = fg.RegisterResourceNode("PreFilter Map");
-  auto gbPass = fg.RegisterPassNode(
-      "GBuffer Pass", {}, {gbuffer0, gbuffer1, gbuffer2, depthstencil});
+  auto gbPass = fg.RegisterPassNode("GBuffer Pass", {},
+                                    {gbuffer0, gbuffer1, gbuffer2, deferDS});
   auto iblPass = fg.RegisterPassNode("IBL", {}, {irradianceMap, prefilterMap});
   auto deferLightingPass = fg.RegisterPassNode(
       "Defer Lighting",
-      {gbuffer0, gbuffer1, gbuffer2, depthstencil, irradianceMap, prefilterMap},
-      {lightedRT});
-  auto skyboxPass = fg.RegisterPassNode("Skybox", {depthstencil}, {resultRT});
+      {gbuffer0, gbuffer1, gbuffer2, deferDS, irradianceMap, prefilterMap},
+      {deferLightedRT});
+  auto skyboxPass =
+      fg.RegisterPassNode("Skybox", {deferDS}, {deferLightedSkyRT});
+  auto forwardPass = fg.RegisterPassNode(
+      "Forward", {irradianceMap, prefilterMap}, {forwardDS, sceneRT});
   auto postprocessPass =
-      fg.RegisterPassNode("Post Process", {resultRT}, {presentedRT});
+      fg.RegisterPassNode("Post Process", {sceneRT}, {presentedRT});
 
   D3D12_RESOURCE_DESC dsDesc = MyDX12::Desc::RSRC::Basic(
       D3D12_RESOURCE_DIMENSION_TEXTURE2D, width, (UINT)height,
@@ -860,9 +901,10 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
       .RegisterTemporalRsrc(gbuffer0, rsrcType)
       .RegisterTemporalRsrc(gbuffer1, rsrcType)
       .RegisterTemporalRsrc(gbuffer2, rsrcType)
-      .RegisterTemporalRsrc(depthstencil, {dsClear, dsDesc})
-      .RegisterTemporalRsrc(lightedRT, rsrcType)
-      .RegisterTemporalRsrc(resultRT, rsrcType)
+      .RegisterTemporalRsrc(deferDS, {dsClear, dsDesc})
+      .RegisterTemporalRsrc(deferLightedRT, rsrcType)
+      .RegisterTemporalRsrc(deferLightedSkyRT, rsrcType)
+      .RegisterTemporalRsrc(sceneRT, rsrcType)
 
       .RegisterRsrcTable(
           {{gbuffer0, srvDesc}, {gbuffer1, srvDesc}, {gbuffer2, srvDesc}})
@@ -881,7 +923,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
                         rtvNull)
       .RegisterPassRsrc(gbPass, gbuffer2, D3D12_RESOURCE_STATE_RENDER_TARGET,
                         rtvNull)
-      .RegisterPassRsrc(gbPass, depthstencil, D3D12_RESOURCE_STATE_DEPTH_WRITE,
+      .RegisterPassRsrc(gbPass, deferDS, D3D12_RESOURCE_STATE_DEPTH_WRITE,
                         dsvDesc)
 
       .RegisterPassRsrcState(iblPass, irradianceMap,
@@ -895,24 +937,33 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
                         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, srvDesc)
       .RegisterPassRsrc(deferLightingPass, gbuffer2,
                         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, srvDesc)
-      .RegisterPassRsrcState(deferLightingPass, depthstencil,
+      .RegisterPassRsrcState(deferLightingPass, deferDS,
                              D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
                                  D3D12_RESOURCE_STATE_DEPTH_READ)
-      .RegisterPassRsrcImplDesc(deferLightingPass, depthstencil, dsvDesc)
-      .RegisterPassRsrcImplDesc(deferLightingPass, depthstencil, dsSrvDesc)
+      .RegisterPassRsrcImplDesc(deferLightingPass, deferDS, dsvDesc)
+      .RegisterPassRsrcImplDesc(deferLightingPass, deferDS, dsSrvDesc)
       .RegisterPassRsrcState(deferLightingPass, irradianceMap,
                              D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
       .RegisterPassRsrcState(deferLightingPass, prefilterMap,
                              D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-      .RegisterPassRsrc(deferLightingPass, lightedRT,
+      .RegisterPassRsrc(deferLightingPass, deferLightedRT,
                         D3D12_RESOURCE_STATE_RENDER_TARGET, rtvNull)
 
-      .RegisterPassRsrc(skyboxPass, depthstencil,
-                        D3D12_RESOURCE_STATE_DEPTH_READ, dsvDesc)
-      .RegisterPassRsrc(skyboxPass, resultRT,
+      .RegisterPassRsrc(skyboxPass, deferDS, D3D12_RESOURCE_STATE_DEPTH_READ,
+                        dsvDesc)
+      .RegisterPassRsrc(skyboxPass, deferLightedSkyRT,
                         D3D12_RESOURCE_STATE_RENDER_TARGET, rtvNull)
 
-      .RegisterPassRsrc(postprocessPass, resultRT,
+      .RegisterPassRsrcState(skyboxPass, irradianceMap,
+                             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+      .RegisterPassRsrcState(skyboxPass, prefilterMap,
+                             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+      .RegisterPassRsrc(forwardPass, forwardDS,
+                        D3D12_RESOURCE_STATE_DEPTH_WRITE, dsvDesc)
+      .RegisterPassRsrc(forwardPass, sceneRT,
+                        D3D12_RESOURCE_STATE_RENDER_TARGET, rtvNull)
+
+      .RegisterPassRsrc(postprocessPass, sceneRT,
                         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, srvDesc)
       .RegisterPassRsrc(postprocessPass, presentedRT,
                         D3D12_RESOURCE_STATE_RENDER_TARGET, rtvNull);
@@ -929,7 +980,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
     auto gb0 = rsrcs.find(gbuffer0)->second;
     auto gb1 = rsrcs.find(gbuffer1)->second;
     auto gb2 = rsrcs.find(gbuffer2)->second;
-    auto ds = rsrcs.find(depthstencil)->second;
+    auto ds = rsrcs.find(deferDS)->second;
 
     std::array rtHandles{gb0.info.null_info_rtv.cpuHandle,
                          gb1.info.null_info_rtv.cpuHandle,
@@ -950,7 +1001,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
     cmdList->OMSetRenderTargets((UINT)rtHandles.size(), rtHandles.data(), false,
                                 &dsHandle);
 
-    DrawObjects(cmdList);
+    DrawObjects(cmdList, "Deferred", 3, DXGI_FORMAT_R32G32B32A32_FLOAT);
   });
 
   fgExecutor.RegisterPassFunc(
@@ -1075,9 +1126,9 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         auto gb0 = rsrcs.at(gbuffer0);
         auto gb1 = rsrcs.at(gbuffer1);
         auto gb2 = rsrcs.at(gbuffer2);
-        auto ds = rsrcs.find(depthstencil)->second;
+        auto ds = rsrcs.find(deferDS)->second;
 
-        auto rt = rsrcs.at(lightedRT);
+        auto rt = rsrcs.at(deferLightedRT);
 
         //cmdList->CopyResource(bb.resource, rt.resource);
 
@@ -1111,10 +1162,11 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
 
         auto cbLights = frameRsrcMngr.GetCurrentFrameResource()
                             ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
-                            .GetBuffer(deferLightingShader)
-                            ->GetResource();
-        cmdList->SetGraphicsRootConstantBufferView(
-            3, cbLights->GetGPUVirtualAddress());
+                            .GetCommonBuffer()
+                            ->GetResource()
+                            ->GetGPUVirtualAddress() +
+                        renderContext.lightOffset;
+        cmdList->SetGraphicsRootConstantBufferView(3, cbLights);
 
         auto cbPerCamera =
             frameRsrcMngr.GetCurrentFrameResource()
@@ -1149,8 +1201,8 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->RSSetViewports(1, &resizeData.screenViewport);
         cmdList->RSSetScissorRects(1, &resizeData.scissorRect);
 
-        auto rt = rsrcs.find(resultRT)->second;
-        auto ds = rsrcs.find(depthstencil)->second;
+        auto rt = rsrcs.find(deferLightedSkyRT)->second;
+        auto ds = rsrcs.find(deferDS)->second;
 
         // Specify the buffers we are going to render to.
         cmdList->OMSetRenderTargets(
@@ -1174,6 +1226,27 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
       });
 
   fgExecutor.RegisterPassFunc(
+      forwardPass, [&](ID3D12GraphicsCommandList* cmdList,
+                       const MyDX12::FG::PassRsrcs& rsrcs) {
+        auto heap = MyDX12::DescriptorHeapMngr::Instance()
+                        .GetCSUGpuDH()
+                        ->GetDescriptorHeap();
+        cmdList->SetDescriptorHeaps(1, &heap);
+        cmdList->RSSetViewports(1, &resizeData.screenViewport);
+        cmdList->RSSetScissorRects(1, &resizeData.scissorRect);
+
+        auto rt = rsrcs.find(sceneRT)->second;
+        auto ds = rsrcs.find(forwardDS)->second;
+
+        auto dsHandle = ds.info.desc2info_dsv.at(dsvDesc).cpuHandle;
+
+        cmdList->OMSetRenderTargets(1, &rt.info.null_info_rtv.cpuHandle, false,
+                                    &dsHandle);
+
+        DrawObjects(cmdList, "Forward", 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
+      });
+
+  fgExecutor.RegisterPassFunc(
       postprocessPass, [&](ID3D12GraphicsCommandList* cmdList,
                            const MyDX12::FG::PassRsrcs& rsrcs) {
         cmdList->SetGraphicsRootSignature(
@@ -1189,7 +1262,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         cmdList->RSSetScissorRects(1, &resizeData.scissorRect);
 
         auto rt = rsrcs.find(presentedRT)->second;
-        auto img = rsrcs.find(resultRT)->second;
+        auto img = rsrcs.find(sceneRT)->second;
 
         // Clear the render texture and depth buffer.
         cmdList->ClearRenderTargetView(rt.info.null_info_rtv.cpuHandle,
@@ -1219,22 +1292,33 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
                      *fgRsrcMngr);
 }
 
-void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
+void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList,
+                                    std::string_view lightMode, size_t rtNum,
+                                    DXGI_FORMAT rtFormat) {
   auto& shaderCBMngr =
       frameRsrcMngr.GetCurrentFrameResource()
           ->GetResource<MyGE::ShaderCBMngrDX12>("ShaderCBMngrDX12");
 
+  D3D12_GPU_DESCRIPTOR_HANDLE ibl;
+  if (renderContext.skybox.ptr == defaultSkybox.ptr)
+    ibl = defaultIBLSRVDH.GetGpuHandle();
+  else {
+    auto iblData = frameRsrcMngr.GetCurrentFrameResource()
+                       ->GetResource<std::shared_ptr<IBLData>>("IBL data");
+    ibl = iblData->SRVDH.GetGpuHandle();
+  }
+
   for (const auto& [shader, material] : renderContext.objectMap) {
-    std::vector<size_t> deferPasses;
+    std::vector<size_t> filteredPasses;
     for (size_t i = 0; i < shader->passes.size(); i++) {
       const auto& pass = shader->passes[i];
       auto target = pass.tags.find("LightMode");
       if (target == pass.tags.end())
         continue;
-      if (target->second == "Deferred")
-        deferPasses.push_back(i);
+      if (target->second == lightMode)
+        filteredPasses.push_back(i);
     }
-    if (deferPasses.empty())
+    if (filteredPasses.empty())
       continue;
 
     cmdList->SetGraphicsRootSignature(
@@ -1248,6 +1332,9 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 
     auto cameraCBAdress = commonBuffer->GetResource()->GetGPUVirtualAddress() +
                           renderContext.cameraOffset;
+
+    auto lightCBAdress = commonBuffer->GetResource()->GetGPUVirtualAddress() +
+                         renderContext.lightOffset;
 
     for (const auto& [material, objects] : mat2objects) {
       // For each render item...
@@ -1267,14 +1354,14 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 
         StdPipeline::SetGraphicsRoot_CBV_SRV(
             cmdList, shaderCBMngr, shaderCBDesc, material,
-            {
-                {StdPipeline_cbPerObject, objCBAddress},
-                {StdPipeline_cbPerCamera, cameraCBAdress},
-            });
+            {{StdPipeline_cbPerObject, objCBAddress},
+             {StdPipeline_cbPerCamera, cameraCBAdress},
+             {StdPipeline_cbLightArray, lightCBAdress}},
+            {{StdPipeline_srvIBL, ibl}});
 
-        for (auto passIndex : deferPasses) {
+        for (auto passIndex : filteredPasses) {
           cmdList->SetPipelineState(RsrcMngrDX12::Instance().GetPSO(
-              GetDeferPSO_ID(shader, passIndex, object.mesh)));
+              GetPSO_ID(shader, passIndex, object.mesh, rtNum, rtFormat)));
           cmdList->DrawIndexedInstanced((UINT)submesh.indexCount, 1,
                                         (UINT)submesh.indexStart,
                                         (INT)submesh.baseVertex, 0);
