@@ -1,7 +1,3 @@
-//
-// Created by Admin on 20/03/2025.
-//
-
 #include "LuaECSAgency.h"
 
 #include <MyGE/ScriptSystem/LuaContext.h>
@@ -19,8 +15,7 @@ const My::MyECS::SystemFunc* LuaECSAgency::RegisterEntityJob(
       [bytes = std::move(bytes), cmptLocator = std::move(cmptLocator)](
           MyECS::World* w, MyECS::SingletonsView singletonsView,
           MyECS::ChunkView chunk) {
-        if (chunk.EntityNum() == 0)
-          return;
+        if (chunk.EntityNum() == 0) return;
 
         auto luaCtx = LuaCtxMngr::Instance().GetContext(w);
         auto L = luaCtx->Request();

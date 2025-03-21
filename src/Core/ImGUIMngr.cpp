@@ -1,9 +1,4 @@
-//
-// Created by Admin on 17/03/2025.
-//
-
 #include <MyGE/Core/ImGUIMngr.h>
-
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/imgui_impl_dx12.h>
 #include <_deps/imgui/imgui_impl_win32.h>
@@ -19,9 +14,7 @@ struct ImGUIMngr::Impl {
 
 ImGUIMngr::ImGUIMngr() : pImpl{new Impl} {}
 
-ImGUIMngr::~ImGUIMngr() {
-  delete pImpl;
-}
+ImGUIMngr::~ImGUIMngr() { delete pImpl; }
 
 void ImGUIMngr::Init(void* hwnd, ID3D12Device* device, size_t numFrames,
                      size_t numContexts, StyleColors style) {
@@ -70,15 +63,12 @@ const std::vector<ImGuiContext*>& ImGUIMngr::GetContexts() const {
 
 void ImGUIMngr::Clear() {
   ImGui_ImplDX12_Shutdown_Shared();
-  for (const auto& ctx : pImpl->contexts)
-    ImGui_ImplDX12_Shutdown_Context(ctx);
+  for (const auto& ctx : pImpl->contexts) ImGui_ImplDX12_Shutdown_Context(ctx);
 
   ImGui_ImplWin32_Shutdown_Shared();
-  for (const auto& ctx : pImpl->contexts)
-    ImGui_ImplWin32_Shutdown_Context(ctx);
+  for (const auto& ctx : pImpl->contexts) ImGui_ImplWin32_Shutdown_Context(ctx);
 
-  for (const auto& ctx : pImpl->contexts)
-    ImGui::DestroyContext(ctx);
+  for (const auto& ctx : pImpl->contexts) ImGui::DestroyContext(ctx);
 
   pImpl->contexts.clear();
 

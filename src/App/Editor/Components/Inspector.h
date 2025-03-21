@@ -1,10 +1,7 @@
-//
-// Created by Admin on 19/03/2025.
-//
-
 #pragma once
 
 #include <MyECS/Entity.h>
+
 #include <_deps/crossguid/guid.hpp>
 
 namespace My::MyGE {

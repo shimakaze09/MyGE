@@ -1,32 +1,25 @@
-//
-// Created by Admin on 15/03/2025.
-//
-
 #include <MyGE/Asset/AssetMngr.h>
-
 #include <MyGE/Asset/Serializer.h>
-
 #include <MyGE/Core/DefaultAsset.h>
-#include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
-#include <MyGE/Core/Material.h>
-#include <MyGE/Core/Mesh.h>
 #include <MyGE/Core/Scene.h>
-#include <MyGE/Core/Shader.h>
 #include <MyGE/Core/TextAsset.h>
-#include <MyGE/Core/Texture2D.h>
-#include <MyGE/Core/TextureCube.h>
+#include <MyGE/Render/HLSLFile.h>
+#include <MyGE/Render/Material.h>
+#include <MyGE/Render/Mesh.h>
+#include <MyGE/Render/Shader.h>
+#include <MyGE/Render/Texture2D.h>
+#include <MyGE/Render/TextureCube.h>
 #include <MyGE/ScriptSystem/LuaScript.h>
-
 #include <_deps/tinyobjloader/tiny_obj_loader.h>
-#ifdef MY_MYGE_USE_ASSIMP
+#ifdef My_MyGE_USE_ASSIMP
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+
 #include <assimp/Importer.hpp>
-#endif  // MY_MYGE_USE_ASSIMP
+#endif  // My_MyGE_USE_ASSIMP
 
 #include <MySRefl/MySRefl.h>
-
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 
@@ -84,13 +77,13 @@ struct AssetMngr::Impl {
 
   static Mesh* BuildMesh(MeshContext ctx);
   static Mesh* LoadObj(const std::filesystem::path& path);
-#ifdef MY_MYGE_USE_ASSIMP
+#ifdef My_MyGE_USE_ASSIMP
   static Mesh* AssimpLoadMesh(const std::filesystem::path& path);
   static void AssimpLoadNode(AssetMngr::Impl::MeshContext& ctx,
                              const aiNode* node, const aiScene* scene);
   static void AssimpLoadMesh(AssetMngr::Impl::MeshContext& ctx,
                              const aiMesh* mesh, const aiScene* scene);
-#endif  // MY_MYGE_USE_ASSIMP
+#endif  // My_MyGE_USE_ASSIMP
 
   std::map<xg::Guid, std::set<xg::Guid>> assetTree;
 
@@ -120,9 +113,9 @@ bool AssetMngr::IsSupported(std::string_view ext) const noexcept {
 
       // [models]
       || ext == "obj"
-#ifdef MY_MYGE_USE_ASSIMP
+#ifdef My_MyGE_USE_ASSIMP
       || ext == "ply"
-#endif  // MY_MYGE_USE_ASSIMP
+#endif  // My_MyGE_USE_ASSIMP
 
       // [texts]
       || ext == "txt" ||
@@ -299,14 +292,14 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
     pImpl->asset2path.emplace(mesh, path);
     return mesh;
   }
-#ifdef MY_MYGE_USE_ASSIMP
+#ifdef My_MyGE_USE_ASSIMP
   else if (ext == ".ply") {
     auto mesh = Impl::AssimpLoadMesh(path);
     pImpl->path2assert.emplace_hint(target, path, Impl::Asset{mesh});
     pImpl->asset2path.emplace(mesh, path);
     return mesh;
   }
-#endif  // MY_MYGE_USE_ASSIMP
+#endif  // My_MyGE_USE_ASSIMP
   else if (ext == ".hlsl") {
     auto str = Impl::LoadText(path);
     auto hlsl = new HLSLFile(std::move(str), path.parent_path().string());
@@ -702,14 +695,14 @@ Mesh* AssetMngr::Impl::LoadObj(const std::filesystem::path& path) {
       ctx.indices.push_back(face[2]);
 
       // per-face material
-      //shapes[s].mesh.material_ids[f];
+      // shapes[s].mesh.material_ids[f];
     }
   }
 
   return BuildMesh(std::move(ctx));
 }
 
-#ifdef MY_MYGE_USE_ASSIMP
+#ifdef My_MyGE_USE_ASSIMP
 void AssetMngr::Impl::AssimpLoadNode(MeshContext& ctx, const aiNode* node,
                                      const aiScene* scene) {
   for (unsigned int i = 0; i < node->mNumMeshes; i++) {
@@ -739,7 +732,7 @@ void AssetMngr::Impl::AssimpLoadMesh(MeshContext& ctx, const aiMesh* mesh,
       color[0] = mesh->mColors[0][i][0];
       color[1] = mesh->mColors[0][i][1];
       color[2] = mesh->mColors[0][i][2];
-      //color[3] = mesh->mColors[0][i][3];
+      // color[3] = mesh->mColors[0][i][3];
       ctx.colors.push_back(color);
     }
 
@@ -767,10 +760,10 @@ void AssetMngr::Impl::AssimpLoadMesh(MeshContext& ctx, const aiMesh* mesh,
     }
 
     // bitangent
-    //vector[0] = mesh->mBitangents[i][0];
-    //vector[1] = mesh->mBitangents[i][1];
-    //vector[2] = mesh->mBitangents[i][2];
-    //vertex.Bitangent = vector;
+    // vector[0] = mesh->mBitangents[i][0];
+    // vector[1] = mesh->mBitangents[i][1];
+    // vector[2] = mesh->mBitangents[i][2];
+    // vertex.Bitangent = vector;
   }
 
   for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
@@ -795,4 +788,4 @@ Mesh* AssetMngr::Impl::AssimpLoadMesh(const std::filesystem::path& path) {
 
   return BuildMesh(std::move(ctx));
 }
-#endif  // MY_MYGE_USE_ASSIMP
+#endif  // My_MyGE_USE_ASSIMP

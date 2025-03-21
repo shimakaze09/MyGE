@@ -1,7 +1,3 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
 #pragma once
 
 #include <d3d12.h>
@@ -30,9 +26,6 @@ class MeshLayoutMngr {
     return instance;
   }
 
-  // generate all layout
-  void Init();
-
   const std::vector<D3D12_INPUT_ELEMENT_DESC>& GetMeshLayoutValue(size_t ID);
 
   static constexpr size_t GetMeshLayoutID(bool uv, bool normal, bool tangent,
@@ -44,7 +37,7 @@ class MeshLayoutMngr {
   static size_t GetMeshLayoutID(const Mesh* mesh) noexcept;
 
  private:
-  MeshLayoutMngr() = default;
+  MeshLayoutMngr();
 
   // if not exist attribute, set it to offset 0
   static std::vector<D3D12_INPUT_ELEMENT_DESC> GenerateDesc(bool uv,

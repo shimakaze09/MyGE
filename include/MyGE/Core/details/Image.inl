@@ -1,7 +1,3 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
 #pragma once
 
 namespace My::MyGE {
@@ -19,8 +15,7 @@ const T& Image::At(size_t x, size_t y) const {
 template <typename T, typename>
 void Image::SetAll(const T& color) {
   if constexpr (std::is_same_v<T, float>) {
-    for (size_t i = 0; i < width * height * channel; i++)
-      data[i] = color;
+    for (size_t i = 0; i < width * height * channel; i++) data[i] = color;
   } else {
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {

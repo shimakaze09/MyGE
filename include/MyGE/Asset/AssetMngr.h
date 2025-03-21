@@ -1,11 +1,8 @@
-//
-// Created by Admin on 15/03/2025.
-//
-
 #pragma once
 
 #include <MyECS/Entity.h>
 
+#include <_deps/crossguid/guid.hpp>
 #include <filesystem>
 #include <map>
 #include <regex>
@@ -13,13 +10,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include <_deps/crossguid/guid.hpp>
-
 namespace My::MyGE {
 // ref: https://docs.unity3d.com/ScriptReference/AssetDatabase.html
 // asset: a file stored in hard disk
 // support
-// - basic: .lua, .hlsl, .shader, image(.jpg, .png, .bmp, .tga, .hdr), .tex2d, .texcube, .mat, .txt, .json, .scene
+// - basic: .lua, .hlsl, .shader, image(.jpg, .png, .bmp, .tga, .hdr), .tex2d,
+// .texcube, .mat, .txt, .json, .scene
 // - model
 // * - support: .obj
 // * - optional (assimp): .ply
@@ -45,6 +41,11 @@ class AssetMngr {
 
   // unique
   bool CreateAsset(void* ptr, const std::filesystem::path& path);
+  template <typename Asset>
+  bool CreateAsset(Asset* ptr, const std::filesystem::path& path);
+  // copy
+  template <typename Asset>
+  bool CreateAsset(Asset&& asset, const std::filesystem::path& path);
 
   bool Contains(const void* ptr) const;
 
@@ -58,7 +59,8 @@ class AssetMngr {
 
   const std::type_info& GetAssetType(const std::filesystem::path&) const;
 
-  // gets the corresponding asset path for the supplied guid, or an empty path if the GUID can't be found.
+  // gets the corresponding asset path for the supplied guid, or an empty path
+  // if the GUID can't be found.
   const std::filesystem::path& GUIDToAssetPath(const xg::Guid&) const;
 
   // if not loaded, return nullptr

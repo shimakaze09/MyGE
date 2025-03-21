@@ -1,10 +1,6 @@
-//
-// Created by Admin on 17/03/2025.
-//
-
 #include <MyECS/World.h>
 #include <MyGE/Asset/Serializer.h>
-#include <MyGE/Core/HLSLFile.h>
+#include <MyGE/Render/HLSLFile.h>
 
 #include <iostream>
 
@@ -130,7 +126,7 @@ int main() {
   Serializer::Instance().RegisterComponentSerializeFunction<A>();
   Serializer::Instance().RegisterComponentDeserializeFunction<A>();
   Serializer::Instance().RegisterUserTypeSerializeFunction(
-      [](const UserType0* t, Serializer::SerializeContext ctx) {
+      [](const UserType0* t, Serializer::SerializeContext& ctx) {
         ctx.writer.Double(static_cast<double>(t->data));
       });
   Serializer::Instance().RegisterUserTypeDeserializeFunction(

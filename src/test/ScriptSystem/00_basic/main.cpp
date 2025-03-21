@@ -1,7 +1,3 @@
-//
-// Created by Admin on 14/03/2025.
-//
-
 #include <MyECS/World.h>
 #include <MyGE/ScriptSystem/LuaContext.h>
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>

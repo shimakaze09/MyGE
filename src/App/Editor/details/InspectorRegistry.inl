@@ -1,29 +1,20 @@
-//
-// Created by Admin on 19/03/2025.
-//
-
 #pragma once
 
-#include "../PlayloadType.h"
-
+#include <MyECS/Entity.h>
 #include <MyGE/Asset/AssetMngr.h>
-
+#include <MyGE/Core/Components/Name.h>
+#include <MyGE/Core/Traits.h>
+#include <MySTL/tuple.h>
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/misc/cpp/imgui_stdlib.h>
 
-#include <MyGE/Core/Traits.h>
-
-#include <MyECS/Entity.h>
-
-#include <MyGE/Core/Components/Name.h>
-#include <MySTL/tuple.h>
+#include "../PlayloadType.h"
 
 namespace My::MyGE::detail {
 template <typename T>
 struct ValNTraits {
   static constexpr bool isValN = false;
 };
-
 template <typename T>
 struct ValNTraitsBase {
   static constexpr bool isValN = std::is_same_v<T, float>;
@@ -31,31 +22,22 @@ struct ValNTraitsBase {
 
 template <typename T, size_t N>
 struct ValNTraits<point<T, N>> : ValNTraitsBase<T> {};
-
 template <typename T, size_t N>
 struct ValNTraits<scale<T, N>> : ValNTraitsBase<T> {};
-
 template <typename T, size_t N>
 struct ValNTraits<val<T, N>> : ValNTraitsBase<T> {};
-
 template <typename T, size_t N>
 struct ValNTraits<vec<T, N>> : ValNTraitsBase<T> {};
-
 template <typename T>
 struct ValNTraits<euler<T>> : ValNTraitsBase<T> {};
-
 template <typename T>
 struct ValNTraits<normal<T>> : ValNTraitsBase<T> {};
-
 template <typename T>
 struct ValNTraits<quat<T>> : ValNTraitsBase<T> {};
-
 template <typename T>
 struct ValNTraits<rgb<T>> : ValNTraitsBase<T> {};
-
 template <typename T>
 struct ValNTraits<rgba<T>> : ValNTraitsBase<T> {};
-
 template <typename T>
 struct ValNTraits<svec<T>> : ValNTraitsBase<T> {};
 
@@ -64,7 +46,6 @@ template <typename T>
 struct ColorTraits {
   static constexpr bool isColor = false;
 };
-
 template <typename T>
 struct ColorTraitsBase {
   static constexpr bool isColor = std::is_floating_point_v<T>;
@@ -72,7 +53,6 @@ struct ColorTraitsBase {
 
 template <typename T>
 struct ColorTraits<rgb<T>> : ColorTraitsBase<T> {};
-
 template <typename T>
 struct ColorTraits<rgba<T>> : ColorTraitsBase<T> {};
 
@@ -261,14 +241,14 @@ void InspectVar(Field field, const Value& var,
     }
   } else {
     assert(false);
-    //InspectUserType(field, &var, ctx);
+    // InspectUserType(field, &var, ctx);
   }
 }
 
 template <typename Field, typename Value>
 void InspectVar(Field field, Value& var,
                 InspectorRegistry::InspectContext ctx) {
-  //static_assert(!std::is_const_v<Value>);
+  // static_assert(!std::is_const_v<Value>);
   if constexpr (std::is_same_v<Value, bool>)
     ImGui::Checkbox(field.name.data(), &var);
   else if constexpr (std::is_same_v<Value, uint8_t>)
@@ -334,8 +314,7 @@ void InspectVar(Field field, Value& var,
           if (ImGui::Selectable(field.name.data(), isSelected))
             var = field.value;
 
-          if (isSelected)
-            ImGui::SetItemDefaultFocus();
+          if (isSelected) ImGui::SetItemDefaultFocus();
         });
         ImGui::EndCombo();
       }
@@ -468,8 +447,7 @@ void InspectVar(Field field, Value& var,
         size_t size = origSize;
         static constexpr ImU64 u64_one = 1;
         ImGui::InputScalar("size", ImGuiDataType_U64, &size, &u64_one);
-        if (size != origSize)
-          OrderContainerTraits_Resize(var, size);
+        if (size != origSize) OrderContainerTraits_Resize(var, size);
       }
 
       auto iter_begin = OrderContainerTraits_Begin(var);

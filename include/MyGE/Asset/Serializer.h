@@ -1,14 +1,8 @@
-//
-// Created by Admin on 17/03/2025.
-//
-
 #pragma once
-
-#include <MyECS/World.h>
 
 #include <MyDP/Visitor/cVisitor.h>
 #include <MyDP/Visitor/ncVisitor.h>
-
+#include <MyECS/World.h>
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 
@@ -36,27 +30,22 @@ class Serializer {
   };
 
   using JSONWriter = rapidjson::Writer<rapidjson::StringBuffer>;
-
   struct SerializeContext {
     SerializeContext(const Visitor<void(const void*, SerializeContext&)>& s)
         : serializer{s} {
       writer.Reset(sb);
     }
-
     JSONWriter writer;
     rapidjson::StringBuffer sb;
     const Visitor<void(const void*, SerializeContext&)>& serializer;
   };
-
   using SerializeFunc = std::function<void(const void*, SerializeContext&)>;
   using EntityIdxMap = std::unordered_map<size_t, MyECS::Entity>;
-
   struct DeserializeContext {
     const EntityIdxMap& entityIdxMap;
     const Visitor<void(void*, const rapidjson::Value&, DeserializeContext&)>&
         deserializer;
   };
-
   using DeserializeFunc =
       std::function<void(void*, const rapidjson::Value&, DeserializeContext&)>;
 

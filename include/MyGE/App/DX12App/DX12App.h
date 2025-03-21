@@ -1,7 +1,3 @@
-//
-// Created by Admin on 17/03/2025.
-//
-
 #pragma once
 
 #include <MyDX12/MyDX12.h>
@@ -14,7 +10,6 @@ class DX12App {
   static DX12App* GetApp() noexcept { return mApp; }
 
   HINSTANCE AppInst() const { return mhAppInst; }
-
   HWND MainWnd() const { return mhMainWnd; }
 
   // 1. process message
@@ -45,7 +40,6 @@ class DX12App {
   }
 
   D3D12_VIEWPORT GetScreenViewport() const noexcept;
-
   D3D12_RECT GetScissorRect() const noexcept {
     return {0, 0, mClientWidth, mClientHeight};
   }
@@ -67,19 +61,15 @@ class DX12App {
   ID3D12Resource* CurrentBackBuffer() const noexcept {
     return mSwapChainBuffer[curBackBuffer].Get();
   }
-
   D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const noexcept {
     return swapchainRTVCpuDH.GetCpuHandle(curBackBuffer);
   }
-
   DXGI_FORMAT GetBackBufferFormat() const noexcept { return mBackBufferFormat; }
 
   static constexpr char FR_CommandAllocator[] = "__CommandAllocator";
-
   MyDX12::FrameResourceMngr* GetFrameResourceMngr() const noexcept {
     return frameRsrcMngr.get();
   }
-
   ID3D12CommandAllocator* GetCurFrameCommandAllocator() noexcept;
 
  protected:

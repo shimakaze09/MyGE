@@ -1,15 +1,11 @@
-//
-// Created by Admin on 19/03/2025.
-//
-
 #pragma once
- 
- #include <string>
- 
- namespace My::MyGE {
- struct Name {
-   std::string value;
- };
- }
- 
+
+#include <string>
+
+namespace My::MyGE {
+struct Name {
+  std::string value;
+};
+}  // namespace My::MyGE
+
 #include "details/Name_AutoRefl.inl"

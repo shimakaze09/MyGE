@@ -1,7 +1,3 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
 #include <MyGE/Core/Components/WorldTime.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/Systems/WorldTimeSystem.h>

@@ -1,9 +1,5 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
-#include <MyGE/Core/Mesh.h>
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
+#include <MyGE/Render/Mesh.h>
 
 using namespace My::MyGE;
 
@@ -60,7 +56,7 @@ std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayoutMngr::GenerateDesc(bool uv,
   return rst;
 }
 
-void MeshLayoutMngr::Init() {
+MeshLayoutMngr::MeshLayoutMngr() {
   layoutMap.reserve(0b1111);
   for (size_t ID = 0; ID <= 0b1111; ID++) {
     auto [uv, normal, tangent, color] = DecodeMeshLayoutID(ID);

@@ -19,7 +19,6 @@ ADD_TARGET(
         My::MyRapidJSON_core
         My::MyGE__deps_crossguid
         My::MyGE__deps_tinyobjloader
-        My::MyGE_Core
         My::MyGE_ScriptSystem
         ${libs}
         DEFINE_PRIVATE

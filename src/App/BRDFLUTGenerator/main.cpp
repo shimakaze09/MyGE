@@ -1,9 +1,4 @@
-//
-// Created by Admin on 19/03/2025.
-//
-
 #include <MyGE/Core/Image.h>
-
 #include <MyGM/MyGM.h>
 
 #include <iostream>

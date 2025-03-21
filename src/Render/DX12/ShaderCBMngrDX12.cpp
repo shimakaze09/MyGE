@@ -1,9 +1,5 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
-#include <MyGE/Core/Shader.h>
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
+#include <MyGE/Render/Shader.h>
 
 using namespace My::MyGE;
 
@@ -16,8 +12,7 @@ ShaderCBMngrDX12::~ShaderCBMngrDX12() {
 My::MyDX12::DynamicUploadBuffer* ShaderCBMngrDX12::GetBuffer(
     const Shader* shader) {
   auto target = bufferMap.find(shader->GetInstanceID());
-  if (target != bufferMap.end())
-    return target->second;
+  if (target != bufferMap.end()) return target->second;
 
   auto rst = bufferMap.emplace_hint(target, shader->GetInstanceID(),
                                     new MyDX12::DynamicUploadBuffer{device});
@@ -27,8 +22,7 @@ My::MyDX12::DynamicUploadBuffer* ShaderCBMngrDX12::GetBuffer(
 My::MyDX12::DynamicUploadBuffer* ShaderCBMngrDX12::GetCommonBuffer() {
   size_t ID = static_cast<size_t>(-1);
   auto target = bufferMap.find(ID);
-  if (target != bufferMap.end())
-    return target->second;
+  if (target != bufferMap.end()) return target->second;
 
   auto rst = bufferMap.emplace_hint(target, ID,
                                     new MyDX12::DynamicUploadBuffer{device});

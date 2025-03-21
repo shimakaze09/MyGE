@@ -1,25 +1,17 @@
-//
-// Created by Admin on 19/03/2025.
-//
-
 #include "InspectorSystem.h"
 
-#include "../InspectorRegistry.h"
+#include <_deps/imgui/imgui.h>
 
 #include "../Components/Hierarchy.h"
 #include "../Components/Inspector.h"
-
-#include <MyGE/Transform/Components/Components.h>
-
-#include <_deps/imgui/imgui.h>
+#include "../InspectorRegistry.h"
 
 using namespace My::MyGE;
 
 void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.RegisterCommand([](MyECS::World* world) {
     auto inspector = world->entityMngr.GetSingleton<Inspector>();
-    if (!inspector)
-      return;
+    if (!inspector) return;
 
     auto hierarchy = world->entityMngr.GetSingleton<Hierarchy>();
     switch (inspector->mode) {
@@ -55,7 +47,8 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
           if (ImGui::BeginPopup("Attach Component Popup")) {
             ImGui::PushID("Attach Component Popup");
             // Helper class to easy setup a text filter.
-            // You may want to implement a more feature-full filtering scheme in your own application.
+            // You may want to implement a more feature-full filtering scheme in
+            // your own application.
             static ImGuiTextFilter filter;
             filter.Draw();
             int ID = 0;
@@ -92,7 +85,8 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
           if (ImGui::BeginPopup("Detach Component Popup")) {
             ImGui::PushID("Detach Component Popup");
             // Helper class to easy setup a text filter.
-            // You may want to implement a more feature-full filtering scheme in your own application.
+            // You may want to implement a more feature-full filtering scheme in
+            // your own application.
             static ImGuiTextFilter filter;
             filter.Draw();
             int ID = 0;
@@ -153,8 +147,7 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
               hierarchy->world->entityMngr.Components(inspector->entity);
           for (size_t i = 0; i < cmpts.size(); i++) {
             auto type = cmpts[i].Type();
-            if (InspectorRegistry::Instance().IsRegisteredCmpt(type))
-              continue;
+            if (InspectorRegistry::Instance().IsRegisteredCmpt(type)) continue;
             auto name = hierarchy->world->entityMngr.cmptTraits.Nameof(type);
             if (name.empty())
               ImGui::Text(std::to_string(type.HashCode()).c_str());

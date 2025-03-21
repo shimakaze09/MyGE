@@ -1,7 +1,3 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
 #pragma once
 
 #include <MyDX12/UploadBuffer.h>
@@ -17,7 +13,6 @@ struct Shader;
 class ShaderCBMngrDX12 {
  public:
   ShaderCBMngrDX12(ID3D12Device* device) : device{device} {}
-
   ~ShaderCBMngrDX12();
   MyDX12::DynamicUploadBuffer* GetBuffer(const Shader* shader);
   MyDX12::DynamicUploadBuffer* GetCommonBuffer();

@@ -1,7 +1,3 @@
-//
-// Created by Admin on 20/03/2025.
-//
-
 #include <MyGE/ScriptSystem/LuaContext.h>
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
 
@@ -17,14 +13,11 @@ struct LuaCtxMngr::Impl {
 
 LuaCtxMngr::LuaCtxMngr() : pImpl{new Impl} {}
 
-LuaCtxMngr::~LuaCtxMngr() {
-  delete pImpl;
-}
+LuaCtxMngr::~LuaCtxMngr() { delete pImpl; }
 
 LuaContext* LuaCtxMngr::Register(const MyECS::World* world) {
   auto target = pImpl->world2ctx.find(world);
-  if (target != pImpl->world2ctx.end())
-    return target->second.get();
+  if (target != pImpl->world2ctx.end()) return target->second.get();
 
   auto ctx = new LuaContext;
   pImpl->world2ctx.emplace_hint(target, world,
@@ -39,12 +32,9 @@ void LuaCtxMngr::Unregister(const MyECS::World* world) {
 // if not registered, return nullptr
 LuaContext* LuaCtxMngr::GetContext(const MyECS::World* world) {
   auto target = pImpl->world2ctx.find(world);
-  if (target == pImpl->world2ctx.end())
-    return nullptr;
+  if (target == pImpl->world2ctx.end()) return nullptr;
 
   return target->second.get();
 }
 
-void LuaCtxMngr::Clear() {
-  pImpl->world2ctx.clear();
-}
+void LuaCtxMngr::Clear() { pImpl->world2ctx.clear(); }

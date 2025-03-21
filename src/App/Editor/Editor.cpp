@@ -1,68 +1,40 @@
-//
-// Created by Admin on 17/03/2025.
-//
-
-#include "Components/Hierarchy.h"
-#include "Components/Inspector.h"
-#include "Components/ProjectViewer.h"
-#include "Components/TestInspector.h"
-
-#include "Systems/HierarchySystem.h"
-#include "Systems/InspectorSystem.h"
-#include "Systems/ProjectViewerSystem.h"
-
-#include "InspectorRegistry.h"
-
 #include <MyGE/App/DX12App/DX12App.h>
-
-#include <MyGE/Render/DX12/MeshLayoutMngr.h>
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
-#include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
-#include <MyGE/Render/DX12/StdPipeline.h>
-
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Asset/Serializer.h>
-
-#include <MyGE/Core/Components/Camera.h>
-#include <MyGE/Core/Components/Input.h>
-#include <MyGE/Core/Components/Light.h>
-#include <MyGE/Core/Components/MeshFilter.h>
-#include <MyGE/Core/Components/MeshRenderer.h>
-#include <MyGE/Core/Components/Name.h>
-#include <MyGE/Core/Components/Roamer.h>
-#include <MyGE/Core/Components/Skybox.h>
-#include <MyGE/Core/Components/WorldTime.h>
+#include <MyGE/Core/Components/Components.h>
 #include <MyGE/Core/GameTimer.h>
-#include <MyGE/Core/HLSLFile.h>
-#include <MyGE/Core/Image.h>
-#include <MyGE/Core/Mesh.h>
-#include <MyGE/Core/Scene.h>
-#include <MyGE/Core/Shader.h>
-#include <MyGE/Core/ShaderMngr.h>
-#include <MyGE/Core/Systems/CameraSystem.h>
-#include <MyGE/Core/Systems/InputSystem.h>
-#include <MyGE/Core/Systems/RoamerSystem.h>
-#include <MyGE/Core/Systems/WorldTimeSystem.h>
-#include <MyGE/Core/Texture2D.h>
-#include <MyGE/Core/TextureCube.h>
-
-#include <MyGE/Transform/Transform.h>
-
 #include <MyGE/Core/ImGUIMngr.h>
-
-#include <_deps/imgui/imgui.h>
-#include <_deps/imgui/imgui_impl_dx12.h>
-#include <_deps/imgui/imgui_impl_win32.h>
-
+#include <MyGE/Core/Scene.h>
+#include <MyGE/Core/Systems/Systems.h>
+#include <MyGE/Render/Components/Components.h>
+#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+#include <MyGE/Render/DX12/StdPipeline.h>
+#include <MyGE/Render/HLSLFile.h>
+#include <MyGE/Render/Mesh.h>
+#include <MyGE/Render/Shader.h>
+#include <MyGE/Render/ShaderMngr.h>
+#include <MyGE/Render/Systems/Systems.h>
+#include <MyGE/Render/Texture2D.h>
+#include <MyGE/Render/TextureCube.h>
 #include <MyGE/ScriptSystem/LuaContext.h>
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
 #include <MyGE/ScriptSystem/LuaScript.h>
 #include <MyGE/ScriptSystem/LuaScriptQueue.h>
 #include <MyGE/ScriptSystem/LuaScriptQueueSystem.h>
-
 #include <MyLuaPP/MyLuaPP.h>
-
+#include <_deps/imgui/imgui.h>
+#include <_deps/imgui/imgui_impl_dx12.h>
+#include <_deps/imgui/imgui_impl_win32.h>
 #include <dxgidebug.h>
+
+#include "Components/Hierarchy.h"
+#include "Components/Inspector.h"
+#include "Components/ProjectViewer.h"
+#include "Components/TestInspector.h"
+#include "InspectorRegistry.h"
+#include "Systems/HierarchySystem.h"
+#include "Systems/InspectorSystem.h"
+#include "Systems/ProjectViewerSystem.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -189,8 +161,10 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                                editorWantCaptureKeyboard;
   }
 
-  // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your editor application.
-  // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your editor application.
+  // - When io.WantCaptureMouse is true, do not dispatch mouse input data to
+  // your editor application.
+  // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data
+  // to your editor application.
   switch (msg) {
       // WM_ACTIVATE is sent when the window is activated or deactivated.
       // We pause the game when the window is deactivated and unpause it
@@ -221,7 +195,6 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
           mMaximized = true;
           OnResize();
         } else if (wParam == SIZE_RESTORED) {
-
           // Restoring from minimized state?
           if (mMinimized) {
             mAppPaused = false;
@@ -243,7 +216,8 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             // the resize bars.  So instead, we reset after the user is
             // done resizing the window and releases the resize bars, which
             // sends a WM_EXITSIZEMOVE message.
-          } else  // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
+          } else  // API call such as SetWindowPos or
+                  // mSwapChain->SetFullscreenState.
           {
             OnResize();
           }
@@ -272,8 +246,9 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       PostQuitMessage(0);
       return 0;
 
-      // The WM_MENUCHAR message is sent when a menu is active and the user presses
-      // a key that does not correspond to any mnemonic or accelerator key.
+      // The WM_MENUCHAR message is sent when a menu is active and the user
+      // presses a key that does not correspond to any mnemonic or accelerator
+      // key.
     case WM_MENUCHAR:
       // Don't beep when we alt-enter.
       return MAKELRESULT(0, MNC_CLOSE);
@@ -287,25 +262,21 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-      if (imguiWantCaptureMouse)
-        return 0;
+      if (imguiWantCaptureMouse) return 0;
       OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-      if (imguiWantCaptureMouse)
-        return 0;
+      if (imguiWantCaptureMouse) return 0;
       OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_MOUSEMOVE:
-      if (imguiWantCaptureMouse)
-        return 0;
+      if (imguiWantCaptureMouse) return 0;
       OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_KEYUP:
-      if (imguiWantCaptureKeyboard)
-        return 0;
+      if (imguiWantCaptureKeyboard) return 0;
       if (wParam == VK_ESCAPE) {
         PostQuitMessage(0);
       }
@@ -325,8 +296,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
   int rst;
   try {
     Editor theApp(hInstance);
-    if (!theApp.Initialize())
-      return 1;
+    if (!theApp.Initialize()) return 1;
 
     rst = theApp.Run();
   } catch (My::MyDX12::Util::Exception& e) {
@@ -347,8 +317,7 @@ Editor::Editor(HINSTANCE hInstance)
     : DX12App(hInstance), curGameWorld{&gameWorld} {}
 
 Editor::~Editor() {
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 
   My::MyGE::ImGUIMngr::Instance().Clear();
 
@@ -367,11 +336,9 @@ Editor::~Editor() {
 }
 
 bool Editor::Initialize() {
-  if (!InitMainWindow())
-    return false;
+  if (!InitMainWindow()) return false;
 
-  if (!InitDirect3D())
-    return false;
+  if (!InitDirect3D()) return false;
 
   gameRT_SRV =
       My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
@@ -381,8 +348,6 @@ bool Editor::Initialize() {
       My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
   sceneRT_RTV =
       My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
-
-  My::MyGE::MeshLayoutMngr::Instance().Init();
 
   My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
                                        NumFrameResources, 3);
@@ -407,7 +372,7 @@ bool Editor::Initialize() {
   BuildShaders();
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
-  //OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&gameWorld).c_str());
+  // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&gameWorld).c_str());
 
   My::MyGE::IPipeline::InitDesc initDesc;
   initDesc.device = myDevice.Get();
@@ -426,14 +391,12 @@ bool Editor::Initialize() {
   return true;
 }
 
-void Editor::OnResize() {
-  DX12App::OnResize();
-}
+void Editor::OnResize() { DX12App::OnResize(); }
 
 void Editor::OnGameResize() {
   My::rgbaf background = {0.f, 0.f, 0.f, 1.f};
-  auto rtType = My::MyDX12::FG::RsrcType::RT2D(gameRTFormat, gameWidth,
-                                               gameHeight, background.data());
+  auto rtType = My::MyDX12::FG::RsrcType::RT2D(
+      gameRTFormat, gameWidth, (UINT)gameHeight, background.data());
   ThrowIfFailed(myDevice->CreateCommittedResource(
       &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
       &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
@@ -457,8 +420,8 @@ void Editor::OnGameResize() {
 
 void Editor::OnSceneResize() {
   My::rgbaf background = {0.f, 0.f, 0.f, 1.f};
-  auto rtType = My::MyDX12::FG::RsrcType::RT2D(sceneRTFormat, sceneWidth,
-                                               sceneHeight, background.data());
+  auto rtType = My::MyDX12::FG::RsrcType::RT2D(
+      sceneRTFormat, sceneWidth, (UINT)sceneHeight, background.data());
   ThrowIfFailed(myDevice->CreateCommittedResource(
       &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
       &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
@@ -483,12 +446,12 @@ void Editor::OnSceneResize() {
 void Editor::Update() {
   // Start the Dear ImGui frame
   ImGui_ImplDX12_NewFrame();
-  ImGui_ImplWin32_NewFrame_Context(editorImGuiCtx, {0.f, 0.f}, mClientWidth,
-                                   mClientHeight);
-  ImGui_ImplWin32_NewFrame_Context(gameImGuiCtx, gamePos, gameWidth,
-                                   gameHeight);
-  ImGui_ImplWin32_NewFrame_Context(sceneImGuiCtx, scenePos, sceneWidth,
-                                   sceneHeight);
+  ImGui_ImplWin32_NewFrame_Context(editorImGuiCtx, {0.f, 0.f},
+                                   (float)mClientWidth, (float)mClientHeight);
+  ImGui_ImplWin32_NewFrame_Context(gameImGuiCtx, gamePos, (float)gameWidth,
+                                   (float)gameHeight);
+  ImGui_ImplWin32_NewFrame_Context(sceneImGuiCtx, scenePos, (float)sceneWidth,
+                                   (float)sceneHeight);
   ImGui_ImplWin32_NewFrame_Shared();
 
   auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
@@ -502,8 +465,9 @@ void Editor::Update() {
     static bool opt_padding = false;
     static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-    // because it would be confusing to have two docking targets within each others.
+    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent
+    // window not dockable into, because it would be confusing to have two
+    // docking targets within each others.
     ImGuiWindowFlags window_flags =
         ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     if (opt_fullscreen) {
@@ -522,24 +486,25 @@ void Editor::Update() {
       dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
     }
 
-    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-    // and handle the pass-thru hole, so we ask Begin() to not render a background.
+    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will
+    // render our background and handle the pass-thru hole, so we ask Begin() to
+    // not render a background.
     if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
       window_flags |= ImGuiWindowFlags_NoBackground;
 
-    // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-    // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-    // all active windows docked into it will lose their parent and become undocked.
-    // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-    // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+    // Important: note that we proceed even if Begin() returns false (aka window
+    // is collapsed). This is because we want to keep our DockSpace() active. If
+    // a DockSpace() is inactive, all active windows docked into it will lose
+    // their parent and become undocked. We cannot preserve the docking
+    // relationship between an active window and an inactive docking, otherwise
+    // any change of dockspace/settings would lead to windows being stuck in
+    // limbo and never being visible.
     if (!opt_padding)
       ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("DockSpace Demo", nullptr, window_flags);
-    if (!opt_padding)
-      ImGui::PopStyleVar();
+    if (!opt_padding) ImGui::PopStyleVar();
 
-    if (opt_fullscreen)
-      ImGui::PopStyleVar(2);
+    if (opt_fullscreen) ImGui::PopStyleVar(2);
 
     // DockSpace
     ImGuiIO& io = ImGui::GetIO();
@@ -558,20 +523,22 @@ void Editor::Update() {
 
     ImGui::End();
 
-    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    if (show_demo_window)
-      ImGui::ShowDemoWindow(&show_demo_window);
+    // 1. Show the big demo window (Most of the sample code is in
+    // ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear
+    // ImGui!).
+    if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+    // 2. Show a simple window that we create ourselves. We use a Begin/End pair
+    // to created a named window.
     {
       static float f = 0.0f;
       static int counter = 0;
 
-      ImGui::Begin(
-          "Hello, world!");  // Create a window called "Hello, world!" and append into it.
+      ImGui::Begin("Hello, world!");  // Create a window called "Hello, world!"
+                                      // and append into it.
 
-      ImGui::Text(
-          "This is some useful text.");  // Display some text (you can use a format strings too)
+      ImGui::Text("This is some useful text.");  // Display some text (you can
+                                                 // use a format strings too)
       ImGui::Checkbox(
           "Demo Window",
           &show_demo_window);  // Edit bools storing our window open/close state
@@ -580,10 +547,12 @@ void Editor::Update() {
       ImGui::SliderFloat(
           "float", &f, 0.0f,
           1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
-      //ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+      // ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3
+      // floats representing a color
 
       if (ImGui::Button(
-              "Button"))  // Buttons return true when clicked (most widgets return true when edited/activated)
+              "Button"))  // Buttons return true when clicked (most widgets
+                          // return true when edited/activated)
         counter++;
       ImGui::SameLine();
       ImGui::Text("counter = %d", counter);
@@ -597,10 +566,11 @@ void Editor::Update() {
     if (show_another_window) {
       ImGui::Begin(
           "Another Window",
-          &show_another_window);  // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+          &show_another_window);  // Pass a pointer to our bool variable (the
+                                  // window will have a closing button that will
+                                  // clear the bool when clicked)
       ImGui::Text("Hello from another window!");
-      if (ImGui::Button("Close Me"))
-        show_another_window = false;
+      if (ImGui::Button("Close Me")) show_another_window = false;
       ImGui::End();
     }
 
@@ -721,8 +691,8 @@ void Editor::Update() {
       case GameState::Running:
         runningGameWorld->Update();
         ImGui::Begin("in game");
-        ImGui::Text(
-            "This is some useful text.");  // Display some text (you can use a format strings too)
+        ImGui::Text("This is some useful text.");  // Display some text (you can
+                                                   // use a format strings too)
         ImGui::End();
         break;
       case GameState::Stopping: {
@@ -731,7 +701,9 @@ void Editor::Update() {
         if (auto hierarchy =
                 editorWorld.entityMngr.GetSingleton<My::MyGE::Hierarchy>())
           hierarchy->world = &gameWorld;
-        { My::MyGE::LuaCtxMngr::Instance().Unregister(w); }
+        {
+          My::MyGE::LuaCtxMngr::Instance().Unregister(w);
+        }
         curGameWorld = &gameWorld;
         gameState = GameState::NotStart;
         break;
@@ -745,11 +717,11 @@ void Editor::Update() {
     ImGui::SetCurrentContext(sceneImGuiCtx);
     ImGui::NewFrame();  // scene ctx
 
-    //UpdateCamera();
+    // UpdateCamera();
     sceneWorld.Update();
     ImGui::Begin("in scene");
-    ImGui::Text(
-        "This is some useful text.");  // Display some text (you can use a format strings too)
+    ImGui::Text("This is some useful text.");  // Display some text (you can use
+                                               // a format strings too)
     ImGui::End();
   }
 
@@ -768,24 +740,20 @@ void Editor::Update() {
     w->RunEntityJob(
         [&](const My::MyGE::MeshFilter* meshFilter,
             const My::MyGE::MeshRenderer* meshRenderer) {
-          if (!meshFilter->mesh || meshRenderer->materials.empty())
-            return;
+          if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
 
           My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
               upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
 
           for (const auto& mat : meshRenderer->materials) {
-            if (!mat)
-              continue;
+            if (!mat) continue;
             for (const auto& [name, tex] : mat->texture2Ds) {
-              if (!tex)
-                continue;
+              if (!tex) continue;
               My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
                   My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
             }
             for (const auto& [name, tex] : mat->textureCubes) {
-              if (!tex)
-                continue;
+              if (!tex) continue;
               My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
                   My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
             }
@@ -796,14 +764,12 @@ void Editor::Update() {
     if (auto skybox = w->entityMngr.GetSingleton<My::MyGE::Skybox>();
         skybox && skybox->material) {
       for (const auto& [name, tex] : skybox->material->texture2Ds) {
-        if (!tex)
-          continue;
+        if (!tex) continue;
         My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
             My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
       }
       for (const auto& [name, tex] : skybox->material->textureCubes) {
-        if (!tex)
-          continue;
+        if (!tex) continue;
         My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
             My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
       }
@@ -927,9 +893,7 @@ void Editor::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(MainWnd());
 }
 
-void Editor::OnMouseUp(WPARAM btnState, int x, int y) {
-  ReleaseCapture();
-}
+void Editor::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
 
 void Editor::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -993,8 +957,7 @@ void Editor::InitWorld(My::MyECS::World& w) {
       // editor
       My::MyGE::HierarchySystem, My::MyGE::InspectorSystem,
       My::MyGE::ProjectViewerSystem>();
-  for (auto idx : indices)
-    w.systemMngr.Activate(idx);
+  for (auto idx : indices) w.systemMngr.Activate(idx);
   w.systemMngr.Register<My::MyGE::LuaScriptQueueSystem>();
 
   w.entityMngr.cmptTraits.Register<
@@ -1044,7 +1007,7 @@ void Editor::BuildWorld() {
       name->value = "Test Inspector";
     }
 
-    //OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&gameWorld).c_str());
+    // OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&gameWorld).c_str());
     auto scene = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Scene>(
         L"..\\assets\\scenes\\Game.scene");
     My::MyGE::Serializer::Instance().ToWorld(&gameWorld, scene->GetText());

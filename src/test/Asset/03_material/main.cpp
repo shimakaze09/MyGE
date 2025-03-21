@@ -1,13 +1,9 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
 #include <MyGE/Asset/AssetMngr.h>
-#include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
-#include <MyGE/Core/Material.h>
-#include <MyGE/Core/Shader.h>
-#include <MyGE/Core/Texture2D.h>
+#include <MyGE/Render/HLSLFile.h>
+#include <MyGE/Render/Material.h>
+#include <MyGE/Render/Shader.h>
+#include <MyGE/Render/Texture2D.h>
 
 #include <iostream>
 
@@ -74,8 +70,7 @@ int main() {
     material->shader = shader;
     material->texture2Ds.emplace("gDiffuseMap", tex2d);
 
-    if (!AssetMngr::Instance().CreateAsset(material, matPath))
-      delete material;
+    if (!AssetMngr::Instance().CreateAsset(material, matPath)) delete material;
 
     AssetMngr::Instance().Clear();
   }

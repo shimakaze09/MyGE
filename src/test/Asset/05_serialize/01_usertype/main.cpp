@@ -1,7 +1,3 @@
-//
-// Created by Admin on 21/03/2025.
-//
-
 #include <MyGE/Asset/Serializer.h>
 
 #include <iostream>

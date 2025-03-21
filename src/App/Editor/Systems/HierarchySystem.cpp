@@ -1,18 +1,13 @@
-//
-// Created by Admin on 19/03/2025.
-//
-
 #include "HierarchySystem.h"
 
-#include "../PlayloadType.h"
+#include <MyGE/Core/Components/Children.h>
+#include <MyGE/Core/Components/Name.h>
+#include <MyGE/Core/Components/Parent.h>
+#include <_deps/imgui/imgui.h>
 
 #include "../Components/Hierarchy.h"
 #include "../Components/Inspector.h"
-
-#include <MyGE/Core/Components/Name.h>
-#include <MyGE/Transform/Components/Components.h>
-
-#include <_deps/imgui/imgui.h>
+#include "../PlayloadType.h"
 
 using namespace My::MyGE;
 
@@ -38,8 +33,7 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e,
   bool isLeaf = !children || children->value.empty();
 
   ImGuiTreeNodeFlags nodeFlags = nodeBaseFlags;
-  if (hierarchy->select == e)
-    nodeFlags |= ImGuiTreeNodeFlags_Selected;
+  if (hierarchy->select == e) nodeFlags |= ImGuiTreeNodeFlags_Selected;
   if (isLeaf)
     nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
@@ -87,8 +81,7 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e,
       inspector->entity = e;
     }
   }
-  if (ImGui::IsItemHovered())
-    hierarchy->hover = e;
+  if (ImGui::IsItemHovered()) hierarchy->hover = e;
 
   if (nodeOpen && !isLeaf) {
     for (const auto& child : children->value)
@@ -121,8 +114,7 @@ void HierarchyDeleteEntity(MyECS::World* w, MyECS::Entity e) {
 void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.RegisterCommand([](MyECS::World* w) {
     auto hierarchy = w->entityMngr.GetSingleton<Hierarchy>();
-    if (!hierarchy)
-      return;
+    if (!hierarchy) return;
 
     if (ImGui::Begin("Hierarchy")) {
       if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) &&

@@ -1,18 +1,13 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
 #pragma once
 
 #include <MyDX12/MyDX12.h>
-
 #include <MyECS/Entity.h>
 
 #include <vector>
 
 namespace My::MyECS {
 class World;
-}  // namespace My::MyECS
+}
 
 namespace My::MyGE {
 class IPipeline {
@@ -23,11 +18,9 @@ class IPipeline {
     ID3D12CommandQueue* cmdQueue;
     DXGI_FORMAT rtFormat;
   };
-
   struct CameraData {
     CameraData(MyECS::Entity entity, const MyECS::World& world)
         : entity{entity}, world{world} {}
-
     MyECS::Entity entity;
     const MyECS::World& world;
   };
@@ -63,9 +56,7 @@ class IPipeline {
     D3D12_VIEWPORT screenViewport;
     D3D12_RECT scissorRect;
   };
-
   const InitDesc initDesc;
-
   const ResizeData& GetResizeData() const { return resizeData; }
 
  private:

@@ -1,7 +1,3 @@
-//
-// Created by Admin on 19/03/2025.
-//
-
 #pragma once
 
 #include <MyECS/World.h>

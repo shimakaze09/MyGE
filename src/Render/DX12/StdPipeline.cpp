@@ -1,37 +1,29 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
-#include <MyGE/Render/DX12/StdPipeline.h>
-
-#include <MyGE/Core/ShaderMngr.h>
+#include <MyDX12/FrameResourceMngr.h>
+#include <MyECS/World.h>
+#include <MyGE/Asset/AssetMngr.h>
+#include <MyGE/Core/Components/LocalToWorld.h>
+#include <MyGE/Core/Components/Translation.h>
+#include <MyGE/Core/Components/WorldToLocal.h>
+#include <MyGE/Core/GameTimer.h>
+#include <MyGE/Core/Image.h>
+#include <MyGE/Render/Components/Camera.h>
+#include <MyGE/Render/Components/Light.h>
+#include <MyGE/Render/Components/MeshFilter.h>
+#include <MyGE/Render/Components/MeshRenderer.h>
+#include <MyGE/Render/Components/Skybox.h>
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
-
-#include <MyGE/Asset/AssetMngr.h>
-
-#include <MyGE/Core/Components/Camera.h>
-#include <MyGE/Core/Components/Light.h>
-#include <MyGE/Core/Components/MeshFilter.h>
-#include <MyGE/Core/Components/MeshRenderer.h>
-#include <MyGE/Core/Components/Skybox.h>
-#include <MyGE/Core/GameTimer.h>
-#include <MyGE/Core/HLSLFile.h>
-#include <MyGE/Core/Image.h>
-#include <MyGE/Core/Mesh.h>
-#include <MyGE/Core/Shader.h>
-#include <MyGE/Core/Systems/CameraSystem.h>
-#include <MyGE/Core/Texture2D.h>
-#include <MyGE/Core/TextureCube.h>
-
-#include <MyGE/Transform/Transform.h>
-
+#include <MyGE/Render/DX12/StdPipeline.h>
+#include <MyGE/Render/HLSLFile.h>
+#include <MyGE/Render/Mesh.h>
+#include <MyGE/Render/Shader.h>
+#include <MyGE/Render/ShaderMngr.h>
+#include <MyGE/Render/Texture2D.h>
+#include <MyGE/Render/TextureCube.h>
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/imgui_impl_dx12.h>
 #include <_deps/imgui/imgui_impl_win32.h>
-
-#include <MyDX12/FrameResourceMngr.h>
 
 using namespace My::MyGE;
 using namespace My;
@@ -58,7 +50,6 @@ struct StdPipeline::Impl {
   size_t ID_PSO_irradiance;
   size_t ID_PSO_prefilter;
 
-  static constexpr size_t ID_RootSignature_geometry = 0;
   static constexpr size_t ID_RootSignature_screen = 1;
   static constexpr size_t ID_RootSignature_defer_light = 2;
   static constexpr size_t ID_RootSignature_skybox = 3;
@@ -70,7 +61,6 @@ struct StdPipeline::Impl {
     transformf World;
     transformf InvWorld;
   };
-
   struct CameraConstants {
     transformf View;
 
@@ -95,7 +85,6 @@ struct StdPipeline::Impl {
     float TotalTime;
     float DeltaTime;
   };
-
   struct GeometryMaterialConstants {
     rgbf albedoFactor;
     float roughnessFactor;
@@ -116,17 +105,14 @@ struct StdPipeline::Impl {
       static constexpr auto pCosHalfInnerSpotAngle = &ShaderLight::f0;
       static constexpr auto pCosHalfOuterSpotAngle = &ShaderLight::f1;
     };
-
     struct Rect {
       static constexpr auto pWidth = &ShaderLight::f0;
       static constexpr auto pHeight = &ShaderLight::f1;
     };
-
     struct Disk {
       static constexpr auto pRadius = &ShaderLight::f0;
     };
   };
-
   struct ShaderLightArray {
     static constexpr size_t size = 16;
 
@@ -169,7 +155,6 @@ struct StdPipeline::Impl {
     // BRDF LUT           : 2
     MyDX12::DescriptorHeapAllocation SRVDH;
   };
-
   MyDX12::DescriptorHeapAllocation defaultIBLSRVDH;  // 3
 
   struct RenderContext {
@@ -179,7 +164,6 @@ struct StdPipeline::Impl {
 
       valf<16> l2w;
     };
-
     std::unordered_map<const Shader*,
                        std::unordered_map<const Material*, std::vector<Object>>>
         objectMap;
@@ -196,8 +180,8 @@ struct StdPipeline::Impl {
   MyDX12::FrameResourceMngr frameRsrcMngr;
 
   MyDX12::FG::Executor fgExecutor;
-  UFG::Compiler fgCompiler;
-  UFG::FrameGraph fg;
+  MyFG::Compiler fgCompiler;
+  MyFG::FrameGraph fg;
 
   MyGE::Shader* screenShader;
   MyGE::Shader* geomrtryShader;
@@ -416,40 +400,6 @@ void StdPipeline::Impl::BuildShaders() {
 }
 
 void StdPipeline::Impl::BuildRootSignature() {
-  {  // geometry
-    CD3DX12_DESCRIPTOR_RANGE texRange0;
-    texRange0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-    CD3DX12_DESCRIPTOR_RANGE texRange1;
-    texRange1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
-    CD3DX12_DESCRIPTOR_RANGE texRange2;
-    texRange2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
-    CD3DX12_DESCRIPTOR_RANGE texRange3;
-    texRange3.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
-
-    // Root parameter can be a table, root descriptor or root constants.
-    CD3DX12_ROOT_PARAMETER slotRootParameter[7];
-
-    // Perfomance TIP: Order from most frequent to least frequent.
-    slotRootParameter[0].InitAsDescriptorTable(1, &texRange0);
-    slotRootParameter[1].InitAsDescriptorTable(1, &texRange1);
-    slotRootParameter[2].InitAsDescriptorTable(1, &texRange2);
-    slotRootParameter[3].InitAsDescriptorTable(1, &texRange3);
-    slotRootParameter[4].InitAsConstantBufferView(0);  // object
-    slotRootParameter[5].InitAsConstantBufferView(1);  // material
-    slotRootParameter[6].InitAsConstantBufferView(2);  // camera
-
-    auto staticSamplers = RsrcMngrDX12::Instance().GetStaticSamplers();
-
-    // A root signature is an array of root parameters.
-    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(
-        7, slotRootParameter, (UINT)staticSamplers.size(),
-        staticSamplers.data(),
-        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-    RsrcMngrDX12::Instance().RegisterRootSignature(ID_RootSignature_geometry,
-                                                   &rootSigDesc);
-  }
-
   {  // screen
     CD3DX12_DESCRIPTOR_RANGE texTable;
     texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -685,14 +635,14 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
   size_t layoutID = MeshLayoutMngr::Instance().GetMeshLayoutID(mesh);
   auto target = PSOIDMap.find(layoutID);
   if (target == PSOIDMap.end()) {
-    //auto [uv, normal, tangent, color] = MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
-    //if (!uv || !normal)
-    //	return static_cast<size_t>(-1); // not support
+    // auto [uv, normal, tangent, color] =
+    // MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID); if (!uv ||
+    // !normal) 	return static_cast<size_t>(-1); // not support
 
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
     auto geometryPsoDesc = MyDX12::Desc::PSO::MRT(
-        RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_geometry),
+        RsrcMngrDX12::Instance().GetShaderRootSignature(geomrtryShader),
         layout.data(), (UINT)layout.size(),
         RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader, 0),
         RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader, 0), 3,
@@ -714,8 +664,7 @@ void StdPipeline::Impl::UpdateRenderContext(
     const_cast<MyECS::World*>(world)->RunEntityJob(
         [&](const MeshFilter* meshFilter, const MeshRenderer* meshRenderer,
             const LocalToWorld* l2w) {
-          if (!meshFilter->mesh)
-            return;
+          if (!meshFilter->mesh) return;
 
           RenderContext::Object obj;
           obj.mesh = meshFilter->mesh;
@@ -724,8 +673,7 @@ void StdPipeline::Impl::UpdateRenderContext(
                               obj.mesh->GetSubMeshes().size());
           for (size_t i = 0; i < N; i++) {
             auto material = meshRenderer->materials[i];
-            if (!material || !material->shader)
-              continue;
+            if (!material || !material->shader) continue;
             obj.submeshIdx = i;
             renderContext.objectMap[material->shader][material].push_back(obj);
           }
@@ -920,8 +868,7 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData,
   // geometry
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
     size_t objectNum = 0;
-    for (const auto& [mat, objects] : mat2objects)
-      objectNum += objects.size();
+    for (const auto& [mat, objects] : mat2objects) objectNum += objects.size();
     if (shader->shaderName == "StdPipeline/Geometry") {
       auto buffer = shaderCBMngr.GetBuffer(shader);
       buffer->FastReserve(mat2objects.size() *
@@ -995,8 +942,9 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   D3D12_RESOURCE_DESC dsDesc = MyDX12::Desc::RSRC::Basic(
       D3D12_RESOURCE_DIMENSION_TEXTURE2D, width, (UINT)height,
       DXGI_FORMAT_R24G8_TYPELESS,
-      // Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer to read from
-      // the depth buffer.  Therefore, because we need to create two views to the same resource:
+      // Correction 11/12/2016: SSAO chapter requires an SRV to the depth buffer
+      // to read from the depth buffer.  Therefore, because we need to create
+      // two views to the same resource:
       //   1. SRV format: DXGI_FORMAT_R24_UNORM_X8_TYPELESS
       //   2. DSV Format: DXGI_FORMAT_D24_UNORM_S8_UINT
       // we need to create the depth buffer resource with a typeless format.
@@ -1010,8 +958,9 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   auto srvDesc = MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R32G32B32A32_FLOAT);
   auto dsSrvDesc = MyDX12::Desc::SRV::Tex2D(DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
   auto dsvDesc = MyDX12::Desc::DSV::Basic(dsFormat);
-  auto rsrcType = MyDX12::FG::RsrcType::RT2D(
-      DXGI_FORMAT_R32G32B32A32_FLOAT, width, height, DirectX::Colors::Black);
+  auto rsrcType =
+      MyDX12::FG::RsrcType::RT2D(DXGI_FORMAT_R32G32B32A32_FLOAT, width,
+                                 (UINT)height, DirectX::Colors::Black);
   const MyDX12::FG::RsrcImplDesc_RTV_Null rtvNull;
 
   auto iblData = frameRsrcMngr.GetCurrentFrameResource()
@@ -1108,11 +1057,11 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
         nullptr);
 
     // Specify the buffers we are going to render to.
-    cmdList->OMSetRenderTargets(rtHandles.size(), rtHandles.data(), false,
+    cmdList->OMSetRenderTargets((UINT)rtHandles.size(), rtHandles.data(), false,
                                 &dsHandle);
 
-    cmdList->SetGraphicsRootSignature(RsrcMngrDX12::Instance().GetRootSignature(
-        Impl::ID_RootSignature_geometry));
+    cmdList->SetGraphicsRootSignature(
+        RsrcMngrDX12::Instance().GetShaderRootSignature(geomrtryShader));
 
     auto cbPerCamera = frameRsrcMngr.GetCurrentFrameResource()
                            ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
@@ -1128,8 +1077,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   fgExecutor.RegisterPassFunc(
       iblPass, [&](ID3D12GraphicsCommandList* cmdList,
                    const MyDX12::FG::PassRsrcs& /*rsrcs*/) {
-        if (iblData->lastSkybox.ptr == renderContext.skybox.ptr)
-          return;
+        if (iblData->lastSkybox.ptr == renderContext.skybox.ptr) return;
 
         if (renderContext.skybox.ptr == defaultSkybox.ptr) {
           iblData->lastSkybox.ptr = defaultSkybox.ptr;
@@ -1164,7 +1112,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
           auto buffer = shaderCBMngr.GetCommonBuffer();
 
           cmdList->SetGraphicsRootDescriptorTable(0, renderContext.skybox);
-          for (size_t i = 0; i < 6; i++) {
+          for (UINT i = 0; i < 6; i++) {
             // Specify the buffers we are going to render to.
             cmdList->OMSetRenderTargets(1, &iblData->RTVsDH.GetCpuHandle(i),
                                         false, nullptr);
@@ -1206,13 +1154,13 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
             viewport.MaxDepth = 1.f;
             viewport.TopLeftX = 0.f;
             viewport.TopLeftY = 0.f;
-            viewport.Width = size;
-            viewport.Height = size;
-            D3D12_RECT rect = {0, 0, size, size};
+            viewport.Width = (float)size;
+            viewport.Height = (float)size;
+            D3D12_RECT rect = {0, 0, (LONG)size, (LONG)size};
             cmdList->RSSetViewports(1, &viewport);
             cmdList->RSSetScissorRects(1, &rect);
 
-            for (size_t i = 0; i < 6; i++) {
+            for (UINT i = 0; i < 6; i++) {
               auto positionLs = buffer->GetResource()->GetGPUVirtualAddress() +
                                 i * MyDX12::Util::CalcConstantBufferByteSize(
                                         sizeof(QuadPositionLs));
@@ -1252,7 +1200,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
 
         auto rt = rsrcs.at(lightedRT);
 
-        //cmdList->CopyResource(bb.resource, rt.resource);
+        // cmdList->CopyResource(bb.resource, rt.resource);
 
         // Clear the render texture and depth buffer.
         cmdList->ClearRenderTargetView(rt.info.null_info_rtv.cpuHandle,
@@ -1306,8 +1254,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
   fgExecutor.RegisterPassFunc(
       skyboxPass, [&](ID3D12GraphicsCommandList* cmdList,
                       const MyDX12::FG::PassRsrcs& rsrcs) {
-        if (renderContext.skybox.ptr == defaultSkybox.ptr)
-          return;
+        if (renderContext.skybox.ptr == defaultSkybox.ptr) return;
 
         auto heap = MyDX12::DescriptorHeapMngr::Instance()
                         .GetCSUGpuDH()
@@ -1450,8 +1397,9 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 
       cmdList->SetPipelineState(
           RsrcMngrDX12::Instance().GetPSO(GetGeometryPSO_ID(object.mesh)));
-      cmdList->DrawIndexedInstanced(submesh.indexCount, 1, submesh.indexStart,
-                                    submesh.baseVertex, 0);
+      cmdList->DrawIndexedInstanced((UINT)submesh.indexCount, 1,
+                                    (UINT)submesh.indexStart,
+                                    (INT)submesh.baseVertex, 0);
       objIdx++;
     }
     offset += matCBByteSize + objects.size() * objCBByteSize;
@@ -1461,9 +1409,7 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
 StdPipeline::StdPipeline(InitDesc initDesc)
     : IPipeline{initDesc}, pImpl{new Impl{initDesc}} {}
 
-StdPipeline::~StdPipeline() {
-  delete pImpl;
-}
+StdPipeline::~StdPipeline() { delete pImpl; }
 
 void StdPipeline::BeginFrame(const std::vector<const MyECS::World*>& worlds,
                              const CameraData& cameraData) {

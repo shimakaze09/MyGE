@@ -1,7 +1,3 @@
-//
-// Created by Admin on 19/03/2025.
-//
-
 #pragma once
 
 #include <MyECS/Entity.h>
@@ -21,12 +17,12 @@ struct TestInspector {
   int16_t v_int16;
   int32_t v_int32;
   int64_t v_int64;
-  //void* v_nullptr;
+  // void* v_nullptr;
   float v_float;
   double v_double;
   std::string v_string;
   MyECS::Entity v_entity{MyECS::Entity::Invalid()};
-  //const HLSLFile* v_hlslFile;
+  // const HLSLFile* v_hlslFile;
   std::array<int, 3> v_array;
   std::array<std::array<float, 2>, 3> v_array2;
   bboxf3 v_bbox;
@@ -37,19 +33,19 @@ struct TestInspector {
   std::deque<size_t> v_deque;
   std::forward_list<size_t> v_forward_list;
   std::list<size_t> v_list;
-  //std::set<size_t> v_set;
-  //std::multiset<size_t> v_multiset;
-  //std::unordered_set<size_t> v_unordered_set;
-  //std::unordered_multiset<size_t> v_unordered_multiset;
+  // std::set<size_t> v_set;
+  // std::multiset<size_t> v_multiset;
+  // std::unordered_set<size_t> v_unordered_set;
+  // std::unordered_multiset<size_t> v_unordered_multiset;
   std::map<std::string, std::array<int, 3>> v_map{{"a", {1, 2, 3}},
                                                   {"b", {4, 5, 6}}};
-  //std::multimap<size_t, std::string> v_multimap;
-  //std::unordered_map<std::string, std::string> v_unordered_map;
-  //std::unordered_multimap<std::string, std::string> v_unordered_multimap;
+  // std::multimap<size_t, std::string> v_multimap;
+  // std::unordered_map<std::string, std::string> v_unordered_map;
+  // std::unordered_multimap<std::string, std::string> v_unordered_multimap;
   std::tuple<size_t, bool, float> v_tuple;
   std::pair<size_t, bool> v_pair;
-  //std::vector<Entity> v_vector_entity;
-  //UserType v_usertype;
+  // std::vector<Entity> v_vector_entity;
+  // UserType v_usertype;
   TestEnum v_enum{TestEnum::B};
 };
 }  // namespace My::MyGE

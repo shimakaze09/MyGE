@@ -1,13 +1,9 @@
-//
-// Created by Admin on 21/03/2025.
-//
-
 #include <MyGE/Core/Components/Input.h>
 #include <MyGE/Core/Components/Roamer.h>
+#include <MyGE/Core/Components/Rotation.h>
+#include <MyGE/Core/Components/Translation.h>
 #include <MyGE/Core/Components/WorldTime.h>
 #include <MyGE/Core/Systems/RoamerSystem.h>
-#include <MyGE/Transform/Components/Rotation.h>
-#include <MyGE/Transform/Components/Translation.h>
 
 using namespace My::MyGE;
 using namespace My::MyECS;

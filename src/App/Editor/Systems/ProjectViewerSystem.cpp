@@ -1,20 +1,13 @@
-//
-// Created by Admin on 19/03/2025.
-//
-
 #include "ProjectViewerSystem.h"
 
-#include "../PlayloadType.h"
+#include <MyGE/Asset/AssetMngr.h>
+#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+#include <MyGE/Render/Texture2D.h>
+#include <_deps/imgui/imgui.h>
 
 #include "../Components/Inspector.h"
 #include "../Components/ProjectViewer.h"
-
-#include <MyGE/Asset/AssetMngr.h>
-#include <MyGE/Core/Texture2D.h>
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
-#include <MyGE/Transform/Components/Components.h>
-
-#include <_deps/imgui/imgui.h>
+#include "../PlayloadType.h"
 
 using namespace My::MyGE;
 
@@ -22,8 +15,7 @@ namespace My::MyGE::detail {
 bool IsFolderLeaf(const xg::Guid& folderGuid) {
   const auto& tree = AssetMngr::Instance().GetAssetTree();
   auto target = tree.find(folderGuid);
-  if (target == tree.end())
-    return true;
+  if (target == tree.end()) return true;
 
   for (const auto& child : target->second) {
     if (std::filesystem::is_directory(
@@ -48,8 +40,7 @@ bool IsParentFolder(const std::filesystem::path& x,
 }
 
 void NameShrink(std::string& name, size_t maxlength) {
-  if (name.size() <= maxlength)
-    return;
+  if (name.size() <= maxlength) return;
   name.resize(maxlength);
   name[maxlength - 2] = '.';
   name[maxlength - 1] = '.';
@@ -69,8 +60,7 @@ void ProjectViewerSystemPrintChildren(ProjectViewer* viewer,
 
   for (const auto& child : children) {
     const auto& path = AssetMngr::Instance().GUIDToAssetPath(child);
-    if (!std::filesystem::is_directory(path))
-      continue;
+    if (!std::filesystem::is_directory(path)) continue;
     bool isFolderLeaf = IsFolderLeaf(child);
 
     auto name = path.filename();
@@ -87,8 +77,7 @@ void ProjectViewerSystemPrintChildren(ProjectViewer* viewer,
     bool nodeOpen = ImGui::TreeNodeEx(AssetMngr::Instance().LoadAsset(path),
                                       nodeFlags, "%s", name.string().c_str());
 
-    if (ImGui::IsItemClicked())
-      viewer->selectedFolder = child;
+    if (ImGui::IsItemClicked()) viewer->selectedFolder = child;
 
     if (nodeOpen && !isFolderLeaf) {
       ProjectViewerSystemPrintChildren(viewer, child);
@@ -100,8 +89,7 @@ void ProjectViewerSystemPrintChildren(ProjectViewer* viewer,
 void ProjectViewerSystemPrintFolder(Inspector* inspector,
                                     ProjectViewer* viewer) {
   const auto& tree = AssetMngr::Instance().GetAssetTree();
-  if (!viewer->selectedFolder.isValid())
-    return;
+  if (!viewer->selectedFolder.isValid()) return;
 
   std::vector<std::filesystem::path> paths;
   auto curPath = AssetMngr::Instance().GUIDToAssetPath(viewer->selectedFolder);
@@ -164,8 +152,7 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
   // pass 1 : folder
   for (const auto& child : children) {
     const auto& path = AssetMngr::Instance().GUIDToAssetPath(child);
-    if (!std::filesystem::is_directory(path))
-      continue;
+    if (!std::filesystem::is_directory(path)) continue;
     ImGui::PushID(idx);
     auto name = path.filename();
 
@@ -210,8 +197,7 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
   // pass 2 : files
   for (const auto& child : children) {
     const auto& path = AssetMngr::Instance().GUIDToAssetPath(child);
-    if (std::filesystem::is_directory(path))
-      continue;
+    if (std::filesystem::is_directory(path)) continue;
     ImGui::PushID(idx);
     auto name = path.stem();
     auto ext = path.extension();
@@ -283,8 +269,7 @@ void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
     auto viewer = w->entityMngr.GetSingleton<ProjectViewer>();
     auto inspector = w->entityMngr.GetSingleton<Inspector>();
 
-    if (!viewer)
-      return;
+    if (!viewer) return;
 
     if (ImGui::Begin("Project"))
       detail::ProjectViewerSystemPrintChildren(viewer, xg::Guid{});

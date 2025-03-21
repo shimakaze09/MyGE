@@ -1,7 +1,3 @@
-//
-// Created by Admin on 15/03/2025.
-//
-
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/ScriptSystem/LuaScript.h>
 

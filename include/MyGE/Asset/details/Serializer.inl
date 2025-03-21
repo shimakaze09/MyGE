@@ -1,13 +1,9 @@
-//
-// Created by Admin on 17/03/2025.
-//
-
 #pragma once
+
+#include <variant>
 
 #include "../../Core/Traits.h"
 #include "../AssetMngr.h"
-
-#include <variant>
 
 namespace My::MyGE::detail {
 template <typename Value>
@@ -36,8 +32,7 @@ void WriteUserType(const UserType* obj, Serializer::SerializeContext& ctx) {
 template <size_t Idx, typename Variant>
 bool WriteVariantAt(const Variant& var, size_t idx,
                     Serializer::SerializeContext& ctx) {
-  if (idx != Idx)
-    return false;
+  if (idx != Idx) return false;
 
   ctx.writer.StartObject();
   ctx.writer.Key(Serializer::Key::INDEX);
@@ -152,8 +147,7 @@ template <size_t Idx, typename Variant>
 bool ReadVariantAt(Variant& var, size_t idx,
                    const rapidjson::Value& jsonValueContent,
                    Serializer::DeserializeContext& ctx) {
-  if (idx != Idx)
-    return false;
+  if (idx != Idx) return false;
 
   var =
       ReadVar<std::variant_alternative_t<Idx, Variant>>(jsonValueContent, ctx);
@@ -179,15 +173,13 @@ void ReadUserType(UserType* obj, const rapidjson::Value& jsonValueField,
     const auto& jsonObject = jsonValueField.GetObject();
     MySRefl::TypeInfo<UserType>::ForEachVarOf(*obj, [&](auto field, auto& var) {
       auto target = jsonObject.FindMember(field.name.data());
-      if (target == jsonObject.MemberEnd())
-        return;
+      if (target == jsonObject.MemberEnd()) return;
 
       if constexpr (std::is_array_v<std::remove_reference_t<decltype(var)>>) {
         using Value = std::remove_pointer_t<std::decay_t<decltype(var)>>;
         static constexpr size_t N = sizeof(decltype(var)) / sizeof(Value);
         auto rst = ReadVar<std::array<Value, N>>(target->value, ctx);
-        for (size_t i = 0; i < N; i++)
-          var[i] = rst[i];
+        for (size_t i = 0; i < N; i++) var[i] = rst[i];
       } else
         var =
             ReadVar<std::remove_reference_t<decltype(var)>>(target->value, ctx);

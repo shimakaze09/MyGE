@@ -40,13 +40,11 @@ inline void d3dSetDebugName(IDXGIObject* obj, const char* name) {
     obj->SetPrivateData(WKPDID_D3DDebugObjectName, lstrlenA(name), name);
   }
 }
-
 inline void d3dSetDebugName(ID3D12Device* obj, const char* name) {
   if (obj) {
     obj->SetPrivateData(WKPDID_D3DDebugObjectName, lstrlenA(name), name);
   }
 }
-
 inline void d3dSetDebugName(ID3D12DeviceChild* obj, const char* name) {
   if (obj) {
     obj->SetPrivateData(WKPDID_D3DDebugObjectName, lstrlenA(name), name);

@@ -1,7 +1,3 @@
-//
-// Created by Admin on 17/03/2025.
-//
-
 #include <MyGE/App/DX12App/DX12App.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
@@ -165,8 +161,8 @@ bool DX12App::InitDirect3D() {
                                       IID_PPV_ARGS(&mFence)));
 
   My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
-  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.Get(), 1024, 1024,
-                                                  1024, 1024, 1024);
+  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.Get(), 16384, 16384,
+                                                  16384, 16384, 16384);
 
   frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
       NumFrameResources, myDevice.Get());

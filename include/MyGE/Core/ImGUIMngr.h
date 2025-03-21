@@ -1,7 +1,3 @@
-//
-// Created by Admin on 17/03/2025.
-//
-
 #pragma once
 
 #include <MyDX12/MyDX12.h>

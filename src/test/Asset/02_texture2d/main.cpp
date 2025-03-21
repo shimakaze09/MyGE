@@ -1,10 +1,6 @@
-//
-// Created by Admin on 16/03/2025.
-//
-
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Core/Image.h>
-#include <MyGE/Core/Texture2D.h>
+#include <MyGE/Render/Texture2D.h>
 
 #include <iostream>
 
@@ -42,8 +38,7 @@ int main() {
     tex2d->wrapMode = Texture2D::WrapMode::Clamp;
     tex2d->filterMode = Texture2D::FilterMode::Point;
 
-    if (!AssetMngr::Instance().CreateAsset(tex2d, tex2dPath))
-      delete tex2d;
+    if (!AssetMngr::Instance().CreateAsset(tex2d, tex2dPath)) delete tex2d;
     AssetMngr::Instance().Clear();
   }
 

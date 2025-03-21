@@ -1,12 +1,8 @@
-//
-// Created by Admin on 15/03/2025.
-//
-
 #pragma once
 
 struct lua_State;
 
-namespace My::MyECS {
+namespace My::MyGE {
 class LuaContext {
  public:
   LuaContext();
@@ -29,4 +25,4 @@ class LuaContext {
   struct Impl;
   Impl* pImpl;
 };
-}  // namespace My::MyECS
+}  // namespace My::MyGE
