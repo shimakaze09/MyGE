@@ -49,6 +49,7 @@ ADD_TARGET(
         My::MyGM_core
         My::MyDP_core
         My::MyECS_core
+        My::MyDX12_core
         My::MyGE__deps_imgui
         DEFINE
         NOMINMAX
