@@ -6,7 +6,8 @@ using namespace My::MyGE;
 using namespace My::MyECS;
 
 void InputSystem::OnUpdate(Schedule& schedule) {
-  if (!ImGui::GetCurrentContext()) return;
+  if (!ImGui::GetCurrentContext())
+    return;
 
   schedule.RegisterJob(
       [](Singleton<Input> input) {

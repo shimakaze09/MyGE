@@ -8,8 +8,8 @@ using namespace My::MyGE;
 
 PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
     ShaderCBMngrDX12& shaderCBMngr, const Shader* shader,
-    std::vector<const Material*> materials,
-    std::set<std::string_view> commonCBs) {
+    const std::vector<const Material*>& materials,
+    const std::set<std::string_view>& commonCBs) {
   PipelineBase::ShaderCBDesc rst;
   assert(shader);
 
@@ -22,13 +22,15 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
       D3D12_SHADER_BUFFER_DESC cbDesc;
       ThrowIfFailed(cb->GetDesc(&cbDesc));
 
-      if (commonCBs.find(cbDesc.Name) != commonCBs.end()) continue;
+      if (commonCBs.find(cbDesc.Name) != commonCBs.end())
+        continue;
 
       D3D12_SHADER_INPUT_BIND_DESC rsrcDesc;
       refl->GetResourceBindingDescByName(cbDesc.Name, &rsrcDesc);
 
       auto target = rst.offsetMap.find(rsrcDesc.BindPoint);
-      if (target != rst.offsetMap.end()) continue;
+      if (target != rst.offsetMap.end())
+        continue;
 
       rst.offsetMap.emplace_hint(
           target, std::pair{rsrcDesc.BindPoint, rst.materialCBSize});
@@ -44,7 +46,8 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
 
   auto buffer = shaderCBMngr.GetBuffer(shader);
   buffer->FastReserve(rst.materialCBSize * materials.size());
-  for (size_t i = 0; i < materials.size(); i++) rst.indexMap[materials[i]] = i;
+  for (size_t i = 0; i < materials.size(); i++)
+    rst.indexMap[materials[i]] = i;
 
   auto UpdateShaderCBsForRefl = [&](std::set<size_t>& flags,
                                     const Material* material,
@@ -65,7 +68,8 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
       if (rst.offsetMap.find(rsrcDesc.BindPoint) == rst.offsetMap.end())
         continue;
 
-      if (flags.find(rsrcDesc.BindPoint) != flags.end()) continue;
+      if (flags.find(rsrcDesc.BindPoint) != flags.end())
+        continue;
 
       flags.insert(rsrcDesc.BindPoint);
 
@@ -78,7 +82,8 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
         ThrowIfFailed(var->GetDesc(&varDesc));
 
         auto target = material->properties.find(varDesc.Name);
-        if (target == material->properties.end()) continue;
+        if (target == material->properties.end())
+          continue;
 
         std::visit(
             [&](const auto& value) {
@@ -91,8 +96,10 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
               } else if constexpr (std::is_same_v<Value, const Texture2D*> ||
                                    std::is_same_v<Value, const TextureCube*>)
                 assert(false);
-              else
+              else {
+                assert(varDesc.Size == sizeof(Value));
                 buffer->Set(offset + varDesc.StartOffset, &value, varDesc.Size);
+              }
             },
             target->second);
       }
@@ -116,13 +123,14 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
 
 void PipelineBase::SetGraphicsRoot_CBV_SRV(
     ID3D12GraphicsCommandList* cmdList, ShaderCBMngrDX12& shaderCBMngr,
-    const ShaderCBDesc& shaderCBDescconst, const Material* material) {
+    const ShaderCBDesc& shaderCBDescconst, const Material* material,
+    const std::map<std::string_view, D3D12_GPU_VIRTUAL_ADDRESS>& commonCBs) {
   auto buffer = shaderCBMngr.GetBuffer(material->shader);
   size_t cbPos = buffer->GetResource()->GetGPUVirtualAddress() +
                  shaderCBDescconst.indexMap.at(material) *
                      shaderCBDescconst.materialCBSize;
 
-  auto SetSRV = [&](ID3D12ShaderReflection* refl) {
+  auto SetGraphicsRoot_Refl = [&](ID3D12ShaderReflection* refl) {
     D3D12_SHADER_DESC shaderDesc;
     ThrowIfFailed(refl->GetDesc(&shaderDesc));
 
@@ -135,10 +143,12 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
               using Type = std::decay_t<decltype(param)>;
               if constexpr (std::is_same_v<Type, RootDescriptorTable>) {
                 const RootDescriptorTable& table = param;
-                if (table.size() != 1) return false;
+                if (table.size() != 1)
+                  return false;
 
                 const auto& range = table.front();
-                if (range.NumDescriptors != 1) return false;
+                if (range.NumDescriptors != 1)
+                  return false;
 
                 return range.BaseShaderRegister == registerIndex;
               } else
@@ -146,7 +156,8 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
             },
             param);
 
-        if (flag) return (UINT)i;
+        if (flag)
+          return (UINT)i;
       }
       assert(false);
       return static_cast<UINT>(-1);
@@ -170,7 +181,8 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
             },
             param);
 
-        if (flag) return (UINT)i;
+        if (flag)
+          return (UINT)i;
       }
       assert(false);
       return static_cast<UINT>(-1);
@@ -182,15 +194,27 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
 
       switch (rsrcDesc.Type) {
         case D3D_SIT_CBUFFER: {
-          auto target = shaderCBDescconst.offsetMap.find(rsrcDesc.BindPoint);
-          if (target == shaderCBDescconst.offsetMap.end()) break;
-          cmdList->SetGraphicsRootConstantBufferView(
-              GetCBVRootParamIndex(rsrcDesc.BindPoint), cbPos + target->second);
+          UINT idx = GetCBVRootParamIndex(rsrcDesc.BindPoint);
+          D3D12_GPU_VIRTUAL_ADDRESS adress;
+
+          if (auto target =
+                  shaderCBDescconst.offsetMap.find(rsrcDesc.BindPoint);
+              target != shaderCBDescconst.offsetMap.end())
+            adress = cbPos + target->second;
+          else if (auto target = commonCBs.find(rsrcDesc.Name);
+                   target != commonCBs.end())
+            adress = target->second;
+          else {
+            assert(false);
+            break;
+          }
+          cmdList->SetGraphicsRootConstantBufferView(idx, adress);
           break;
         }
         case D3D_SIT_TEXTURE: {
           auto target = material->properties.find(rsrcDesc.Name);
-          if (target == material->properties.end()) break;
+          if (target == material->properties.end())
+            break;
 
           auto dim = rsrcDesc.Dimension;
           UINT rootParamIndex = GetSRVRootParamIndex(rsrcDesc.BindPoint);
@@ -225,7 +249,9 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
   };
 
   for (size_t i = 0; i < material->shader->passes.size(); i++) {
-    SetSRV(RsrcMngrDX12::Instance().GetShaderRefl_vs(material->shader, i));
-    SetSRV(RsrcMngrDX12::Instance().GetShaderRefl_ps(material->shader, i));
+    SetGraphicsRoot_Refl(
+        RsrcMngrDX12::Instance().GetShaderRefl_vs(material->shader, i));
+    SetGraphicsRoot_Refl(
+        RsrcMngrDX12::Instance().GetShaderRefl_ps(material->shader, i));
   }
 }

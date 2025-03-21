@@ -1,3 +1,4 @@
+
 #include <MyGE/Render/DX12/StdPipeline.h>
 
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
@@ -203,8 +204,7 @@ struct StdPipeline::Impl {
   MyFG::Compiler fgCompiler;
   MyFG::FrameGraph fg;
 
-  MyGE::Shader* geomrtryShader;
-  MyGE::Shader* deferShader;
+  MyGE::Shader* deferLightingShader;
   MyGE::Shader* skyboxShader;
   MyGE::Shader* postprocessShader;
   MyGE::Shader* irradianceShader;
@@ -221,8 +221,10 @@ struct StdPipeline::Impl {
   void BuildShaders();
   void BuildPSOs();
 
-  size_t GetGeometryPSO_ID(const Mesh* mesh);
-  std::unordered_map<size_t, size_t> PSOIDMap;
+  size_t GetDeferPSO_ID(const Shader* shader, size_t passIdx, const Mesh* mesh);
+  std::unordered_map<
+      size_t, std::unordered_map<size_t, std::unordered_map<size_t, size_t>>>
+      PSOIDMap;  // shader ID -> pass Index -> layout ID -> PSO ID
 
   void UpdateRenderContext(const std::vector<const MyECS::World*>& worlds);
   void UpdateShaderCBs(const ResizeData& resizeData,
@@ -353,8 +355,8 @@ void StdPipeline::Impl::BuildFrameResources() {
 }
 
 void StdPipeline::Impl::BuildShaders() {
-  geomrtryShader = ShaderMngr::Instance().Get("StdPipeline/Geometry");
-  deferShader = ShaderMngr::Instance().Get("StdPipeline/Defer Lighting");
+  deferLightingShader =
+      ShaderMngr::Instance().Get("StdPipeline/Defer Lighting");
   skyboxShader = ShaderMngr::Instance().Get("StdPipeline/Skybox");
   postprocessShader = ShaderMngr::Instance().Get("StdPipeline/Post Process");
   irradianceShader = ShaderMngr::Instance().Get("StdPipeline/Irradiance");
@@ -431,9 +433,10 @@ void StdPipeline::Impl::BuildPSOs() {
   ID_PSO_skybox = RsrcMngrDX12::Instance().RegisterPSO(&skyboxPsoDesc);
 
   auto deferLightingPsoDesc = MyDX12::Desc::PSO::Basic(
-      RsrcMngrDX12::Instance().GetShaderRootSignature(deferShader), nullptr, 0,
-      RsrcMngrDX12::Instance().GetShaderByteCode_vs(deferShader, 0),
-      RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferShader, 0),
+      RsrcMngrDX12::Instance().GetShaderRootSignature(deferLightingShader),
+      nullptr, 0,
+      RsrcMngrDX12::Instance().GetShaderByteCode_vs(deferLightingShader, 0),
+      RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferLightingShader, 0),
       DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT);
   deferLightingPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   deferLightingPsoDesc.DepthStencilState.DepthEnable = true;
@@ -483,27 +486,25 @@ void StdPipeline::Impl::BuildPSOs() {
   }
 }
 
-size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
+size_t StdPipeline::Impl::GetDeferPSO_ID(const Shader* shader, size_t passIdx,
+                                         const Mesh* mesh) {
   size_t layoutID = MeshLayoutMngr::Instance().GetMeshLayoutID(mesh);
-  auto target = PSOIDMap.find(layoutID);
-  if (target == PSOIDMap.end()) {
-    //auto [uv, normal, tangent, color] = MeshLayoutMngr::Instance().DecodeMeshLayoutID(layoutID);
-    //if (!uv || !normal)
-    //	return static_cast<size_t>(-1); // not support
-
+  auto& PSOs = PSOIDMap[shader->GetInstanceID()][passIdx];
+  auto target = PSOs.find(layoutID);
+  if (target == PSOs.end()) {
     const auto& layout =
         MeshLayoutMngr::Instance().GetMeshLayoutValue(layoutID);
+
     auto geometryPsoDesc = MyDX12::Desc::PSO::MRT(
-        RsrcMngrDX12::Instance().GetShaderRootSignature(geomrtryShader),
-        layout.data(), (UINT)layout.size(),
-        RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader, 0),
-        RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader, 0), 3,
+        RsrcMngrDX12::Instance().GetShaderRootSignature(shader), layout.data(),
+        (UINT)layout.size(),
+        RsrcMngrDX12::Instance().GetShaderByteCode_vs(shader, passIdx),
+        RsrcMngrDX12::Instance().GetShaderByteCode_ps(shader, passIdx), 3,
         DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT);
     geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
     size_t ID_PSO_geometry =
         RsrcMngrDX12::Instance().RegisterPSO(&geometryPsoDesc);
-    target =
-        PSOIDMap.emplace_hint(target, std::pair{layoutID, ID_PSO_geometry});
+    target = PSOs.emplace_hint(target, std::pair{layoutID, ID_PSO_geometry});
   }
   return target->second;
 }
@@ -728,7 +729,7 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData,
           ->GetResource<MyGE::ShaderCBMngrDX12>("ShaderCBMngrDX12");
 
   {  // defer lighting
-    auto buffer = shaderCBMngr.GetBuffer(deferShader);
+    auto buffer = shaderCBMngr.GetBuffer(deferLightingShader);
     buffer->FastReserve(
         MyDX12::Util::CalcConstantBufferByteSize(sizeof(ShaderLightArray)));
     buffer->Set(0, &renderContext.lights, sizeof(ShaderLightArray));
@@ -781,13 +782,11 @@ void StdPipeline::Impl::UpdateShaderCBs(const ResizeData& resizeData,
 
   // geometry
   for (const auto& [shader, mat2objects] : renderContext.objectMap) {
-    if (shader->shaderName == "StdPipeline/Geometry") {  // TODO: light mode
-      std::vector<const Material*> materials;
-      for (const auto& [material, objects] : mat2objects)
-        materials.push_back(material);
-      renderContext.shaderCBDescMap[shader] = PipelineBase::UpdateShaderCBs(
-          shaderCBMngr, shader, materials, commonCBs);
-    }
+    std::vector<const Material*> materials;
+    for (const auto& [material, objects] : mat2objects)
+      materials.push_back(material);
+    renderContext.shaderCBDescMap[shader] = PipelineBase::UpdateShaderCBs(
+        shaderCBMngr, shader, materials, commonCBs);
   }
 }
 
@@ -951,17 +950,6 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
     cmdList->OMSetRenderTargets((UINT)rtHandles.size(), rtHandles.data(), false,
                                 &dsHandle);
 
-    cmdList->SetGraphicsRootSignature(
-        RsrcMngrDX12::Instance().GetShaderRootSignature(geomrtryShader));
-
-    auto cbPerCamera = frameRsrcMngr.GetCurrentFrameResource()
-                           ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
-                           .GetCommonBuffer()
-                           ->GetResource();
-
-    cmdList->SetGraphicsRootConstantBufferView(
-        6, cbPerCamera->GetGPUVirtualAddress());
-
     DrawObjects(cmdList);
   });
 
@@ -1103,7 +1091,8 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
             &ds.info.desc2info_dsv.at(dsvDesc).cpuHandle);
 
         cmdList->SetGraphicsRootSignature(
-            RsrcMngrDX12::Instance().GetShaderRootSignature(deferShader));
+            RsrcMngrDX12::Instance().GetShaderRootSignature(
+                deferLightingShader));
         cmdList->SetPipelineState(
             RsrcMngrDX12::Instance().GetPSO(ID_PSO_defer_light));
 
@@ -1122,7 +1111,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
 
         auto cbLights = frameRsrcMngr.GetCurrentFrameResource()
                             ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
-                            .GetBuffer(deferShader)
+                            .GetBuffer(deferLightingShader)
                             ->GetResource();
         cmdList->SetGraphicsRootConstantBufferView(
             3, cbLights->GetGPUVirtualAddress());
@@ -1235,38 +1224,62 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList) {
       frameRsrcMngr.GetCurrentFrameResource()
           ->GetResource<MyGE::ShaderCBMngrDX12>("ShaderCBMngrDX12");
 
-  auto matBuffer = shaderCBMngr.GetBuffer(geomrtryShader);
-  auto commonBuffer = shaderCBMngr.GetCommonBuffer();
+  for (const auto& [shader, material] : renderContext.objectMap) {
+    std::vector<size_t> deferPasses;
+    for (size_t i = 0; i < shader->passes.size(); i++) {
+      const auto& pass = shader->passes[i];
+      auto target = pass.tags.find("LightMode");
+      if (target == pass.tags.end())
+        continue;
+      if (target->second == "Deferred")
+        deferPasses.push_back(i);
+    }
+    if (deferPasses.empty())
+      continue;
 
-  const auto& mat2objects =
-      renderContext.objectMap.at(geomrtryShader);  // LightMode
-  const auto& shaderCBDesc = renderContext.shaderCBDescMap.at(geomrtryShader);
+    cmdList->SetGraphicsRootSignature(
+        RsrcMngrDX12::Instance().GetShaderRootSignature(shader));
 
-  for (const auto& [material, objects] : mat2objects) {
-    // For each render item...
-    for (size_t i = 0; i < objects.size(); i++) {
-      const auto& object = objects[i];
-      auto& meshGPUBuffer =
-          MyGE::RsrcMngrDX12::Instance().GetMeshGPUBuffer(object.mesh);
-      const auto& submesh = object.mesh->GetSubMeshes().at(object.submeshIdx);
-      cmdList->IASetVertexBuffers(0, 1, &meshGPUBuffer.VertexBufferView());
-      cmdList->IASetIndexBuffer(&meshGPUBuffer.IndexBufferView());
-      // submesh.topology
-      cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    auto matBuffer = shaderCBMngr.GetBuffer(shader);
+    auto commonBuffer = shaderCBMngr.GetCommonBuffer();
 
-      D3D12_GPU_VIRTUAL_ADDRESS objCBAddress =
-          commonBuffer->GetResource()->GetGPUVirtualAddress() +
-          renderContext.entity2offset.at(object.entity);
+    const auto& mat2objects = renderContext.objectMap.at(shader);
+    const auto& shaderCBDesc = renderContext.shaderCBDescMap.at(shader);
 
-      StdPipeline::SetGraphicsRoot_CBV_SRV(cmdList, material);
+    auto cameraCBAdress = commonBuffer->GetResource()->GetGPUVirtualAddress() +
+                          renderContext.cameraOffset;
 
-      cmdList->SetGraphicsRootConstantBufferView(4, objCBAddress);
+    for (const auto& [material, objects] : mat2objects) {
+      // For each render item...
+      for (size_t i = 0; i < objects.size(); i++) {
+        const auto& object = objects[i];
+        auto& meshGPUBuffer =
+            MyGE::RsrcMngrDX12::Instance().GetMeshGPUBuffer(object.mesh);
+        const auto& submesh = object.mesh->GetSubMeshes().at(object.submeshIdx);
+        cmdList->IASetVertexBuffers(0, 1, &meshGPUBuffer.VertexBufferView());
+        cmdList->IASetIndexBuffer(&meshGPUBuffer.IndexBufferView());
+        // submesh.topology
+        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-      cmdList->SetPipelineState(
-          RsrcMngrDX12::Instance().GetPSO(GetGeometryPSO_ID(object.mesh)));
-      cmdList->DrawIndexedInstanced((UINT)submesh.indexCount, 1,
-                                    (UINT)submesh.indexStart,
-                                    (INT)submesh.baseVertex, 0);
+        D3D12_GPU_VIRTUAL_ADDRESS objCBAddress =
+            commonBuffer->GetResource()->GetGPUVirtualAddress() +
+            renderContext.entity2offset.at(object.entity);
+
+        StdPipeline::SetGraphicsRoot_CBV_SRV(
+            cmdList, shaderCBMngr, shaderCBDesc, material,
+            {
+                {StdPipeline_cbPerObject, objCBAddress},
+                {StdPipeline_cbPerCamera, cameraCBAdress},
+            });
+
+        for (auto passIndex : deferPasses) {
+          cmdList->SetPipelineState(RsrcMngrDX12::Instance().GetPSO(
+              GetDeferPSO_ID(shader, passIndex, object.mesh)));
+          cmdList->DrawIndexedInstanced((UINT)submesh.indexCount, 1,
+                                        (UINT)submesh.indexStart,
+                                        (INT)submesh.baseVertex, 0);
+        }
+      }
     }
   }
 }

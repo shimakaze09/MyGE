@@ -3,6 +3,8 @@
 #include <MyDX12/MyDX12.h>
 #include <MyECS/Entity.h>
 
+#include <map>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -63,14 +65,14 @@ class PipelineBase {
     std::unordered_map<const Material*, size_t> indexMap;
   };
 
-  static ShaderCBDesc UpdateShaderCBs(ShaderCBMngrDX12& shaderCBMngr,
-                                      const Shader* shader,
-                                      std::vector<const Material*> materials,
-                                      std::set<std::string_view> commonCBs);
-  static void SetGraphicsRoot_CBV_SRV(ID3D12GraphicsCommandList* cmdList,
-                                      ShaderCBMngrDX12& shaderCBMngr,
-                                      const ShaderCBDesc& shaderCBDescconst,
-                                      const Material* material);
+  static ShaderCBDesc UpdateShaderCBs(
+      ShaderCBMngrDX12& shaderCBMngr, const Shader* shader,
+      const std::vector<const Material*>& materials,
+      const std::set<std::string_view>& commonCBs);
+  static void SetGraphicsRoot_CBV_SRV(
+      ID3D12GraphicsCommandList* cmdList, ShaderCBMngrDX12& shaderCBMngr,
+      const ShaderCBDesc& shaderCBDescconst, const Material* material,
+      const std::map<std::string_view, D3D12_GPU_VIRTUAL_ADDRESS>& commonCBs);
 
  protected:
   virtual void Impl_Resize() = 0;

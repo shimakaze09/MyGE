@@ -48,7 +48,9 @@ float GameTimer::TotalTime() const {
   }
 }
 
-float GameTimer::DeltaTime() const { return (float)mDeltaTime; }
+float GameTimer::DeltaTime() const {
+  return (float)mDeltaTime;
+}
 
 void GameTimer::Reset() {
   __int64 currTime;

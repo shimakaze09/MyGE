@@ -23,7 +23,8 @@ void LocalToParentSystem::ChildLocalToWorld(World* w,
 
   if (w->entityMngr.Have(e, CmptType::Of<Children>)) {
     auto children = w->entityMngr.Get<Children>(e);
-    for (const auto& child : children->value) ChildLocalToWorld(w, l2w, child);
+    for (const auto& child : children->value)
+      ChildLocalToWorld(w, l2w, child);
   }
 }
 
