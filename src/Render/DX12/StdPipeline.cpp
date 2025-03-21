@@ -1413,7 +1413,9 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList,
          {StdPipeline_cbPerCamera, cameraCBAdress},
          {StdPipeline_cbLightArray, lightCBAdress}},
         {{StdPipeline_srvIBL, ibl}});
-
+    if (shader->passes[obj.passIdx].renderState.stencilState.enable)
+      cmdList->OMSetStencilRef(
+          shader->passes[obj.passIdx].renderState.stencilState.ref);
     cmdList->SetPipelineState(RsrcMngrDX12::Instance().GetPSO(
         GetPSO_ID(shader, obj.passIdx, obj.mesh, rtNum, rtFormat)));
     cmdList->DrawIndexedInstanced((UINT)submesh.indexCount, 1,

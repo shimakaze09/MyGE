@@ -823,6 +823,14 @@ void Editor::Update() {
     scenePipeline->BeginFrame({curGameWorld, &sceneWorld},
                               sceneCameras.front());
   }
+
+  {
+    static bool flag = false;
+    if (!flag) {
+      OutputDebugStringA(curGameWorld->GenUpdateFrameGraph().Dump().c_str());
+      flag = true;
+    }
+  }
 }
 
 void Editor::Draw() {
