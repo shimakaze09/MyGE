@@ -2,7 +2,7 @@
 
 namespace My::MyGE {
 template <typename Asset>
-bool CreateAsset(Asset* ptr, const std::filesystem::path& path) {
+bool AssetMngr::CreateAsset(Asset* ptr, const std::filesystem::path& path) {
   static_assert(!std::is_pointer_v<std::decay_t<Asset>>);
   return CreateAsset((void*)ptr, path);
 }
@@ -34,8 +34,10 @@ inline bool operator<(const xg::Guid& lhs, const xg::Guid& rhs) noexcept {
   for (size_t i = 0; i < sizeof(xg::Guid) / sizeof(size_t); i++) {
     size_t lhs_vi = *(lhs_p + i);
     size_t rhs_vi = *(rhs_p + i);
-    if (lhs_vi < rhs_vi) return true;
-    if (lhs_vi > rhs_vi) return false;
+    if (lhs_vi < rhs_vi)
+      return true;
+    if (lhs_vi > rhs_vi)
+      return false;
   }
   return false;
 }

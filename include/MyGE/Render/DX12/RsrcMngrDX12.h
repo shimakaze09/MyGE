@@ -53,9 +53,6 @@ class RsrcMngrDX12 {
                                            size_t passIdx) const;
   ID3D12RootSignature* GetShaderRootSignature(const Shader* shader) const;
 
-  RsrcMngrDX12& RegisterRootSignature(size_t id,
-                                      const D3D12_ROOT_SIGNATURE_DESC* descs);
-
   size_t RegisterPSO(const D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc);
 
   D3D12_CPU_DESCRIPTOR_HANDLE GetTexture2DSrvCpuHandle(
@@ -70,8 +67,6 @@ class RsrcMngrDX12 {
   ID3D12Resource* GetTextureCubeResource(const TextureCube* texcube) const;
 
   MyDX12::MeshGPUBuffer& GetMeshGPUBuffer(const Mesh* mesh) const;
-
-  ID3D12RootSignature* GetRootSignature(size_t id) const;
 
   ID3D12PipelineState* GetPSO(size_t id) const;
 

@@ -18,15 +18,18 @@ struct RsrcMngrDX12::Impl {
     ID3D12Resource* resource;
     MyDX12::DescriptorHeapAllocation allocationSRV;
   };
+
   struct TextureCubeGPUData {
     ID3D12Resource* resource;
     MyDX12::DescriptorHeapAllocation allocationSRV;
   };
+
   struct RenderTargetGPUData {
     vector<ID3D12Resource*> resources;
     MyDX12::DescriptorHeapAllocation allocationSRV;
     MyDX12::DescriptorHeapAllocation allocationRTV;
   };
+
   struct ShaderCompileData {
     struct PassData {
       Microsoft::WRL::ComPtr<ID3DBlob> vsByteCode;
@@ -34,6 +37,7 @@ struct RsrcMngrDX12::Impl {
       Microsoft::WRL::ComPtr<ID3D12ShaderReflection> vsRefl;
       Microsoft::WRL::ComPtr<ID3D12ShaderReflection> psRefl;
     };
+
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
     std::vector<PassData> passes;
   };
@@ -49,7 +53,6 @@ struct RsrcMngrDX12::Impl {
   unordered_map<size_t, ShaderCompileData> shaderMap;
 
   unordered_map<size_t, MyDX12::MeshGPUBuffer> meshMap;
-  unordered_map<size_t, ID3D12RootSignature*> rootSignatureMap;
   vector<ID3D12PipelineState*> PSOs;
 
   const CD3DX12_STATIC_SAMPLER_DESC pointWrap{
@@ -142,12 +145,12 @@ void RsrcMngrDX12::Clear() {
         move(tex.allocationSRV));
     MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         move(tex.allocationRTV));
-    for (auto rsrc : tex.resources) rsrc->Release();
+    for (auto rsrc : tex.resources)
+      rsrc->Release();
   }
 
-  for (auto& [name, rootSig] : pImpl->rootSignatureMap) rootSig->Release();
-
-  for (auto PSO : pImpl->PSOs) PSO->Release();
+  for (auto PSO : pImpl->PSOs)
+    PSO->Release();
 
   pImpl->device = nullptr;
   delete pImpl->upload;
@@ -156,7 +159,6 @@ void RsrcMngrDX12::Clear() {
   pImpl->textureCubeMap.clear();
   pImpl->renderTargetMap.clear();
   pImpl->meshMap.clear();
-  pImpl->rootSignatureMap.clear();
   pImpl->PSOs.clear();
   pImpl->shaderMap.clear();
 
@@ -219,7 +221,8 @@ MyDX12::ResourceDeleteBatch& RsrcMngrDX12::GetDeleteBatch() const {
 RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
     DirectX::ResourceUploadBatch& upload, const Texture2D* tex2D) {
   auto target = pImpl->texture2DMap.find(tex2D->GetInstanceID());
-  if (target != pImpl->texture2DMap.end()) return *this;
+  if (target != pImpl->texture2DMap.end())
+    return *this;
 
   Impl::Texture2DGPUData tex;
 
@@ -258,7 +261,8 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
 RsrcMngrDX12& RsrcMngrDX12::RegisterTextureCube(
     DirectX::ResourceUploadBatch& upload, const TextureCube* texcube) {
   auto target = pImpl->textureCubeMap.find(texcube->GetInstanceID());
-  if (target != pImpl->textureCubeMap.end()) return *this;
+  if (target != pImpl->textureCubeMap.end())
+    return *this;
 
   Impl::TextureCubeGPUData tex;
 
@@ -352,25 +356,30 @@ D3D12_CPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTexture2DSrvCpuHandle(
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())
       ->second.allocationSRV.GetCpuHandle(0);
 }
+
 D3D12_GPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTexture2DSrvGpuHandle(
     const Texture2D* tex2D) const {
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())
       ->second.allocationSRV.GetGpuHandle(0);
 }
+
 ID3D12Resource* RsrcMngrDX12::GetTexture2DResource(
     const Texture2D* tex2D) const {
   return pImpl->texture2DMap.find(tex2D->GetInstanceID())->second.resource;
 }
+
 D3D12_CPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTextureCubeSrvCpuHandle(
     const TextureCube* texCube) const {
   return pImpl->textureCubeMap.find(texCube->GetInstanceID())
       ->second.allocationSRV.GetCpuHandle(0);
 }
+
 D3D12_GPU_DESCRIPTOR_HANDLE RsrcMngrDX12::GetTextureCubeSrvGpuHandle(
     const TextureCube* texCube) const {
   return pImpl->textureCubeMap.find(texCube->GetInstanceID())
       ->second.allocationSRV.GetGpuHandle(0);
 }
+
 ID3D12Resource* RsrcMngrDX12::GetTextureCubeResource(
     const TextureCube* texCube) const {
   return pImpl->textureCubeMap.find(texCube->GetInstanceID())->second.resource;
@@ -387,7 +396,8 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
     ID3D12GraphicsCommandList* cmdList, Mesh* mesh) {
   auto target = pImpl->meshMap.find(mesh->GetInstanceID());
   if (target == pImpl->meshMap.end()) {
-    if (mesh->IsDirty()) mesh->UpdateVertexBuffer();
+    if (mesh->IsDirty())
+      mesh->UpdateVertexBuffer();
 
     auto vb_data = mesh->GetVertexBufferData();
     auto vb_count = (UINT)mesh->GetVertexBufferVertexCount();
@@ -453,7 +463,8 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::GetMeshGPUBuffer(const Mesh* mesh) const {
 
 bool RsrcMngrDX12::RegisterShader(const Shader* shader) {
   auto target = pImpl->shaderMap.find(shader->GetInstanceID());
-  if (target != pImpl->shaderMap.end()) return true;
+  if (target != pImpl->shaderMap.end())
+    return true;
 
   D3D_SHADER_MACRO macros[] = {{nullptr, nullptr}};
   My::MyDX12::D3DInclude d3dInclude{shader->hlslFile->GetLocalDir(), "../"};
@@ -501,7 +512,8 @@ bool RsrcMngrDX12::RegisterShader(const Shader* shader) {
   };
 
   size_t N = shader->rootParameters.size();
-  if (N == 0) return true;
+  if (N == 0)
+    return true;
   std::vector<CD3DX12_ROOT_PARAMETER> rootParamters(N);
   std::vector<std::vector<CD3DX12_DESCRIPTOR_RANGE>> rangesVec;
   for (size_t i = 0; i < N; i++) {
@@ -714,42 +726,6 @@ ID3D12RootSignature* RsrcMngrDX12::GetShaderRootSignature(
 //
 //	return *this;
 // }
-
-RsrcMngrDX12& RsrcMngrDX12::RegisterRootSignature(
-    size_t id, const D3D12_ROOT_SIGNATURE_DESC* desc) {
-  auto target = pImpl->rootSignatureMap.find(id);
-  if (target != pImpl->rootSignatureMap.end()) return *this;
-
-  // create a root signature with a single slot which points to a descriptor
-  // range consisting of a single constant buffer
-  ID3DBlob* serializedRootSig = nullptr;
-  ID3DBlob* errorBlob = nullptr;
-
-  HRESULT hr = D3D12SerializeRootSignature(desc, D3D_ROOT_SIGNATURE_VERSION_1,
-                                           &serializedRootSig, &errorBlob);
-
-  if (errorBlob != nullptr) {
-    ::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-    errorBlob->Release();
-  }
-  ThrowIfFailed(hr);
-
-  ID3D12RootSignature* rootSig;
-
-  ThrowIfFailed(pImpl->device->CreateRootSignature(
-      0, serializedRootSig->GetBufferPointer(),
-      serializedRootSig->GetBufferSize(), IID_PPV_ARGS(&rootSig)));
-
-  pImpl->rootSignatureMap.emplace(id, rootSig);
-
-  serializedRootSig->Release();
-
-  return *this;
-}
-
-ID3D12RootSignature* RsrcMngrDX12::GetRootSignature(size_t id) const {
-  return pImpl->rootSignatureMap.find(id)->second;
-}
 
 size_t RsrcMngrDX12::RegisterPSO(
     const D3D12_GRAPHICS_PIPELINE_STATE_DESC* desc) {
