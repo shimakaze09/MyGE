@@ -4,6 +4,8 @@
 
 #include <MyGE/Asset/AssetMngr.h>
 
+#include <MyGE/Asset/Serializer.h>
+
 #include <MyGE/Core/DefaultAsset.h>
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/Image.h>
@@ -95,7 +97,9 @@ struct AssetMngr::Impl {
   std::filesystem::path root{L".."};
 };
 
-AssetMngr::AssetMngr() : pImpl{new Impl} {}
+AssetMngr::AssetMngr() : pImpl{new Impl} {
+  Serializer::Instance().RegisterUserTypes<Shader, ShaderPass>();
+}
 
 AssetMngr::~AssetMngr() {
   delete pImpl;
@@ -322,18 +326,10 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
     pImpl->asset2path.emplace(text, path);
     return text;
   } else if (ext == ".shader") {
-    auto shaderJSON = Impl::LoadJSON(path);
-    auto guidstr = shaderJSON["hlslFile"].GetString();
-    xg::Guid guid{guidstr};
-    auto hlslTarget = pImpl->guid2path.find(guid);
+    auto json = Impl::LoadText(path);
     auto shader = new Shader;
-    shader->hlslFile = hlslTarget != pImpl->guid2path.end()
-                           ? LoadAsset<HLSLFile>(hlslTarget->second)
-                           : nullptr;
-    shader->shaderName = shaderJSON["shaderName"].GetString();
-    shader->vertexName = shaderJSON["vertexName"].GetString();
-    shader->fragmentName = shaderJSON["fragmentName"].GetString();
-    shader->targetName = shaderJSON["targetName"].GetString();
+    Serializer::Instance().ToUserType(json, shader);
+
     pImpl->path2assert.emplace_hint(target, path, Impl::Asset{shader});
     pImpl->asset2path.emplace(shader, path);
     return shader;
@@ -490,20 +486,8 @@ bool AssetMngr::CreateAsset(void* ptr, const std::filesystem::path& path) {
   if (ext == ".shader") {
     auto shader = reinterpret_cast<Shader*>(ptr);
     auto guid = AssetPathToGUID(GetAssetPath(shader->hlslFile));
-    rapidjson::StringBuffer sb;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-    writer.StartObject();
-    writer.Key("hlslFile");
-    writer.String(guid.str());
-    writer.Key("shaderName");
-    writer.String(shader->shaderName);
-    writer.Key("vertexName");
-    writer.String(shader->vertexName);
-    writer.Key("fragmentName");
-    writer.String(shader->fragmentName);
-    writer.Key("targetName");
-    writer.String(shader->targetName);
-    writer.EndObject();
+
+    auto json = Serializer::Instance().ToJSON(shader);
 
     auto dirPath = path.parent_path();
     if (!std::filesystem::is_directory(dirPath))
@@ -511,7 +495,7 @@ bool AssetMngr::CreateAsset(void* ptr, const std::filesystem::path& path) {
 
     std::ofstream ofs(path);
     assert(ofs.is_open());
-    ofs << sb.GetString();
+    ofs << json;
     ofs.close();
 
     ImportAsset(path);

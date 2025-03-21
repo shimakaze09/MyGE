@@ -597,8 +597,10 @@ void DeferApp::BuildShadersAndInputLayout() {
 
   shader = new My::MyGE::Shader;
   shader->hlslFile = hlslFile;
-  shader->vertexName = "vert";
-  shader->fragmentName = "frag";
+  My::MyGE::ShaderPass pass;
+  pass.vertexName = "vert";
+  pass.fragmentName = "frag";
+  shader->passes.push_back(pass);
   shader->targetName = "5_0";
   shader->shaderName = "Default";
 
@@ -633,8 +635,8 @@ void DeferApp::BuildPSOs() {
       My::MyGE::RsrcMngrDX12::Instance().GetRootSignature(
           ID_RootSignature_default),
       mInputLayout.data(), (UINT)mInputLayout.size(),
-      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(shader),
-      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(shader),
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_vs(shader, 0),
+      My::MyGE::RsrcMngrDX12::Instance().GetShaderByteCode_ps(shader, 0),
       mBackBufferFormat, mDepthStencilFormat);
   opaquePsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   ID_PSO_opaque =

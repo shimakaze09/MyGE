@@ -42,7 +42,7 @@
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
 #include <MyGE/ScriptSystem/LuaScript.h>
 
-#include <MyLuaPP/MyLuaPP.h>
+#include <ULuaPP/ULuaPP.h>
 
 using Microsoft::WRL::ComPtr;
 
@@ -450,7 +450,7 @@ void GameStarter::Update() {
       [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
       camFilter);
   assert(gameCameras.size() == 1);  // now only support 1 camera
-  pipeline->BeginFrame(world, gameCameras.front());
+  pipeline->BeginFrame({&world}, gameCameras.front());
 }
 
 void GameStarter::Draw() {
@@ -537,12 +537,15 @@ void GameStarter::UpdateCamera() {
 }
 
 void GameStarter::BuildWorld() {
-  world.systemMngr.Register<
+  auto indices = world.systemMngr.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem>();
-  world.cmptTraits.Register<
+  for (auto idx : indices)
+    world.systemMngr.Activate(idx);
+
+  world.entityMngr.cmptTraits.Register<
       // core
       My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
       My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
@@ -575,7 +578,7 @@ void GameStarter::BuildWorld() {
 	std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;*/
 
   My::MyGE::Serializer::Instance()
-      .Register<
+      .RegisterComponents<
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
           My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,

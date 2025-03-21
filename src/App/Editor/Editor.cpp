@@ -975,7 +975,8 @@ void Editor::InitInspectorRegistry() {
           My::MyGE::LuaScriptQueue,
 
           My::MyGE::TestInspector>();
-  My::MyGE::InspectorRegistry::Instance().RegisterAssets<My::MyGE::Material>();
+  My::MyGE::InspectorRegistry::Instance()
+      .RegisterAssets<My::MyGE::Material, My::MyGE::Shader>();
 }
 
 void Editor::InitWorld(My::MyECS::World& w) {
@@ -1017,7 +1018,7 @@ void Editor::InitWorld(My::MyECS::World& w) {
 
 void Editor::BuildWorld() {
   My::MyGE::Serializer::Instance()
-      .Register<
+      .RegisterComponents<
           // core
           My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
           My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,

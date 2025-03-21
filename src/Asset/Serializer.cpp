@@ -109,7 +109,7 @@ string Serializer::ToJSON(size_t ID, const void* obj) {
   return json;
 }
 
-void Serializer::ToWorld(MyECS::World* world, string_view json) {
+bool Serializer::ToWorld(MyECS::World* world, string_view json) {
   Document doc;
   ParseResult rst = doc.Parse(json.data());
 
@@ -117,7 +117,7 @@ void Serializer::ToWorld(MyECS::World* world, string_view json) {
     cerr << "ERROR::Serializer::ToWorld:" << endl
          << "\t" << "JSON parse error: " << GetParseError_En(rst.Code()) << " ("
          << rst.Offset() << ")" << endl;
-    return;
+    return false;
   }
 
   auto entityMngr = doc[Serializer::Key::ENTITY_MNGR].GetObject();
@@ -166,6 +166,17 @@ void Serializer::ToWorld(MyECS::World* world, string_view json) {
       }
     }
   }
+
+  return true;
+}
+
+bool Serializer::ToUserType(std::string_view json, size_t ID, void* obj) {
+  Document doc;
+  ParseResult rst = doc.Parse(json.data());
+  EntityIdxMap emptyMap;
+  DeserializeContext ctx{emptyMap, pImpl->deserializer};
+  pImpl->deserializer.Visit(ID, obj, doc, ctx);
+  return true;
 }
 
 void Serializer::RegisterSerializeFunction(size_t id, SerializeFunc func) {

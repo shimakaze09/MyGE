@@ -20,6 +20,7 @@
 #include <MyGE/Core/Components/MeshFilter.h>
 #include <MyGE/Core/Components/MeshRenderer.h>
 #include <MyGE/Core/Components/Skybox.h>
+#include <MyGE/Core/Components/WorldTime.h>
 #include <MyGE/Core/HLSLFile.h>
 #include <MyGE/Core/ImGUIMngr.h>
 #include <MyGE/Core/Image.h>
@@ -27,6 +28,7 @@
 #include <MyGE/Core/Shader.h>
 #include <MyGE/Core/ShaderMngr.h>
 #include <MyGE/Core/Systems/CameraSystem.h>
+#include <MyGE/Core/Systems/WorldTimeSystem.h>
 #include <MyGE/Core/Texture2D.h>
 #include <MyGE/Core/TextureCube.h>
 
@@ -42,30 +44,34 @@ using namespace DirectX::PackedVector;
 
 const int gNumFrameResources = 3;
 
-struct AnimateMeshSystem : My::MyECS::System {
-  using My::MyECS::System::System;
+struct AnimateMeshSystem {
   size_t cnt = 0;
 
-  virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
-    if (cnt < 600) {
-      schedule.RegisterEntityJob(
-          [](My::MyGE::MeshFilter* meshFilter) {
+  static void OnUpdate(My::MyECS::Schedule& schedule) {
+    schedule.RegisterEntityJob(
+        [](My::MyGE::MeshFilter* meshFilter,
+           My::MyECS::Latest<My::MyECS::Singleton<My::MyGE::WorldTime>> time) {
+          if (time->elapsedTime < 10.f) {
             if (meshFilter->mesh->IsEditable()) {
               auto positions = meshFilter->mesh->GetPositions();
               for (auto& pos : positions)
                 pos[1] = 0.2f * (My::rand01<float>() - 0.5f);
               meshFilter->mesh->SetPositions(positions);
             }
-          },
-          "AnimateMesh");
-    } else if (cnt == 600) {
-      schedule.RegisterEntityJob(
-          [](My::MyGE::MeshFilter* meshFilter) {
+          } else
             meshFilter->mesh->SetToNonEditable();
-          },
-          "set mesh static");
-    }
-    cnt++;
+        },
+        "AnimateMesh");
+    schedule.RegisterCommand([](My::MyECS::World* w) {
+      auto time = w->entityMngr.GetSingleton<My::MyGE::WorldTime>();
+      if (!time)
+        return;
+
+      if (time->elapsedTime < 10.f)
+        return;
+
+      w->systemMngr.Deactivate(w->systemMngr.GetIndex<AnimateMeshSystem>());
+    });
   }
 };
 
@@ -499,7 +505,7 @@ void ImGUIApp::Update() {
       [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
       camFilter);
   assert(gameCameras.size() == 1);  // now only support 1 camera
-  pipeline->BeginFrame(world, gameCameras.front());
+  pipeline->BeginFrame({&world}, gameCameras.front());
 }
 
 void ImGUIApp::Draw() {
@@ -598,11 +604,13 @@ void ImGUIApp::UpdateCamera() {
 }
 
 void ImGUIApp::BuildWorld() {
-  world.systemMngr.Register<
+  auto indices = world.systemMngr.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
-      AnimateMeshSystem>();
+      My::MyGE::WorldTimeSystem, AnimateMeshSystem>();
+  for (auto idx : indices)
+    world.systemMngr.Activate(idx);
 
   {  // skybox
     auto [e, skybox] = world.entityMngr.Create<My::MyGE::Skybox>();
@@ -612,11 +620,15 @@ void ImGUIApp::BuildWorld() {
         My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(path);
   }
 
-  auto e0 =
-      world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::WorldToLocal,
-                              My::MyGE::Camera, My::MyGE::Translation,
-                              My::MyGE::Rotation>();
-  cam = std::get<My::MyECS::Entity>(e0);
+  {
+    auto e =
+        world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::WorldToLocal,
+                                My::MyGE::Camera, My::MyGE::Translation,
+                                My::MyGE::Rotation>();
+    cam = std::get<My::MyECS::Entity>(e);
+  }
+
+  { world.entityMngr.Create<My::MyGE::WorldTime>(); }
 
   auto quadMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
       "../assets/models/quad.obj");

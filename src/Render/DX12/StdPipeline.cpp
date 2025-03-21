@@ -606,8 +606,9 @@ void StdPipeline::Impl::BuildRootSignature() {
 void StdPipeline::Impl::BuildPSOs() {
   auto screenPsoDesc = MyDX12::Desc::PSO::Basic(
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_screen),
-      nullptr, 0, RsrcMngrDX12::Instance().GetShaderByteCode_vs(screenShader),
-      RsrcMngrDX12::Instance().GetShaderByteCode_ps(screenShader),
+      nullptr, 0,
+      RsrcMngrDX12::Instance().GetShaderByteCode_vs(screenShader, 0),
+      RsrcMngrDX12::Instance().GetShaderByteCode_ps(screenShader, 0),
       initDesc.rtFormat, DXGI_FORMAT_UNKNOWN);
   screenPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   screenPsoDesc.DepthStencilState.DepthEnable = false;
@@ -616,8 +617,9 @@ void StdPipeline::Impl::BuildPSOs() {
 
   auto skyboxPsoDesc = MyDX12::Desc::PSO::Basic(
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_skybox),
-      nullptr, 0, RsrcMngrDX12::Instance().GetShaderByteCode_vs(skyboxShader),
-      RsrcMngrDX12::Instance().GetShaderByteCode_ps(skyboxShader),
+      nullptr, 0,
+      RsrcMngrDX12::Instance().GetShaderByteCode_vs(skyboxShader, 0),
+      RsrcMngrDX12::Instance().GetShaderByteCode_ps(skyboxShader, 0),
       DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT);
   skyboxPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   skyboxPsoDesc.DepthStencilState.DepthEnable = true;
@@ -628,8 +630,8 @@ void StdPipeline::Impl::BuildPSOs() {
 
   auto deferLightingPsoDesc = MyDX12::Desc::PSO::Basic(
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_defer_light),
-      nullptr, 0, RsrcMngrDX12::Instance().GetShaderByteCode_vs(deferShader),
-      RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferShader),
+      nullptr, 0, RsrcMngrDX12::Instance().GetShaderByteCode_vs(deferShader, 0),
+      RsrcMngrDX12::Instance().GetShaderByteCode_ps(deferShader, 0),
       DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT);
   deferLightingPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   deferLightingPsoDesc.DepthStencilState.DepthEnable = true;
@@ -643,8 +645,8 @@ void StdPipeline::Impl::BuildPSOs() {
   auto postprocessPsoDesc = MyDX12::Desc::PSO::Basic(
       RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_postprocess),
       nullptr, 0,
-      RsrcMngrDX12::Instance().GetShaderByteCode_vs(postprocessShader),
-      RsrcMngrDX12::Instance().GetShaderByteCode_ps(postprocessShader),
+      RsrcMngrDX12::Instance().GetShaderByteCode_vs(postprocessShader, 0),
+      RsrcMngrDX12::Instance().GetShaderByteCode_ps(postprocessShader, 0),
       initDesc.rtFormat, DXGI_FORMAT_UNKNOWN);
   postprocessPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
   postprocessPsoDesc.DepthStencilState.DepthEnable = false;
@@ -656,8 +658,8 @@ void StdPipeline::Impl::BuildPSOs() {
     auto desc = MyDX12::Desc::PSO::Basic(
         RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_irradiance),
         nullptr, 0,
-        RsrcMngrDX12::Instance().GetShaderByteCode_vs(irradianceShader),
-        RsrcMngrDX12::Instance().GetShaderByteCode_ps(irradianceShader),
+        RsrcMngrDX12::Instance().GetShaderByteCode_vs(irradianceShader, 0),
+        RsrcMngrDX12::Instance().GetShaderByteCode_ps(irradianceShader, 0),
         DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_UNKNOWN);
     desc.RasterizerState.FrontCounterClockwise = TRUE;
     desc.DepthStencilState.DepthEnable = false;
@@ -669,8 +671,8 @@ void StdPipeline::Impl::BuildPSOs() {
     auto desc = MyDX12::Desc::PSO::Basic(
         RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_prefilter),
         nullptr, 0,
-        RsrcMngrDX12::Instance().GetShaderByteCode_vs(prefilterShader),
-        RsrcMngrDX12::Instance().GetShaderByteCode_ps(prefilterShader),
+        RsrcMngrDX12::Instance().GetShaderByteCode_vs(prefilterShader, 0),
+        RsrcMngrDX12::Instance().GetShaderByteCode_ps(prefilterShader, 0),
         DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_UNKNOWN);
     desc.RasterizerState.FrontCounterClockwise = TRUE;
     desc.DepthStencilState.DepthEnable = false;
@@ -692,8 +694,8 @@ size_t StdPipeline::Impl::GetGeometryPSO_ID(const Mesh* mesh) {
     auto geometryPsoDesc = MyDX12::Desc::PSO::MRT(
         RsrcMngrDX12::Instance().GetRootSignature(ID_RootSignature_geometry),
         layout.data(), (UINT)layout.size(),
-        RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader),
-        RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader), 3,
+        RsrcMngrDX12::Instance().GetShaderByteCode_vs(geomrtryShader, 0),
+        RsrcMngrDX12::Instance().GetShaderByteCode_ps(geomrtryShader, 0), 3,
         DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT);
     geometryPsoDesc.RasterizerState.FrontCounterClockwise = TRUE;
     size_t ID_PSO_geometry =

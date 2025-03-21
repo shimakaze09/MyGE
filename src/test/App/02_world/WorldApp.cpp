@@ -35,10 +35,8 @@ using namespace DirectX::PackedVector;
 
 const int gNumFrameResources = 3;
 
-struct RotateSystem : My::MyECS::System {
-  using My::MyECS::System::System;
-
-  virtual void OnUpdate(My::MyECS::Schedule& schedule) override {
+struct RotateSystem {
+  static void OnUpdate(My::MyECS::Schedule& schedule) {
     My::MyECS::ArchetypeFilter filter;
     filter.all = {My::MyECS::CmptAccessType::Of<My::MyGE::MeshFilter>};
     schedule.RegisterEntityJob(
@@ -279,7 +277,7 @@ void WorldApp::Update() {
       [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
       camFilter);
   assert(gameCameras.size() == 1);  // now only support 1 camera
-  pipeline->BeginFrame(world, gameCameras.front());
+  pipeline->BeginFrame({&world}, gameCameras.front());
 }
 
 void WorldApp::Draw() {

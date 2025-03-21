@@ -82,7 +82,7 @@ void InspectVar(Field field, Value& var, InspectorRegistry::InspectContext ctx);
 template <typename Cmpt>
 void InspectCmpt(Cmpt* cmpt, InspectorRegistry::InspectContext ctx) {
   if constexpr (HasDefinition<MySRefl::TypeInfo<Cmpt>>::value) {
-    ImGui::PushID(MyECS::CmptType::Of<Cmpt>.HashCode());
+    ImGui::PushID((const void*)MyECS::CmptType::Of<Cmpt>.HashCode());
     if (ImGui::CollapsingHeader(MySRefl::TypeInfo<Cmpt>::name.data())) {
       MySRefl::TypeInfo<Cmpt>::ForEachVarOf(
           *cmpt, [ctx](auto field, auto& var) { InspectVar(field, var, ctx); });
@@ -110,7 +110,7 @@ void InspectUserType(Field field, UserType* obj,
                      InspectorRegistry::InspectContext ctx) {
   if constexpr (HasDefinition<MySRefl::TypeInfo<UserType>>::value) {
     if (ImGui::TreeNode(field.name.data())) {
-      ImGui::PushID(GetID<UserType>());
+      ImGui::PushID((const void*)GetID<UserType>());
       MySRefl::TypeInfo<UserType>::ForEachVarOf(
           *obj, [ctx](auto field, auto& var) { InspectVar(field, var, ctx); });
       ImGui::TreePop();
