@@ -3,6 +3,7 @@
 #pragma once
 
 #include <MySRefl/MySRefl.h>
+#include <MyTemplate/Func.h>
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::World>
@@ -11,35 +12,17 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
 
   static constexpr FieldList fields = {
       Field{Name::constructor, WrapConstructor<My::MyECS::World()>()},
-      Field{"GetSystemMngr",
-            static_cast<My::MyECS::SystemMngr* (*)(My::MyECS::World&)>(
-                [](My::MyECS::World& w) { return &w.systemMngr; })},
-      Field{"GetSystemMngr",
-            static_cast<
-                const My::MyECS::SystemMngr* (*)(const My::MyECS::World&)>(
-                [](const My::MyECS::World& w) { return &w.systemMngr; })},
-      Field{Name::constructor, WrapConstructor<My::MyECS::World()>()},
-      Field{"GetEntityMngr",
-            static_cast<My::MyECS::EntityMngr* (*)(My::MyECS::World&)>(
-                [](My::MyECS::World& w) { return &w.entityMngr; })},
-      Field{"GetEntityMngr",
-            static_cast<
-                const My::MyECS::EntityMngr* (*)(const My::MyECS::World&)>(
-                [](const My::MyECS::World& w) { return &w.entityMngr; })},
-      Field{"cmptTraits", &My::MyECS::World::cmptTraits},
+      Field{Name::constructor,
+            WrapConstructor<My::MyECS::World(const My::MyECS::World&)>()},
+      Field{"entityMngr", &My::MyECS::World::entityMngr},
+      Field{"systemMngr", &My::MyECS::World::systemMngr},
       Field{"Update", &My::MyECS::World::Update},
       Field{"DumpUpdateJobGraph", &My::MyECS::World::DumpUpdateJobGraph},
       Field{"GenUpdateFrameGraph", &My::MyECS::World::GenUpdateFrameGraph},
       Field{"AddCommand", &My::MyECS::World::AddCommand},
-      // Field{"Accept", &My::MyECS::World::Accept},
+      //Field{"Accept", &My::MyECS::World::Accept},
       Field{"RunEntityJob",
-            static_cast<void (*)(
-                My::MyECS::World*,
-                std::function<void(My::MyECS::World*, My::MyECS::SingletonsView,
-                                   My::MyECS::Entity, size_t,
-                                   My::MyECS::CmptsView)>,
-                My::MyECS::ArchetypeFilter, My::MyECS::CmptLocator,
-                My::MyECS::SingletonLocator, bool)>(
+            My::DecayLambda(
                 [](My::MyECS::World* world,
                    std::function<void(
                        My::MyECS::World*, My::MyECS::SingletonsView,
@@ -54,11 +37,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
                       std::move(cmptLocator), std::move(singletonLocator));
                 })},
       Field{"RunChunkJob",
-            static_cast<void (*)(
-                My::MyECS::World*,
-                std::function<void(My::MyECS::World*, My::MyECS::ChunkView,
-                                   My::MyECS::SingletonsView)>,
-                My::MyECS::ArchetypeFilter, My::MyECS::SingletonLocator, bool)>(
+            My::DecayLambda(
                 [](My::MyECS::World* world,
                    std::function<void(My::MyECS::World*, My::MyECS::ChunkView,
                                       My::MyECS::SingletonsView)>
@@ -70,17 +49,12 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
                                      std::move(archetypeFilter), isParallel,
                                      std::move(singletonLocator));
                 })},
-      Field{
-          "RunJob",
-          static_cast<void (*)(
-              My::MyECS::World*,
-              std::function<void(My::MyECS::World*, My::MyECS::SingletonsView)>,
-              My::MyECS::SingletonLocator)>(
-              [](My::MyECS::World* world,
-                 std::function<void(My::MyECS::World*,
-                                    My::MyECS::SingletonsView)>
-                     func,
-                 My::MyECS::SingletonLocator singletonLocator) {
-                world->RunJob(std::move(func), std::move(singletonLocator));
-              })}};
+      Field{"RunJob",
+            My::DecayLambda([](My::MyECS::World* world,
+                               std::function<void(My::MyECS::World*,
+                                                  My::MyECS::SingletonsView)>
+                                   func,
+                               My::MyECS::SingletonLocator singletonLocator) {
+              world->RunJob(std::move(func), std::move(singletonLocator));
+            })}};
 };

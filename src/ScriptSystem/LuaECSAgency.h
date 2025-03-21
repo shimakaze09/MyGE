@@ -1,18 +1,14 @@
+//
+// Created by Admin on 20/03/2025.
+//
+
 #pragma once
 
 #include <MyECS/World.h>
 #include <MyLuaPP/MyLuaPP.h>
 
 namespace My::MyGE {
-class LuaContext;
-
-class LuaSystem : public MyECS::System {
- public:
-  using System::System;
-
-  static void RegisterSystem(MyECS::World* world, std::string name,
-                             sol::function onUpdate);
-
+struct LuaECSAgency {
   // World, SingletonsView, Entity, size_t index, CmptsView
   static const MyECS::SystemFunc* RegisterEntityJob(
       MyECS::Schedule*, sol::function systemFunc, std::string name,
@@ -29,16 +25,7 @@ class LuaSystem : public MyECS::System {
                                               sol::function systemFunc,
                                               std::string name,
                                               MyECS::SingletonLocator);
-
- private:
-  LuaSystem(MyECS::World* world, std::string name, sol::function onUpdate);
-
-  virtual void OnUpdate(MyECS::Schedule& schedule) override;
-
-  LuaContext* luaCtx;
-  sol::function mainOnUpdate;
 };
 }  // namespace My::MyGE
 
-#include "detail/LuaSystem_AutoRefl.inl"
-#include "detail/MyECS_AutoRefl/System_AutoRefl.inl"
+#include "detail/LuaECSAgency_AutoRefl.inl"

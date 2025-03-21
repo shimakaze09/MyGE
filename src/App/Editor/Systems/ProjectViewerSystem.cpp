@@ -188,7 +188,7 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
         viewer->selectedFolder = child;
 
       auto nameStr = name.string();
-      if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+      if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
         ImGui::SetDragDropPayload(PlayloadType::GUID, &child, sizeof(xg::Guid));
         ImGui::ImageButton(ImTextureID(folderID.ptr), {32, 32});
         ImGui::Text(nameStr.c_str());
@@ -256,7 +256,7 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
         }
       }
       auto nameStr = name.string();
-      if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+      if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
         ImGui::SetDragDropPayload(PlayloadType::GUID, &child, sizeof(xg::Guid));
         ImGui::ImageButton(ImTextureID(id), {32, 32});
         ImGui::Text(nameStr.c_str());
@@ -279,16 +279,19 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
 }  // namespace My::MyGE::detail
 
 void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
-  GetWorld()->AddCommand([](MyECS::World* w) {
+  schedule.RegisterCommand([](MyECS::World* w) {
     auto viewer = w->entityMngr.GetSingleton<ProjectViewer>();
     auto inspector = w->entityMngr.GetSingleton<Inspector>();
 
-    ImGui::Begin("Project");
-    detail::ProjectViewerSystemPrintChildren(viewer, xg::Guid{});
+    if (!viewer)
+      return;
+
+    if (ImGui::Begin("Project"))
+      detail::ProjectViewerSystemPrintChildren(viewer, xg::Guid{});
     ImGui::End();
 
-    ImGui::Begin("Folder");
-    detail::ProjectViewerSystemPrintFolder(inspector, viewer);
+    if (ImGui::Begin("Folder"))
+      detail::ProjectViewerSystemPrintFolder(inspector, viewer);
     ImGui::End();
   });
 }

@@ -7,11 +7,7 @@
 #include <MyECS/World.h>
 
 namespace My::MyGE {
-class ProjectViewerSystem : public MyECS::System {
- public:
-  using MyECS::System::System;
-
- private:
-  virtual void OnUpdate(MyECS::Schedule&) override;
+struct ProjectViewerSystem {
+  static void OnUpdate(MyECS::Schedule&);
 };
 }  // namespace My::MyGE

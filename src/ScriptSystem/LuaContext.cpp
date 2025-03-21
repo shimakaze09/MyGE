@@ -1,18 +1,25 @@
+//
+// Created by Admin on 20/03/2025.
+//
+
 #include <MyGE/ScriptSystem/LuaContext.h>
+
+#include <MyGE/ScriptSystem/LuaScriptQueue.h>
+
+#include "InitCore.h"
+#include "InitTransform.h"
+#include "InitMyECS.h"
+#include "InitMyGraphviz.h"
+#include "LuaArray.h"
+#include "LuaBuffer.h"
+#include "LuaECSAgency.h"
+#include "LuaMemory.h"
+
 #include <MyLuaPP/MyLuaPP.h>
 
 #include <mutex>
 #include <set>
 #include <vector>
-
-#include "InitCore.h"
-#include "InitMyECS.h"
-#include "InitMyGraphviz.h"
-#include "InitTransform.h"
-#include "LuaArray.h"
-#include "LuaBuffer.h"
-#include "LuaMemory.h"
-#include "LuaSystem.h"
 
 using namespace My::MyGE;
 
@@ -86,9 +93,9 @@ void LuaContext::Clear() {
 class LuaArray_CmptType : public LuaArray<My::MyECS::CmptType> {};
 
 template <>
-struct My::MySRefl::TypeInfo<LuaArray_CmptType>
-    : My::MySRefl::TypeInfoBase<LuaArray_CmptType,
-                                Base<LuaArray<My::MyECS::CmptType>>> {
+struct My::USRefl::TypeInfo<LuaArray_CmptType>
+    : My::USRefl::TypeInfoBase<LuaArray_CmptType,
+                               Base<LuaArray<My::MyECS::CmptType>>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {};
@@ -97,9 +104,9 @@ struct My::MySRefl::TypeInfo<LuaArray_CmptType>
 class LuaArray_CmptAccessType : public LuaArray<My::MyECS::CmptAccessType> {};
 
 template <>
-struct My::MySRefl::TypeInfo<LuaArray_CmptAccessType>
-    : My::MySRefl::TypeInfoBase<LuaArray_CmptAccessType,
-                                Base<LuaArray<My::MyECS::CmptAccessType>>> {
+struct My::USRefl::TypeInfo<LuaArray_CmptAccessType>
+    : My::USRefl::TypeInfoBase<LuaArray_CmptAccessType,
+                               Base<LuaArray<My::MyECS::CmptAccessType>>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {};
@@ -116,7 +123,8 @@ lua_State* LuaContext::Impl::Construct() {
   MyLuaPP::Register<LuaArray_CmptAccessType>(L);
   MyLuaPP::Register<LuaBuffer>(L);
   MyLuaPP::Register<LuaMemory>(L);
-  MyLuaPP::Register<LuaSystem>(L);
+  MyLuaPP::Register<LuaECSAgency>(L);
+  MyLuaPP::Register<LuaScriptQueue>(L);
   return L;
 }
 

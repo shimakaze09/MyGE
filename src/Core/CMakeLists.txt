@@ -18,6 +18,7 @@ SET(components
         Skybox
         Light
         Input
+        Roamer
 )
 
 SET(refls "")

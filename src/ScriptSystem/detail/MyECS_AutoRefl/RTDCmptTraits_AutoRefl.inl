@@ -10,8 +10,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::RTDCmptTraits>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      // Field{"default_alignment",
-      // &My::MyECS::RTDCmptTraits::default_alignment},
+      Field{"DefaultAlignment", &My::MyECS::RTDCmptTraits::DefaultAlignment},
       Field{"Clear", &My::MyECS::RTDCmptTraits::Clear},
 
       Field{"RegisterSize", &My::MyECS::RTDCmptTraits::RegisterSize},
@@ -50,7 +49,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::RTDCmptTraits>
       Field{
           "Deregister",
           static_cast<My::MyECS::RTDCmptTraits& (
-              My::MyECS::RTDCmptTraits::*)(My::MyECS::CmptType)>(
+              My::MyECS::RTDCmptTraits::*)(My::MyECS::CmptType) noexcept>(
               &My::MyECS::RTDCmptTraits::Deregister),
       },
   };

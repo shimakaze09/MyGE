@@ -11,9 +11,11 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityMngr>
 
   static constexpr FieldList fields = {
       Field{Name::constructor,
+            My::MySRefl::WrapConstructor<My::MyECS::EntityMngr()>()},
+      Field{Name::constructor,
             My::MySRefl::WrapConstructor<My::MyECS::EntityMngr(
                 const My::MyECS::EntityMngr&)>()},
-      Field{"Swap", &My::MyECS::EntityMngr::Swap},
+      Field{"cmptTraits", &My::MyECS::EntityMngr::cmptTraits},
       Field{
           "Create",
           static_cast<My::MyECS::Entity (My::MyECS::EntityMngr::*)(

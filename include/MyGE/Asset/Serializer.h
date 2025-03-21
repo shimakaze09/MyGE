@@ -36,21 +36,27 @@ class Serializer {
   using JSONWriter = rapidjson::Writer<rapidjson::StringBuffer>;
 
   struct SerializeContext {
-    JSONWriter* const writer;
-    const Visitor<void(const void*, SerializeContext)>* const serializer;
+    SerializeContext(const Visitor<void(const void*, SerializeContext&)>& s)
+        : serializer{s} {
+      writer.Reset(sb);
+    }
+
+    JSONWriter writer;
+    rapidjson::StringBuffer sb;
+    const Visitor<void(const void*, SerializeContext&)>& serializer;
   };
 
-  using SerializeFunc = std::function<void(const void*, SerializeContext)>;
+  using SerializeFunc = std::function<void(const void*, SerializeContext&)>;
   using EntityIdxMap = std::unordered_map<size_t, MyECS::Entity>;
 
   struct DeserializeContext {
-    const EntityIdxMap* entityIdxMap;
-    const Visitor<void(void*, const rapidjson::Value&,
-                       DeserializeContext)>* const deserializer;
+    const EntityIdxMap& entityIdxMap;
+    const Visitor<void(void*, const rapidjson::Value&, DeserializeContext&)>&
+        deserializer;
   };
 
   using DeserializeFunc =
-      std::function<void(void*, const rapidjson::Value&, DeserializeContext)>;
+      std::function<void(void*, const rapidjson::Value&, DeserializeContext&)>;
 
   void RegisterComponentSerializeFunction(MyECS::CmptType, SerializeFunc);
   void RegisterComponentDeserializeFunction(MyECS::CmptType, DeserializeFunc);
@@ -78,6 +84,7 @@ class Serializer {
 
   std::string ToJSON(const MyECS::World*);
   void ToWorld(MyECS::World*, std::string_view json);
+  std::string ToJSON(size_t ID, const void* obj);
 
  private:
   // core functions

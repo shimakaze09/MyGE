@@ -7,12 +7,9 @@
 #include <MyECS/World.h>
 
 namespace My::MyGE {
-class TRSToLocalToParentSystem : public MyECS::System {
- public:
-  using System::System;
-
+struct TRSToLocalToParentSystem {
   static constexpr char SystemFuncName[] = "TRSToLocalToParentSystem";
 
-  virtual void OnUpdate(MyECS::Schedule& schedule) override;
+  static void OnUpdate(MyECS::Schedule& schedule);
 };
 }  // namespace My::MyGE

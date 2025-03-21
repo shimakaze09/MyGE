@@ -11,6 +11,7 @@ struct My::MySRefl::TypeInfo<My::MyGE::Input>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
+    Field{"DisplaySize", &My::MyGE::Input::DisplaySize},
     Field{"MousePos", &My::MyGE::Input::MousePos},
     Field{"MouseDown", &My::MyGE::Input::MouseDown},
     Field{"MouseWheel", &My::MyGE::Input::MouseWheel},
@@ -20,6 +21,8 @@ struct My::MySRefl::TypeInfo<My::MyGE::Input>
     Field{"KeyAlt", &My::MyGE::Input::KeyAlt},
     Field{"KeySuper", &My::MyGE::Input::KeySuper},
     Field{"KeysDown", &My::MyGE::Input::KeysDown},
+    Field{"MouseInDisplay", &My::MyGE::Input::MouseInDisplay},
+    Field{"MouseInDisplayPre", &My::MyGE::Input::MouseInDisplayPre},
     Field{"MouseClicked", &My::MyGE::Input::MouseClicked},
     Field{"MousePosPrev", &My::MyGE::Input::MousePosPrev},
     Field{"MouseDelta", &My::MyGE::Input::MouseDelta},

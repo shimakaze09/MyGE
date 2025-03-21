@@ -119,74 +119,69 @@ void HierarchyDeleteEntity(MyECS::World* w, MyECS::Entity e) {
 }  // namespace My::MyGE::detail
 
 void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
-  schedule.RegisterJob(
-      [](MyECS::World* w,
-         MyECS::Latest<MyECS::Singleton<Hierarchy>> hierarchy) {
-        w->AddCommand([hierarchy = const_cast<Hierarchy*>(hierarchy.Get())](
-                          MyECS::World* w) {
-          if (ImGui::Begin("Hierarchy")) {
-            if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) &&
-                ImGui::IsWindowHovered())
-              ImGui::OpenPopup("Hierarchy_popup");
+  schedule.RegisterCommand([](MyECS::World* w) {
+    auto hierarchy = w->entityMngr.GetSingleton<Hierarchy>();
+    if (!hierarchy)
+      return;
 
-            if (ImGui::BeginPopup("Hierarchy_popup")) {
-              if (hierarchy->hover.Valid()) {
-                if (ImGui::MenuItem("Create Empty")) {
-                  auto [e, p] = hierarchy->world->entityMngr.Create<Parent>();
-                  p->value = hierarchy->hover;
-                  auto [children] =
-                      hierarchy->world->entityMngr.Attach<Children>(
-                          hierarchy->hover);
-                  children->value.insert(e);
-                }
+    if (ImGui::Begin("Hierarchy")) {
+      if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) &&
+          ImGui::IsWindowHovered())
+        ImGui::OpenPopup("Hierarchy_popup");
 
-                if (ImGui::MenuItem("Delete")) {
-                  detail::HierarchyDeleteEntity(hierarchy->world,
-                                                hierarchy->hover);
-
-                  hierarchy->hover = MyECS::Entity::Invalid();
-                  if (!hierarchy->world->entityMngr.Exist(hierarchy->select))
-                    hierarchy->select = MyECS::Entity::Invalid();
-                }
-              } else {
-                if (ImGui::MenuItem("Create Empty Entity"))
-                  hierarchy->world->entityMngr.Create();
-              }
-
-              ImGui::EndPopup();
-            } else
-              hierarchy->hover = MyECS::Entity::Invalid();
-
-            if (ImGui::BeginDragDropTarget()) {
-              if (const ImGuiPayload* payload =
-                      ImGui::AcceptDragDropPayload(PlayloadType::ENTITY)) {
-                IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
-                auto payload_e = *(const MyECS::Entity*)payload->Data;
-
-                if (auto payload_e_p =
-                        hierarchy->world->entityMngr.Get<Parent>(payload_e)) {
-                  auto parentChildren =
-                      hierarchy->world->entityMngr.Get<Children>(
-                          payload_e_p->value);
-                  parentChildren->value.erase(payload_e);
-                  hierarchy->world->entityMngr.Detach(
-                      payload_e, &MyECS::CmptType::Of<Parent>, 1);
-                }
-              }
-              ImGui::EndDragDropTarget();
-            }
-
-            auto inspector = w->entityMngr.GetSingleton<Inspector>();
-            MyECS::ArchetypeFilter filter;
-            filter.none = {MyECS::CmptType::Of<Parent>};
-            hierarchy->world->RunEntityJob(
-                [=](MyECS::Entity e) {
-                  detail::HierarchyPrintEntity(hierarchy, e, inspector);
-                },
-                false, filter);
+      if (ImGui::BeginPopup("Hierarchy_popup")) {
+        if (hierarchy->hover.Valid()) {
+          if (ImGui::MenuItem("Create Empty")) {
+            auto [e, p] = hierarchy->world->entityMngr.Create<Parent>();
+            p->value = hierarchy->hover;
+            auto [children] =
+                hierarchy->world->entityMngr.Attach<Children>(hierarchy->hover);
+            children->value.insert(e);
           }
-          ImGui::End();
-        });
-      },
-      "HierarchySystem");
+
+          if (ImGui::MenuItem("Delete")) {
+            detail::HierarchyDeleteEntity(hierarchy->world, hierarchy->hover);
+
+            hierarchy->hover = MyECS::Entity::Invalid();
+            if (!hierarchy->world->entityMngr.Exist(hierarchy->select))
+              hierarchy->select = MyECS::Entity::Invalid();
+          }
+        } else {
+          if (ImGui::MenuItem("Create Empty Entity"))
+            hierarchy->world->entityMngr.Create();
+        }
+
+        ImGui::EndPopup();
+      } else
+        hierarchy->hover = MyECS::Entity::Invalid();
+
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload =
+                ImGui::AcceptDragDropPayload(PlayloadType::ENTITY)) {
+          IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
+          auto payload_e = *(const MyECS::Entity*)payload->Data;
+
+          if (auto payload_e_p =
+                  hierarchy->world->entityMngr.Get<Parent>(payload_e)) {
+            auto parentChildren =
+                hierarchy->world->entityMngr.Get<Children>(payload_e_p->value);
+            parentChildren->value.erase(payload_e);
+            hierarchy->world->entityMngr.Detach(
+                payload_e, &MyECS::CmptType::Of<Parent>, 1);
+          }
+        }
+        ImGui::EndDragDropTarget();
+      }
+
+      auto inspector = w->entityMngr.GetSingleton<Inspector>();
+      MyECS::ArchetypeFilter filter;
+      filter.none = {MyECS::CmptType::Of<Parent>};
+      hierarchy->world->RunEntityJob(
+          [=](MyECS::Entity e) {
+            detail::HierarchyPrintEntity(hierarchy, e, inspector);
+          },
+          false, filter);
+    }
+    ImGui::End();
+  });
 }

@@ -14,7 +14,7 @@ class StdPipeline final : public IPipeline {
 
   // data : cpu -> gpu
   // run in update
-  virtual void BeginFrame(const MyECS::World&,
+  virtual void BeginFrame(const std::vector<const MyECS::World*>& worlds,
                           const CameraData& cameraData) override;
 
   // run in draw

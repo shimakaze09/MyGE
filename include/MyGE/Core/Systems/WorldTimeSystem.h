@@ -7,12 +7,9 @@
 #include <MyECS/World.h>
 
 namespace My::MyGE {
-class WorldTimeSystem : public MyECS::System {
- public:
-  using MyECS::System::System;
-
+struct WorldTimeSystem {
   static constexpr char SystemFuncName[] = "WorldTimeSystem";
 
-  virtual void OnUpdate(MyECS::Schedule& schedule) override;
+  static void OnUpdate(MyECS::Schedule& schedule);
 };
 }  // namespace My::MyGE

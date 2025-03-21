@@ -11,40 +11,40 @@
 
 namespace My::MyGE::detail {
 template <typename Value>
-void WriteVar(const Value& var, Serializer::SerializeContext ctx);
+void WriteVar(const Value& var, Serializer::SerializeContext& ctx);
 
 template <typename UserType>
-void WriteUserType(const UserType* obj, Serializer::SerializeContext ctx) {
+void WriteUserType(const UserType* obj, Serializer::SerializeContext& ctx) {
   if constexpr (HasTypeInfo<UserType>::value) {
-    ctx.writer->StartObject();
+    ctx.writer.StartObject();
     My::MySRefl::TypeInfo<UserType>::ForEachVarOf(
         *obj, [&ctx](auto field, const auto& var) {
-          ctx.writer->Key(field.name.data());
+          ctx.writer.Key(field.name.data());
           detail::WriteVar(var, ctx);
         });
-    ctx.writer->EndObject();
+    ctx.writer.EndObject();
   } else {
-    if (ctx.serializer->IsRegistered(GetID<UserType>()))
-      ctx.serializer->Visit(GetID<UserType>(), obj, ctx);
+    if (ctx.serializer.IsRegistered(GetID<UserType>()))
+      ctx.serializer.Visit(GetID<UserType>(), obj, ctx);
     else {
       assert("not support" && false);
-      ctx.writer->String(Serializer::Key::NOT_SUPPORT);
+      ctx.writer.String(Serializer::Key::NOT_SUPPORT);
     }
   }
 }
 
 template <size_t Idx, typename Variant>
 bool WriteVariantAt(const Variant& var, size_t idx,
-                    Serializer::SerializeContext ctx) {
+                    Serializer::SerializeContext& ctx) {
   if (idx != Idx)
     return false;
 
-  ctx.writer->StartObject();
-  ctx.writer->Key(Serializer::Key::INDEX);
-  ctx.writer->Uint64(var.index());
-  ctx.writer->Key(Serializer::Key::CONTENT);
+  ctx.writer.StartObject();
+  ctx.writer.Key(Serializer::Key::INDEX);
+  ctx.writer.Uint64(var.index());
+  ctx.writer.Key(Serializer::Key::CONTENT);
   WriteVar(std::get<std::variant_alternative_t<Idx, Variant>>(var), ctx);
-  ctx.writer->EndObject();
+  ctx.writer.EndObject();
 
   return true;
 }
@@ -52,91 +52,91 @@ bool WriteVariantAt(const Variant& var, size_t idx,
 // TODO : stop
 template <typename Variant, size_t... Ns>
 void WriteVariant(const Variant& var, std::index_sequence<Ns...>,
-                  Serializer::SerializeContext ctx) {
+                  Serializer::SerializeContext& ctx) {
   (WriteVariantAt<Ns>(var, var.index(), ctx), ...);
 }
 
 template <typename Value>
-void WriteVar(const Value& var, Serializer::SerializeContext ctx) {
+void WriteVar(const Value& var, Serializer::SerializeContext& ctx) {
   if constexpr (std::is_floating_point_v<Value>)
-    ctx.writer->Double(static_cast<double>(var));
+    ctx.writer.Double(static_cast<double>(var));
   else if constexpr (std::is_enum_v<Value>)
     WriteVar(static_cast<std::underlying_type_t<Value>>(var), ctx);
   else if constexpr (std::is_integral_v<Value>) {
     if constexpr (std::is_same_v<Value, bool>)
-      ctx.writer->Bool(var);
+      ctx.writer.Bool(var);
     else {
       constexpr size_t size = sizeof(Value);
       if constexpr (std::is_unsigned_v<Value>) {
         if constexpr (size <= sizeof(unsigned int))
-          ctx.writer->Uint(static_cast<std::uint32_t>(var));
+          ctx.writer.Uint(static_cast<std::uint32_t>(var));
         else
-          ctx.writer->Uint64(static_cast<std::uint64_t>(var));
+          ctx.writer.Uint64(static_cast<std::uint64_t>(var));
       } else {
         if constexpr (size <= sizeof(int))
-          ctx.writer->Int(static_cast<std::int32_t>(var));
+          ctx.writer.Int(static_cast<std::int32_t>(var));
         else
-          ctx.writer->Int64(static_cast<std::int64_t>(var));
+          ctx.writer.Int64(static_cast<std::int64_t>(var));
       }
     }
   } else if constexpr (std::is_same_v<Value, std::string>)
-    ctx.writer->String(var);
+    ctx.writer.String(var);
   else if constexpr (std::is_pointer_v<Value>) {
     if (var == nullptr)
-      ctx.writer->Null();
+      ctx.writer.Null();
     else {
       auto& assetMngr = AssetMngr::Instance();
       if (assetMngr.Contains(var))
-        ctx.writer->String(
+        ctx.writer.String(
             assetMngr.AssetPathToGUID(assetMngr.GetAssetPath(var)).str());
       else {
         assert("not support" && false);
-        ctx.writer->Null();
+        ctx.writer.Null();
       }
     }
   } else if constexpr (std::is_same_v<Value, MyECS::Entity>)
-    ctx.writer->Uint64(var.Idx());
+    ctx.writer.Uint64(var.Idx());
   else if constexpr (ArrayTraits<Value>::isArray) {
-    ctx.writer->StartArray();
+    ctx.writer.StartArray();
     for (size_t i = 0; i < ArrayTraits<Value>::size; i++)
       WriteVar(ArrayTraits_Get(var, i), ctx);
-    ctx.writer->EndArray();
+    ctx.writer.EndArray();
   } else if constexpr (OrderContainerTraits<Value>::isOrderContainer) {
-    ctx.writer->StartArray();
+    ctx.writer.StartArray();
     auto iter_end = OrderContainerTraits_End(var);
     for (auto iter = OrderContainerTraits_Begin(var); iter != iter_end; iter++)
       WriteVar(*iter, ctx);
-    ctx.writer->EndArray();
+    ctx.writer.EndArray();
   } else if constexpr (MapTraits<Value>::isMap) {
     auto iter_end = MapTraits_End(var);
     if constexpr (std::is_same_v<std::string, MapTraits_KeyType<Value>>) {
-      ctx.writer->StartObject();
+      ctx.writer.StartObject();
       for (auto iter = MapTraits_Begin(var); iter != iter_end; ++iter) {
         const auto& key = MapTraits_Iterator_Key(iter);
         const auto& mapped = MapTraits_Iterator_Mapped(iter);
-        ctx.writer->Key(key);
+        ctx.writer.Key(key);
         WriteVar(mapped, ctx);
       }
-      ctx.writer->EndObject();
+      ctx.writer.EndObject();
     } else {
-      ctx.writer->StartArray();
+      ctx.writer.StartArray();
       for (auto iter = MapTraits_Begin(var); iter != iter_end; ++iter) {
         const auto& key = MapTraits_Iterator_Key(iter);
         const auto& mapped = MapTraits_Iterator_Mapped(iter);
-        ctx.writer->StartObject();
-        ctx.writer->Key(Serializer::Key::KEY);
+        ctx.writer.StartObject();
+        ctx.writer.Key(Serializer::Key::KEY);
         WriteVar(key, ctx);
-        ctx.writer->Key(Serializer::Key::MAPPED);
+        ctx.writer.Key(Serializer::Key::MAPPED);
         WriteVar(mapped, ctx);
-        ctx.writer->EndObject();
+        ctx.writer.EndObject();
       }
-      ctx.writer->EndArray();
+      ctx.writer.EndArray();
     }
   } else if constexpr (TupleTraits<Value>::isTuple) {
-    ctx.writer->StartArray();
+    ctx.writer.StartArray();
     std::apply([&](const auto&... elements) { (WriteVar(elements, ctx), ...); },
                var);
-    ctx.writer->EndArray();
+    ctx.writer.EndArray();
   } else if constexpr (My::is_instance_of_v<Value, std::variant>) {
     constexpr size_t N = std::variant_size_v<Value>;
     WriteVariant(var, std::make_index_sequence<N>{}, ctx);
@@ -146,12 +146,12 @@ void WriteVar(const Value& var, Serializer::SerializeContext ctx) {
 
 template <typename Value>
 Value ReadVar(const rapidjson::Value& jsonValueField,
-              Serializer::DeserializeContext ctx);
+              Serializer::DeserializeContext& ctx);
 
 template <size_t Idx, typename Variant>
 bool ReadVariantAt(Variant& var, size_t idx,
                    const rapidjson::Value& jsonValueContent,
-                   Serializer::DeserializeContext ctx) {
+                   Serializer::DeserializeContext& ctx) {
   if (idx != Idx)
     return false;
 
@@ -165,7 +165,7 @@ bool ReadVariantAt(Variant& var, size_t idx,
 template <typename Variant, size_t... Ns>
 void ReadVariant(Variant& var, std::index_sequence<Ns...>,
                  const rapidjson::Value& jsonValueField,
-                 Serializer::DeserializeContext ctx) {
+                 Serializer::DeserializeContext& ctx) {
   const auto& jsonObject = jsonValueField.GetObject();
   size_t idx = jsonObject[Serializer::Key::INDEX].GetUint64();
   const auto& jsonValueVariantData = jsonObject[Serializer::Key::CONTENT];
@@ -174,7 +174,7 @@ void ReadVariant(Variant& var, std::index_sequence<Ns...>,
 
 template <typename UserType>
 void ReadUserType(UserType* obj, const rapidjson::Value& jsonValueField,
-                  Serializer::DeserializeContext ctx) {
+                  Serializer::DeserializeContext& ctx) {
   if constexpr (HasTypeInfo<UserType>::value) {
     const auto& jsonObject = jsonValueField.GetObject();
     MySRefl::TypeInfo<UserType>::ForEachVarOf(*obj, [&](auto field, auto& var) {
@@ -193,8 +193,8 @@ void ReadUserType(UserType* obj, const rapidjson::Value& jsonValueField,
             ReadVar<std::remove_reference_t<decltype(var)>>(target->value, ctx);
     });
   } else {
-    if (ctx.deserializer->IsRegistered(GetID<UserType>()))
-      ctx.deserializer->Visit(GetID<UserType>(), obj, jsonValueField, ctx);
+    if (ctx.deserializer.IsRegistered(GetID<UserType>()))
+      ctx.deserializer.Visit(GetID<UserType>(), obj, jsonValueField, ctx);
     else
       assert("not support" && false);
   }
@@ -202,7 +202,7 @@ void ReadUserType(UserType* obj, const rapidjson::Value& jsonValueField,
 
 template <typename Value>
 Value ReadVar(const rapidjson::Value& jsonValueField,
-              Serializer::DeserializeContext ctx) {
+              Serializer::DeserializeContext& ctx) {
   if constexpr (std::is_floating_point_v<Value>)
     return static_cast<Value>(jsonValueField.GetDouble());
   if constexpr (std::is_enum_v<Value>)
@@ -238,7 +238,7 @@ Value ReadVar(const rapidjson::Value& jsonValueField,
     }
   } else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
     auto index = jsonValueField.GetUint64();
-    return ctx.entityIdxMap->find(index)->second;
+    return ctx.entityIdxMap.at(index);
   } else {
     // compound type
     static_assert(std::is_default_constructible_v<Value>);
@@ -305,7 +305,7 @@ template <typename Func>
 void Serializer::RegisterComponentSerializeFunction(Func&& func) {
   using ArgList = FuncTraits_ArgList<Func>;
   static_assert(Length_v<ArgList> == 2);
-  static_assert(std::is_same_v<At_t<ArgList, 1>, SerializeContext>);
+  static_assert(std::is_same_v<At_t<ArgList, 1>, SerializeContext&>);
   using ConstCmptPtr = At_t<ArgList, 0>;
   static_assert(std::is_pointer_v<ConstCmptPtr>);
   using ConstCmpt = std::remove_pointer_t<ConstCmptPtr>;
@@ -313,7 +313,7 @@ void Serializer::RegisterComponentSerializeFunction(Func&& func) {
   using Cmpt = std::remove_const_t<ConstCmpt>;
   RegisterComponentSerializeFunction(
       MyECS::CmptType::Of<Cmpt>,
-      [f = std::forward<Func>(func)](const void* p, SerializeContext ctx) {
+      [f = std::forward<Func>(func)](const void* p, SerializeContext& ctx) {
         f(reinterpret_cast<const Cmpt*>(p), ctx);
       });
 }
@@ -323,7 +323,7 @@ void Serializer::RegisterComponentDeserializeFunction(Func&& func) {
   using ArgList = FuncTraits_ArgList<Func>;
   static_assert(Length_v<ArgList> == 3);
   static_assert(std::is_same_v<At_t<ArgList, 1>, const rapidjson::Value&>);
-  static_assert(std::is_same_v<At_t<ArgList, 2>, DeserializeContext>);
+  static_assert(std::is_same_v<At_t<ArgList, 2>, DeserializeContext&>);
   using CmptPtr = At_t<ArgList, 0>;
   static_assert(std::is_pointer_v<CmptPtr>);
   using Cmpt = std::remove_pointer_t<CmptPtr>;
@@ -332,7 +332,7 @@ void Serializer::RegisterComponentDeserializeFunction(Func&& func) {
       MyECS::CmptType::Of<Cmpt>,
       [f = std::forward<Func>(func)](void* p,
                                      const rapidjson::Value& jsonValueCmpt,
-                                     DeserializeContext ctx) {
+                                     DeserializeContext& ctx) {
         f(reinterpret_cast<Cmpt*>(p), jsonValueCmpt, ctx);
       });
 }
@@ -341,7 +341,7 @@ template <typename Func>
 void Serializer::RegisterUserTypeSerializeFunction(Func&& func) {
   using ArgList = FuncTraits_ArgList<Func>;
   static_assert(Length_v<ArgList> == 2);
-  static_assert(std::is_same_v<At_t<ArgList, 1>, SerializeContext>);
+  static_assert(std::is_same_v<At_t<ArgList, 1>, SerializeContext&>);
   using ConstUserTypePtr = At_t<ArgList, 0>;
   static_assert(std::is_pointer_v<ConstUserTypePtr>);
   using ConstUserType = std::remove_pointer_t<ConstUserTypePtr>;
@@ -349,7 +349,7 @@ void Serializer::RegisterUserTypeSerializeFunction(Func&& func) {
   using UserType = std::remove_const_t<ConstUserType>;
   RegisterUserTypeSerializeFunction(
       GetID<UserType>(),
-      [f = std::forward<Func>(func)](const void* p, SerializeContext ctx) {
+      [f = std::forward<Func>(func)](const void* p, SerializeContext& ctx) {
         f(reinterpret_cast<const UserType*>(p), ctx);
       });
 }
@@ -359,7 +359,7 @@ void Serializer::RegisterUserTypeDeserializeFunction(Func&& func) {
   using ArgList = FuncTraits_ArgList<Func>;
   static_assert(Length_v<ArgList> == 3);
   static_assert(std::is_same_v<At_t<ArgList, 1>, const rapidjson::Value&>);
-  static_assert(std::is_same_v<At_t<ArgList, 2>, DeserializeContext>);
+  static_assert(std::is_same_v<At_t<ArgList, 2>, DeserializeContext&>);
   using UserTypePtr = At_t<ArgList, 0>;
   static_assert(std::is_pointer_v<UserTypePtr>);
   using UserType = std::remove_pointer_t<UserTypePtr>;
@@ -367,7 +367,7 @@ void Serializer::RegisterUserTypeDeserializeFunction(Func&& func) {
   RegisterUserTypeDeserializeFunction(
       GetID<UserType>(), [f = std::forward<Func>(func)](
                              void* p, const rapidjson::Value& jsonValueCmpt,
-                             DeserializeContext ctx) {
+                             DeserializeContext& ctx) {
         f(reinterpret_cast<UserType*>(p), jsonValueCmpt, ctx);
       });
 }

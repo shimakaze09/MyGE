@@ -23,7 +23,6 @@ void My::MyGE::detail::InitMyECS(lua_State* L) {
   MyLuaPP::Register<MyECS::Schedule>(L);
   MyLuaPP::Register<MyECS::SingletonLocator>(L);
   MyLuaPP::Register<MyECS::SingletonsView>(L);
-  MyLuaPP::Register<MyECS::System>(L);
   MyLuaPP::Register<MyECS::SystemMngr>(L);
   MyLuaPP::Register<MyECS::World>(L);
 }

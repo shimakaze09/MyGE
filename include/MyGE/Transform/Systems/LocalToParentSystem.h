@@ -8,14 +8,12 @@
 #include <MyGM/transform.h>
 
 namespace My::MyGE {
-class LocalToParentSystem : public MyECS::System {
- public:
-  using System::System;
-
+struct LocalToParentSystem {
   static constexpr char SystemFuncName[] = "LocalToParentSystem";
 
-  void ChildLocalToWorld(const transformf& parent_l2w, MyECS::Entity e);
+  static void ChildLocalToWorld(MyECS::World* w, const transformf& parent_l2w,
+                                MyECS::Entity e);
 
-  virtual void OnUpdate(MyECS::Schedule& schedule) override;
+  static void OnUpdate(MyECS::Schedule& schedule);
 };
 }  // namespace My::MyGE

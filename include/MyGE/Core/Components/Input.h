@@ -5,6 +5,7 @@
 #pragma once
 
 #include <MyGM/point.h>
+#include <MyGM/val.h>
 
 namespace My::MyGE {
 struct Input {
@@ -12,9 +13,10 @@ struct Input {
   //           [Basic]
   // ============================
 
+  valf2 DisplaySize;
+
   // Mouse position, in pixels.
-  // Set to (-FLT_MAX, -FLT_MAX) if mouse is unavailable (on another screen,
-  // etc.)
+  // Set to (-FLT_MAX, -FLT_MAX) if mouse is unavailable (on another screen, etc.)
   pointf2 MousePos;
 
   // Mouse buttons: 0=left, 1=right, 2=middle + extras
@@ -24,8 +26,7 @@ struct Input {
   float MouseWheel;
 
   // Mouse wheel Horizontal.
-  // Most users don't have a mouse with an horizontal wheel, may not be filled
-  // by all back-ends.
+  // Most users don't have a mouse with an horizontal wheel, may not be filled by all back-ends.
   float MouseWheelH;
 
   // Keyboard modifier pressed: Control
@@ -40,9 +41,9 @@ struct Input {
   // Keyboard modifier pressed: Cmd/Super/Windows
   bool KeySuper;
 
-  // Keyboard keys that are pressed (ideally left in the "native" order your
-  // engine has access to keyboard keys, so you can use your own defines/enums
-  // for keys). ASCII : 0-255 256 - 511 ?
+  // Keyboard keys that are pressed (ideally left in the "native" order your engine has access to keyboard keys, so you can use your own defines/enums for keys).
+  // ASCII : 0-255
+  // 256 - 511 ?
   bool KeysDown[512];
 
   // ============================
@@ -50,17 +51,17 @@ struct Input {
   // ============================
   // Forward compatibility not guaranteed!
 
+  bool MouseInDisplay;
+  bool MouseInDisplayPre;
+
   // Mouse button went from !Down to Down
   bool MouseClicked[5];
 
-  // Previous mouse position (note that MouseDelta is not necessary ==
-  // MousePos-MousePosPrev, in case either position is invalid)
+  // Previous mouse position (note that MouseDelta is not necessary == MousePos-MousePosPrev, in case either position is invalid)
   pointf2 MousePosPrev;
 
   // Mouse delta.
-  // Note that this is zero if either current or previous position are invalid
-  // (-FLT_MAX,-FLT_MAX), so a disappearing/reappearing mouse won't have a huge
-  // delta.
+  // Note that this is zero if either current or previous position are invalid (-FLT_MAX,-FLT_MAX), so a disappearing/reappearing mouse won't have a huge delta.
   vecf2 MouseDelta;
 
   // Position at time of clicking

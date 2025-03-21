@@ -1,17 +1,15 @@
-#include "LuaSystem.h"
+//
+// Created by Admin on 20/03/2025.
+//
+
+#include "LuaECSAgency.h"
 
 #include <MyGE/ScriptSystem/LuaContext.h>
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
 
 using namespace My::MyGE;
 
-void LuaSystem::RegisterSystem(MyECS::World* world, std::string name,
-                               sol::function onUpdate) {
-  world->systemMngr.Register(
-      std::unique_ptr<LuaSystem>(new LuaSystem(world, name, onUpdate)));
-}
-
-const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
+const My::MyECS::SystemFunc* LuaECSAgency::RegisterEntityJob(
     MyECS::Schedule* s, sol::function systemFunc, std::string name,
     MyECS::ArchetypeFilter filter, MyECS::CmptLocator cmptLocator,
     MyECS::SingletonLocator singletonLocator, bool isParallel) {
@@ -43,7 +41,7 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
             cmpts.push_back(chunk.GetCmptArray(t));
             types.push_back(t);
             cmptPtrs.emplace_back(t, cmpts.back());
-            sizes.push_back(w->cmptTraits.Sizeof(t));
+            sizes.push_back(w->entityMngr.cmptTraits.Sizeof(t));
           }
 
           size_t i = 0;
@@ -63,7 +61,7 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterEntityJob(
   return sysfunc;
 }
 
-const My::MyECS::SystemFunc* LuaSystem::RegisterChunkJob(
+const My::MyECS::SystemFunc* LuaECSAgency::RegisterChunkJob(
     MyECS::Schedule* s, sol::function systemFunc, std::string name,
     MyECS::ArchetypeFilter filter, MyECS::SingletonLocator singletonLocator,
     bool isParallel) {
@@ -85,7 +83,7 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterChunkJob(
   return sysfunc;
 }
 
-const My::MyECS::SystemFunc* LuaSystem::RegisterJob(
+const My::MyECS::SystemFunc* LuaECSAgency::RegisterJob(
     MyECS::Schedule* s, sol::function systemFunc, std::string name,
     MyECS::SingletonLocator singletonLocator) {
   auto bytes = systemFunc.dump();
@@ -102,17 +100,4 @@ const My::MyECS::SystemFunc* LuaSystem::RegisterJob(
       },
       std::move(name), std::move(singletonLocator));
   return sysfunc;
-}
-
-LuaSystem::LuaSystem(MyECS::World* world, std::string name,
-                     sol::function onUpdate)
-    : MyECS::System{world, name},
-      luaCtx{LuaCtxMngr::Instance().GetContext(world)} {
-  sol::state_view lua{luaCtx->Main()};
-  auto bytecode = onUpdate.dump();
-  mainOnUpdate = lua.load(bytecode.as_string_view());
-}
-
-void LuaSystem::OnUpdate(MyECS::Schedule& schedule) {
-  mainOnUpdate.call(&schedule);
 }

@@ -5,15 +5,11 @@
 #pragma once
 
 #include <MyECS/World.h>
-#include <MyGM/transform.h>
 
 namespace My::MyGE {
-class InputSystem : public MyECS::System {
- public:
-  using System::System;
-
+struct InputSystem {
   static constexpr char SystemFuncName[] = "InputSystem";
 
-  virtual void OnUpdate(MyECS::Schedule& schedule) override;
+  static void OnUpdate(MyECS::Schedule& schedule);
 };
 }  // namespace My::MyGE

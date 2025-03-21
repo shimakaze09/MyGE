@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <MyLuaPP/MyLuaPP.h>
 #include <MySRefl/MySRefl.h>
 
 template <>
@@ -11,9 +10,10 @@ struct My::MySRefl::TypeInfo<My::MyECS::Schedule>
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {
-      Field{"LockFilter", &My::MyECS::Schedule::LockFilter},
       Field{"Order", &My::MyECS::Schedule::Order},
+      Field{"LockFilter", &My::MyECS::Schedule::LockFilter},
       Field{"InsertNone", &My::MyECS::Schedule::InsertNone},
       Field{"EraseNone", &My::MyECS::Schedule::EraseNone},
+      Field{"RegisterCommand", &My::MyECS::Schedule::RegisterCommand},
   };
 };

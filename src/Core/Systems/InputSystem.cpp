@@ -19,6 +19,7 @@ void InputSystem::OnUpdate(Schedule& schedule) {
         // ============================
         //           [Basic]
         // ============================
+        input->DisplaySize = io.DisplaySize;
         input->MousePos = io.MousePos;
         memcpy(input->MouseDown, io.MouseDown, 5 * sizeof(bool));
         input->MouseWheel = io.MouseWheel;
@@ -34,6 +35,10 @@ void InputSystem::OnUpdate(Schedule& schedule) {
         //            [Pro]
         // ============================
         // Forward compatibility not guaranteed!
+        input->MouseInDisplayPre = input->MouseInDisplay;
+        input->MouseInDisplay =
+            io.MousePos.x >= 0.f && io.MousePos.x <= io.DisplaySize.x &&
+            io.MousePos.y >= 0.f && io.MousePos.y <= io.DisplaySize.y;
 
         input->MousePosPrev = io.MousePosPrev;
         input->MouseDelta = io.MouseDelta;

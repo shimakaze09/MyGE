@@ -8,6 +8,8 @@
 
 #include <MyECS/Entity.h>
 
+#include <vector>
+
 namespace My::MyECS {
 class World;
 }  // namespace My::MyECS
@@ -36,7 +38,7 @@ class IPipeline {
 
   // data : cpu -> gpu
   // run in update
-  virtual void BeginFrame(const MyECS::World& world,
+  virtual void BeginFrame(const std::vector<const MyECS::World*>& worlds,
                           const CameraData& cameraData) = 0;
   // run in draw
   virtual void Render(ID3D12Resource* rt) = 0;
