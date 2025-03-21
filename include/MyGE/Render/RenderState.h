@@ -83,7 +83,7 @@ struct RenderState {
 
   StencilState stencilState;
 
-  BlendState blendState;
+  BlendState blendStates[8];
 
   uint8_t colorMask[8] = {0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f};
 };

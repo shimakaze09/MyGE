@@ -5,9 +5,9 @@
 
 namespace My::MyGE {
 enum class RootDescriptorType {
-  CBV,
   SRV,
   UAV,
+  CBV,
 };
 
 struct DescriptorRange {

@@ -133,7 +133,7 @@ struct My::MySRefl::TypeInfo<My::MyGE::RenderState>
       Field{"zTest", &My::MyGE::RenderState::zTest},
       Field{"zWrite", &My::MyGE::RenderState::zWrite},
       Field{"stencilState", &My::MyGE::RenderState::stencilState},
-      Field{"blendState", &My::MyGE::RenderState::blendState},
+      Field{"blendStates", &My::MyGE::RenderState::blendStates},
       Field{"colorMask", &My::MyGE::RenderState::colorMask},
   };
 };

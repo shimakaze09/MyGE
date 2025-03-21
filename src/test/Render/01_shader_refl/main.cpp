@@ -20,6 +20,7 @@ class TestApp : public DX12App {
 
  private:
   virtual void Update() override {}
+
   virtual void Draw() override {}
 
   virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -139,7 +140,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     TestApp theApp(hInstance);
-    if (!theApp.Initialize()) return 1;
+    if (!theApp.Initialize())
+      return 1;
 
     int rst = theApp.Run();
     return rst;
@@ -152,25 +154,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 TestApp::TestApp(HINSTANCE hInstance) : DX12App(hInstance) {}
 
 TestApp::~TestApp() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 }
 
 void PrintL(const std::string& str, size_t indent) {
-  for (size_t i = 0; i < indent; i++) OutputDebugStringA("  ");
+  for (size_t i = 0; i < indent; i++)
+    OutputDebugStringA("  ");
   OutputDebugStringA(str.c_str());
   OutputDebugStringA("\n");
 }
 
 void PrintL(const std::wstring& str, size_t indent) {
-  for (size_t i = 0; i < indent; i++) OutputDebugStringA("  ");
+  for (size_t i = 0; i < indent; i++)
+    OutputDebugStringA("  ");
   OutputDebugStringW(str.c_str());
   OutputDebugStringW(L"\n");
 }
 
 bool TestApp::Initialize() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   OnResize();
   FlushCommandQueue();
@@ -283,9 +290,9 @@ bool TestApp::Initialize() {
       }
     };
     PrintRefl(RsrcMngrDX12::Instance().GetShaderRefl_vs(shader, 0),
-              shader->shaderName + " vs");
+              shader->name + " vs");
     PrintRefl(RsrcMngrDX12::Instance().GetShaderRefl_ps(shader, 0),
-              shader->shaderName + " ps");
+              shader->name + " ps");
   };
 
   auto geometry = ShaderMngr::Instance().Get("StdPipeline/Geometry");

@@ -1,3 +1,16 @@
+# myshader
+SET(target_dir "${PROJECT_SOURCE_DIR}/src/Asset/ShaderCompiler/_deps")
+IF (NOT EXISTS ${target_dir})
+    ANTLR4_GENERATE(
+            GEN_VISITOR
+            GEN_LISTENER
+            G4 "${PROJECT_SOURCE_DIR}/cmake/Shader.g4"
+            NAMESPACE My::MyGE::details
+            DIR ${target_dir}
+    )
+ENDIF ()
+
+# deps
 SET(libs "")
 SET(defines "")
 
@@ -13,6 +26,8 @@ ADD_TARGET(
         MODE STATIC
         SOURCE
         "${PROJECT_SOURCE_DIR}/include/MyGE/Asset"
+        "${PROJECT_SOURCE_DIR}/cmake/Shader.g4"
+        ${ushader_parser_files}
         INC
         "${PROJECT_SOURCE_DIR}/include"
         LIB
@@ -21,6 +36,8 @@ ADD_TARGET(
         My::MyGE__deps_tinyobjloader
         My::MyGE_ScriptSystem
         ${libs}
+        LIB_PRIVATE
+        My::MyANTLR_runtime
         DEFINE_PRIVATE
         ${defines}
 )

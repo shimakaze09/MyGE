@@ -473,16 +473,16 @@ bool RsrcMngrDX12::RegisterShader(const Shader* shader) {
   for (size_t i = 0; i < shader->passes.size(); i++) {
     const auto& pass = shader->passes[i];
     Impl::ShaderCompileData::PassData passdata;
-    shaderCompileData.passes[i].vsByteCode = MyDX12::Util::CompileShader(
-        shader->hlslFile->GetText(), macros, pass.vertexName,
-        "vs_" + shader->targetName, &d3dInclude);
+    shaderCompileData.passes[i].vsByteCode =
+        MyDX12::Util::CompileShader(shader->hlslFile->GetText(), macros,
+                                    pass.vertexName, "vs_5_0", &d3dInclude);
     if (!shaderCompileData.passes[i].vsByteCode) {
       pImpl->shaderMap.erase(shader->GetInstanceID());
       return false;
     }
-    shaderCompileData.passes[i].psByteCode = MyDX12::Util::CompileShader(
-        shader->hlslFile->GetText(), macros, pass.fragmentName,
-        "ps_" + shader->targetName, &d3dInclude);
+    shaderCompileData.passes[i].psByteCode =
+        MyDX12::Util::CompileShader(shader->hlslFile->GetText(), macros,
+                                    pass.fragmentName, "ps_5_0", &d3dInclude);
     if (!shaderCompileData.passes[i].psByteCode) {
       pImpl->shaderMap.erase(shader->GetInstanceID());
       return false;

@@ -12,8 +12,7 @@ struct My::MySRefl::TypeInfo<My::MyGE::Shader>
 
   static constexpr FieldList fields = {
       Field{"hlslFile", &My::MyGE::Shader::hlslFile},
-      Field{"shaderName", &My::MyGE::Shader::shaderName},
-      Field{"targetName", &My::MyGE::Shader::targetName},
+      Field{"name", &My::MyGE::Shader::name},
       Field{"rootParameters", &My::MyGE::Shader::rootParameters},
       Field{"properties", &My::MyGE::Shader::properties},
       Field{"passes", &My::MyGE::Shader::passes},
