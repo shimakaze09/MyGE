@@ -10,7 +10,7 @@ using namespace My::MyGE;
 
 PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
     ShaderCBMngrDX12& shaderCBMngr, const Shader* shader,
-    const std::vector<const Material*>& materials,
+    const std::unordered_set<const Material*>& materials,
     const std::set<std::string_view>& commonCBs) {
   PipelineBase::ShaderCBDesc rst;
   assert(shader);
@@ -48,8 +48,10 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
 
   auto buffer = shaderCBMngr.GetBuffer(shader);
   buffer->FastReserve(rst.materialCBSize * materials.size());
-  for (size_t i = 0; i < materials.size(); i++)
-    rst.indexMap[materials[i]] = i;
+  for (auto material : materials) {
+    size_t idx = rst.indexMap.size();
+    rst.indexMap[material] = idx;
+  }
 
   auto UpdateShaderCBsForRefl = [&](std::set<size_t>& flags,
                                     const Material* material,
@@ -278,4 +280,19 @@ void PipelineBase::SetPSODescForRenderState(
       static_cast<D3D12_COMPARISON_FUNC>(renderState.zTest);
   desc.DepthStencilState.DepthWriteMask =
       static_cast<D3D12_DEPTH_WRITE_MASK>(renderState.zWrite);
+  if (renderState.blendState.blendEnable) {
+    desc.BlendState.RenderTarget[0].BlendEnable = TRUE;
+    desc.BlendState.RenderTarget[0].SrcBlend =
+        static_cast<D3D12_BLEND>(renderState.blendState.srcBlend);
+    desc.BlendState.RenderTarget[0].DestBlend =
+        static_cast<D3D12_BLEND>(renderState.blendState.destBlend);
+    desc.BlendState.RenderTarget[0].BlendOp =
+        static_cast<D3D12_BLEND_OP>(renderState.blendState.blendOp);
+    desc.BlendState.RenderTarget[0].SrcBlendAlpha =
+        static_cast<D3D12_BLEND>(renderState.blendState.srcBlendAlpha);
+    desc.BlendState.RenderTarget[0].DestBlendAlpha =
+        static_cast<D3D12_BLEND>(renderState.blendState.destBlendAlpha);
+    desc.BlendState.RenderTarget[0].BlendOpAlpha =
+        static_cast<D3D12_BLEND_OP>(renderState.blendState.blendOpAlpha);
+  }
 }

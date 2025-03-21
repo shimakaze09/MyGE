@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace My::MyECS {
@@ -68,7 +69,7 @@ class PipelineBase {
 
   static ShaderCBDesc UpdateShaderCBs(
       ShaderCBMngrDX12& shaderCBMngr, const Shader* shader,
-      const std::vector<const Material*>& materials,
+      const std::unordered_set<const Material*>& materials,
       const std::set<std::string_view>& commonCBs);
   static void SetGraphicsRoot_CBV_SRV(
       ID3D12GraphicsCommandList* cmdList, ShaderCBMngrDX12& shaderCBMngr,

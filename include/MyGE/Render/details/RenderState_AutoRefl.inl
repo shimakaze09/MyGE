@@ -34,6 +34,62 @@ struct My::MySRefl::TypeInfo<My::MyGE::ZTest>
 };
 
 template <>
+struct My::MySRefl::TypeInfo<My::MyGE::BLEND>
+    : My::MySRefl::TypeInfoBase<My::MyGE::BLEND> {
+  static constexpr AttrList attrs = {};
+
+  static constexpr FieldList fields = {
+      Field{"ZERO", My::MyGE::BLEND::ZERO},
+      Field{"ONE", My::MyGE::BLEND::ONE},
+      Field{"SRC_COLOR", My::MyGE::BLEND::SRC_COLOR},
+      Field{"INV_SRC_COLOR", My::MyGE::BLEND::INV_SRC_COLOR},
+      Field{"SRC_ALPHA", My::MyGE::BLEND::SRC_ALPHA},
+      Field{"INV_SRC_ALPHA", My::MyGE::BLEND::INV_SRC_ALPHA},
+      Field{"DEST_ALPHA", My::MyGE::BLEND::DEST_ALPHA},
+      Field{"INV_DEST_ALPHA", My::MyGE::BLEND::INV_DEST_ALPHA},
+      Field{"DEST_COLOR", My::MyGE::BLEND::DEST_COLOR},
+      Field{"INV_DEST_COLOR", My::MyGE::BLEND::INV_DEST_COLOR},
+      Field{"SRC_ALPHA_SAT", My::MyGE::BLEND::SRC_ALPHA_SAT},
+      Field{"BLEND_FACTOR", My::MyGE::BLEND::BLEND_FACTOR},
+      Field{"INV_BLEND_FACTOR", My::MyGE::BLEND::INV_BLEND_FACTOR},
+      Field{"SRC1_COLOR", My::MyGE::BLEND::SRC1_COLOR},
+      Field{"INV_SRC1_COLOR", My::MyGE::BLEND::INV_SRC1_COLOR},
+      Field{"SRC1_ALPHA", My::MyGE::BLEND::SRC1_ALPHA},
+      Field{"INV_SRC1_ALPHA", My::MyGE::BLEND::INV_SRC1_ALPHA},
+  };
+};
+
+template <>
+struct My::MySRefl::TypeInfo<My::MyGE::BLEND_OP>
+    : My::MySRefl::TypeInfoBase<My::MyGE::BLEND_OP> {
+  static constexpr AttrList attrs = {};
+
+  static constexpr FieldList fields = {
+      Field{"ADD", My::MyGE::BLEND_OP::ADD},
+      Field{"SUBTRACT", My::MyGE::BLEND_OP::SUBTRACT},
+      Field{"REV_SUBTRACT", My::MyGE::BLEND_OP::REV_SUBTRACT},
+      Field{"MIN", My::MyGE::BLEND_OP::MIN},
+      Field{"MAX", My::MyGE::BLEND_OP::MAX},
+  };
+};
+
+template <>
+struct My::MySRefl::TypeInfo<My::MyGE::BlendState>
+    : My::MySRefl::TypeInfoBase<My::MyGE::BlendState> {
+  static constexpr AttrList attrs = {};
+
+  static constexpr FieldList fields = {
+      Field{"blendEnable", &My::MyGE::BlendState::blendEnable},
+      Field{"srcBlend", &My::MyGE::BlendState::srcBlend},
+      Field{"destBlend", &My::MyGE::BlendState::destBlend},
+      Field{"blendOp", &My::MyGE::BlendState::blendOp},
+      Field{"srcBlendAlpha", &My::MyGE::BlendState::srcBlendAlpha},
+      Field{"destBlendAlpha", &My::MyGE::BlendState::destBlendAlpha},
+      Field{"blendOpAlpha", &My::MyGE::BlendState::blendOpAlpha},
+  };
+};
+
+template <>
 struct My::MySRefl::TypeInfo<My::MyGE::RenderState>
     : My::MySRefl::TypeInfoBase<My::MyGE::RenderState> {
   static constexpr AttrList attrs = {};
@@ -42,5 +98,6 @@ struct My::MySRefl::TypeInfo<My::MyGE::RenderState>
       Field{"cullMode", &My::MyGE::RenderState::cullMode},
       Field{"zTest", &My::MyGE::RenderState::zTest},
       Field{"zWrite", &My::MyGE::RenderState::zWrite},
+      Field{"blendState", &My::MyGE::RenderState::blendState},
   };
 };

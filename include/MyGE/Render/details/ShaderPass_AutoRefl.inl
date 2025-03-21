@@ -14,5 +14,6 @@ struct My::MySRefl::TypeInfo<My::MyGE::ShaderPass>
       Field{"fragmentName", &My::MyGE::ShaderPass::fragmentName},
       Field{"renderState", &My::MyGE::ShaderPass::renderState},
       Field{"tags", &My::MyGE::ShaderPass::tags},
+      Field{"queue", &My::MyGE::ShaderPass::queue},
   };
 };
