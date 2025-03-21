@@ -3,6 +3,7 @@
 #include <MyDX12/MyDX12.h>
 #include <MyECS/Entity.h>
 
+#include <unordered_map>
 #include <vector>
 
 namespace My::MyECS {
@@ -11,6 +12,8 @@ class World;
 
 namespace My::MyGE {
 struct Material;
+struct Shader;
+class ShaderCBMngrDX12;
 
 class PipelineBase {
  public:
@@ -51,8 +54,23 @@ class PipelineBase {
     Impl_Resize();
   }
 
-  static void SetGraphicsRootSRV(ID3D12GraphicsCommandList* cmdList,
-                                 const Material* material);
+  struct ShaderCBDesc {
+    // whole size == materialCBSize * globalOffsetMap.size()
+    // offset = indexMap[material] * materialCBSize + offsetRef[register index]
+
+    size_t materialCBSize{0};
+    std::map<size_t, size_t> offsetMap;  // register index -> local offset
+    std::unordered_map<const Material*, size_t> indexMap;
+  };
+
+  static ShaderCBDesc UpdateShaderCBs(ShaderCBMngrDX12& shaderCBMngr,
+                                      const Shader* shader,
+                                      std::vector<const Material*> materials,
+                                      std::set<std::string_view> commonCBs);
+  static void SetGraphicsRoot_CBV_SRV(ID3D12GraphicsCommandList* cmdList,
+                                      ShaderCBMngrDX12& shaderCBMngr,
+                                      const ShaderCBDesc& shaderCBDescconst,
+                                      const Material* material);
 
  protected:
   virtual void Impl_Resize() = 0;
