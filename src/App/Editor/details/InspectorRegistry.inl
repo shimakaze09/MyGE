@@ -10,11 +10,14 @@
 
 #include "../PlayloadType.h"
 
+#include <variant>
+
 namespace My::MyGE::detail {
 template <typename T>
 struct ValNTraits {
   static constexpr bool isValN = false;
 };
+
 template <typename T>
 struct ValNTraitsBase {
   static constexpr bool isValN = std::is_same_v<T, float>;
@@ -22,22 +25,31 @@ struct ValNTraitsBase {
 
 template <typename T, size_t N>
 struct ValNTraits<point<T, N>> : ValNTraitsBase<T> {};
+
 template <typename T, size_t N>
 struct ValNTraits<scale<T, N>> : ValNTraitsBase<T> {};
+
 template <typename T, size_t N>
 struct ValNTraits<val<T, N>> : ValNTraitsBase<T> {};
+
 template <typename T, size_t N>
 struct ValNTraits<vec<T, N>> : ValNTraitsBase<T> {};
+
 template <typename T>
 struct ValNTraits<euler<T>> : ValNTraitsBase<T> {};
+
 template <typename T>
 struct ValNTraits<normal<T>> : ValNTraitsBase<T> {};
+
 template <typename T>
 struct ValNTraits<quat<T>> : ValNTraitsBase<T> {};
+
 template <typename T>
 struct ValNTraits<rgb<T>> : ValNTraitsBase<T> {};
+
 template <typename T>
 struct ValNTraits<rgba<T>> : ValNTraitsBase<T> {};
+
 template <typename T>
 struct ValNTraits<svec<T>> : ValNTraitsBase<T> {};
 
@@ -46,6 +58,7 @@ template <typename T>
 struct ColorTraits {
   static constexpr bool isColor = false;
 };
+
 template <typename T>
 struct ColorTraitsBase {
   static constexpr bool isColor = std::is_floating_point_v<T>;
@@ -53,8 +66,28 @@ struct ColorTraitsBase {
 
 template <typename T>
 struct ColorTraits<rgb<T>> : ColorTraitsBase<T> {};
+
 template <typename T>
 struct ColorTraits<rgba<T>> : ColorTraitsBase<T> {};
+
+template <size_t Idx, typename Field, typename Variant>
+bool InspectVariantAt(Field field, Variant& var, size_t idx,
+                      InspectorRegistry::InspectContext ctx) {
+  if (idx != Idx)
+    return false;
+
+  using Value = std::variant_alternative_t<Idx, Variant>;
+  InspectVar(field, std::get<Value>(var), ctx);
+
+  return true;
+}
+
+// TODO : stop
+template <typename Field, typename Variant, size_t... Ns>
+void InspectVariant(Field field, Variant& var, std::index_sequence<Ns...>,
+                    InspectorRegistry::InspectContext ctx) {
+  (InspectVariantAt<Ns>(field, var, var.index(), ctx), ...);
+}
 
 template <typename Field, typename Value>
 void InspectVar(Field field, Value& var, InspectorRegistry::InspectContext ctx);
@@ -314,7 +347,8 @@ void InspectVar(Field field, Value& var,
           if (ImGui::Selectable(field.name.data(), isSelected))
             var = field.value;
 
-          if (isSelected) ImGui::SetItemDefaultFocus();
+          if (isSelected)
+            ImGui::SetItemDefaultFocus();
         });
         ImGui::EndCombo();
       }
@@ -419,7 +453,10 @@ void InspectVar(Field field, Value& var,
       ImGui::PopID();
       ImGui::TreePop();
     }
-  } else if constexpr (MapTraits<Value>::isMap) {
+  } else if constexpr (is_instance_of_v<Value, std::variant>)
+    InspectVariant(field, var,
+                   std::make_index_sequence<std::variant_size_v<Value>>{}, ctx);
+  else if constexpr (MapTraits<Value>::isMap) {
     if (ImGui::TreeNode(field.name.data())) {
       ImGui::PushID(field.name.data());
       auto iter_begin = MapTraits_Begin(var);
@@ -447,7 +484,8 @@ void InspectVar(Field field, Value& var,
         size_t size = origSize;
         static constexpr ImU64 u64_one = 1;
         ImGui::InputScalar("size", ImGuiDataType_U64, &size, &u64_one);
-        if (size != origSize) OrderContainerTraits_Resize(var, size);
+        if (size != origSize)
+          OrderContainerTraits_Resize(var, size);
       }
 
       auto iter_begin = OrderContainerTraits_Begin(var);

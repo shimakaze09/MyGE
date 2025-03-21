@@ -4,6 +4,8 @@
 #include <MyGM/MyGM.h>
 #include <MySRefl/MySRefl.h>
 
+#include <variant>
+
 namespace My::MyGE {
 enum class TestEnum { A, B, C };
 
@@ -44,6 +46,7 @@ struct TestInspector {
   // std::unordered_multimap<std::string, std::string> v_unordered_multimap;
   std::tuple<size_t, bool, float> v_tuple;
   std::pair<size_t, bool> v_pair;
+  std::variant<size_t, std::string> v_variant{std::string{"I'm varaint"}};
   // std::vector<Entity> v_vector_entity;
   // UserType v_usertype;
   TestEnum v_enum{TestEnum::B};
@@ -94,5 +97,6 @@ struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
       Field{"v_map", &My::MyGE::TestInspector::v_map},
       Field{"v_tuple", &My::MyGE::TestInspector::v_tuple},
       Field{"v_pair", &My::MyGE::TestInspector::v_pair},
+      Field{"v_variant", &My::MyGE::TestInspector::v_variant},
       Field{"v_enum", &My::MyGE::TestInspector::v_enum}};
 };

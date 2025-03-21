@@ -15,6 +15,7 @@ struct My::MySRefl::TypeInfo<My::MyGE::Shader>
       Field{"shaderName", &My::MyGE::Shader::shaderName},
       Field{"targetName", &My::MyGE::Shader::targetName},
       Field{"rootParameters", &My::MyGE::Shader::rootParameters},
+      Field{"properties", &My::MyGE::Shader::properties},
       Field{"passes", &My::MyGE::Shader::passes},
   };
 };

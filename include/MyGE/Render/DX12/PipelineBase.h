@@ -10,7 +10,9 @@ class World;
 }
 
 namespace My::MyGE {
-class IPipeline {
+struct Material;
+
+class PipelineBase {
  public:
   struct InitDesc {
     size_t numFrame;
@@ -18,16 +20,18 @@ class IPipeline {
     ID3D12CommandQueue* cmdQueue;
     DXGI_FORMAT rtFormat;
   };
+
   struct CameraData {
     CameraData(MyECS::Entity entity, const MyECS::World& world)
         : entity{entity}, world{world} {}
+
     MyECS::Entity entity;
     const MyECS::World& world;
   };
 
-  IPipeline(InitDesc initDesc) : initDesc{initDesc} {}
+  PipelineBase(InitDesc initDesc) : initDesc{initDesc} {}
 
-  virtual ~IPipeline() = default;
+  virtual ~PipelineBase() = default;
 
   // data : cpu -> gpu
   // run in update
@@ -47,6 +51,9 @@ class IPipeline {
     Impl_Resize();
   }
 
+  static void SetGraphicsRootSRV(ID3D12GraphicsCommandList* cmdList,
+                                 const Material* material);
+
  protected:
   virtual void Impl_Resize() = 0;
 
@@ -56,7 +63,9 @@ class IPipeline {
     D3D12_VIEWPORT screenViewport;
     D3D12_RECT scissorRect;
   };
+
   const InitDesc initDesc;
+
   const ResizeData& GetResizeData() const { return resizeData; }
 
  private:

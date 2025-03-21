@@ -1,9 +1,9 @@
 #pragma once
 
-#include "IPipeline.h"
+#include "PipelineBase.h"
 
 namespace My::MyGE {
-class StdPipeline final : public IPipeline {
+class StdPipeline final : public PipelineBase {
  public:
   StdPipeline(InitDesc desc);
   virtual ~StdPipeline();

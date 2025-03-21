@@ -1,8 +1,7 @@
+#include "../common/d3dApp.h"
+
 #include <MyGE/Asset/AssetMngr.h>
-#include <MyGE/Core/Components/Components.h>
-#include <MyGE/Core/GameTimer.h>
-#include <MyGE/Core/Scene.h>
-#include <MyGE/Core/Systems/Systems.h>
+
 #include <MyGE/Render/Components/Components.h>
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
@@ -14,7 +13,10 @@
 #include <MyGE/Render/Texture2D.h>
 #include <MyGE/Render/TextureCube.h>
 
-#include "../common/d3dApp.h"
+#include <MyGE/Core/Components/Components.h>
+#include <MyGE/Core/GameTimer.h>
+#include <MyGE/Core/Scene.h>
+#include <MyGE/Core/Systems/Systems.h>
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -77,7 +79,7 @@ class WorldApp : public D3DApp {
   My::MyECS::World world;
   My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
 
-  std::unique_ptr<My::MyGE::IPipeline> pipeline;
+  std::unique_ptr<My::MyGE::PipelineBase> pipeline;
 
   std::unique_ptr<My::MyDX12::FrameResourceMngr> frameRsrcMngr;
 };
@@ -91,7 +93,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     WorldApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    if (!theApp.Initialize())
+      return 0;
 
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
@@ -106,13 +109,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 WorldApp::WorldApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 WorldApp::~WorldApp() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 }
 
 bool WorldApp::Initialize() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
@@ -156,7 +162,7 @@ bool WorldApp::Initialize() {
   myCmdQueue.Execute(myGCmdList.raw.Get());
   deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
 
-  My::MyGE::IPipeline::InitDesc initDesc;
+  My::MyGE::PipelineBase::InitDesc initDesc;
   initDesc.device = myDevice.raw.Get();
   initDesc.rtFormat = mBackBufferFormat;
   initDesc.cmdQueue = myCmdQueue.raw.Get();
@@ -202,22 +208,26 @@ void WorldApp::Update() {
   world.RunEntityJob(
       [&](const My::MyGE::MeshFilter* meshFilter,
           const My::MyGE::MeshRenderer* meshRenderer) {
-        if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
+        if (!meshFilter->mesh || meshRenderer->materials.empty())
+          return;
 
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
 
-        for (const auto& mat : meshRenderer->materials) {
-          if (!mat) continue;
-          for (const auto& [name, tex] : mat->texture2Ds) {
-            if (!tex) continue;
-            My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
-          }
-          for (const auto& [name, tex] : mat->textureCubes) {
-            if (!tex) continue;
-            My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+        for (const auto& material : meshRenderer->materials) {
+          if (!material)
+            continue;
+          for (const auto& [name, property] : material->properties) {
+            if (std::holds_alternative<const My::MyGE::Texture2D*>(property)) {
+              My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+                  My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+                  std::get<const My::MyGE::Texture2D*>(property));
+            } else if (std::holds_alternative<const My::MyGE::TextureCube*>(
+                           property)) {
+              My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+                  My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+                  std::get<const My::MyGE::TextureCube*>(property));
+            }
           }
         }
       },
@@ -225,15 +235,17 @@ void WorldApp::Update() {
 
   if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>();
       skybox && skybox->material) {
-    for (const auto& [name, tex] : skybox->material->texture2Ds) {
-      if (!tex) continue;
-      My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
-    }
-    for (const auto& [name, tex] : skybox->material->textureCubes) {
-      if (!tex) continue;
-      My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    for (const auto& [name, property] : skybox->material->properties) {
+      if (std::holds_alternative<const My::MyGE::Texture2D*>(property)) {
+        My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+            My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+            std::get<const My::MyGE::Texture2D*>(property));
+      } else if (std::holds_alternative<const My::MyGE::TextureCube*>(
+                     property)) {
+        My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+            My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+            std::get<const My::MyGE::TextureCube*>(property));
+      }
     }
   }
 
@@ -244,7 +256,7 @@ void WorldApp::Update() {
   deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
   frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
 
-  std::vector<My::MyGE::IPipeline::CameraData> gameCameras;
+  std::vector<My::MyGE::PipelineBase::CameraData> gameCameras;
   My::MyECS::ArchetypeFilter camFilter{
       {My::MyECS::CmptAccessType::Of<My::MyGE::Camera>}};
   world.RunEntityJob(
@@ -269,7 +281,9 @@ void WorldApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void WorldApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void WorldApp::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {

@@ -91,7 +91,7 @@ struct AssetMngr::Impl {
 };
 
 AssetMngr::AssetMngr() : pImpl{new Impl} {
-  Serializer::Instance().RegisterUserTypes<Shader, ShaderPass>();
+  Serializer::Instance().RegisterUserTypes<Shader, ShaderPass, Material>();
 }
 
 AssetMngr::~AssetMngr() {
@@ -387,25 +387,11 @@ void* AssetMngr::LoadAsset(const std::filesystem::path& path) {
     pImpl->asset2path.emplace(texcube, path);
     return texcube;
   } else if (ext == ".mat") {
-    auto materialJSON = Impl::LoadJSON(path);
-    auto guidstr = materialJSON["shader"].GetString();
-    xg::Guid guid{guidstr};
-    auto shaderTarget = pImpl->guid2path.find(guid);
+    auto materialJSON = Impl::LoadText(path);
     auto material = new Material;
-    material->shader = shaderTarget != pImpl->guid2path.end()
-                           ? LoadAsset<Shader>(shaderTarget->second)
-                           : nullptr;
-    const auto& texture2DsJSON = materialJSON["texture2Ds"].GetObject();
-    for (const auto& [name, value] : texture2DsJSON) {
-      xg::Guid guid{value.GetString()};
-      material->texture2Ds.emplace(name.GetString(),
-                                   LoadAsset<Texture2D>(GUIDToAssetPath(guid)));
-    }
-    const auto& textureCubesJSON = materialJSON["textureCubes"].GetObject();
-    for (const auto& [name, value] : textureCubesJSON) {
-      xg::Guid guid{value.GetString()};
-      material->textureCubes.emplace(
-          name.GetString(), LoadAsset<TextureCube>(GUIDToAssetPath(guid)));
+    if (!Serializer::Instance().ToUserType(materialJSON, material)) {
+      delete material;
+      return nullptr;
     }
     pImpl->path2assert.emplace_hint(target, path, Impl::Asset{material});
     pImpl->asset2path.emplace(material, path);
@@ -524,28 +510,8 @@ bool AssetMngr::CreateAsset(void* ptr, const std::filesystem::path& path) {
     pImpl->asset2path.emplace(tex2d, path);
   } else if (ext == ".mat") {
     auto material = reinterpret_cast<Material*>(ptr);
-    auto guid = AssetPathToGUID(GetAssetPath(material->shader));
-    rapidjson::StringBuffer sb;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-    writer.StartObject();
-    writer.Key("shader");
-    writer.String(guid.str());
-    writer.Key("texture2Ds");
-    writer.StartObject();
-    for (const auto& [name, tex2D] : material->texture2Ds) {
-      writer.Key(name);
-      writer.String(AssetPathToGUID(GetAssetPath(tex2D)));
-    }
-    writer.EndObject();  // texture2Ds
-    writer.Key("textureCubes");
-    writer.StartObject();
-    for (const auto& [name, texcube] : material->textureCubes) {
-      writer.Key(name);
-      writer.String(AssetPathToGUID(GetAssetPath(texcube)));
-    }
-    writer.EndObject();  // textureCubes
 
-    writer.EndObject();
+    auto materialJSON = Serializer::Instance().ToJSON(material);
 
     auto dirPath = path.parent_path();
     if (!std::filesystem::is_directory(dirPath))
@@ -553,7 +519,7 @@ bool AssetMngr::CreateAsset(void* ptr, const std::filesystem::path& path) {
 
     std::ofstream ofs(path);
     assert(ofs.is_open());
-    ofs << sb.GetString();
+    ofs << materialJSON;
     ofs.close();
 
     ImportAsset(path);

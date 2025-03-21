@@ -11,7 +11,5 @@ struct My::MySRefl::TypeInfo<My::MyGE::Material>
 
   static constexpr FieldList fields = {
       Field{"shader", &My::MyGE::Material::shader},
-      Field{"texture2Ds", &My::MyGE::Material::texture2Ds},
-      Field{"textureCubes", &My::MyGE::Material::textureCubes},
-  };
+      Field{"properties", &My::MyGE::Material::properties}};
 };

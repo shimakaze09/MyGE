@@ -92,7 +92,7 @@ class MyDX12App : public My::MyGE::DX12App {
   My::MyECS::World world;
   My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
 
-  std::unique_ptr<My::MyGE::IPipeline> pipeline;
+  std::unique_ptr<My::MyGE::PipelineBase> pipeline;
   std::unique_ptr<My::MyGE::Mesh> dynamicMesh;
 
   bool show_demo_window = true;
@@ -268,7 +268,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
     int rst = theApp.Run();
     return rst;
-  } catch (My::MyDX12::Util::Exception& e) {
+  } catch (My::UDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     return 1;
   }
@@ -301,7 +301,7 @@ bool MyDX12App::Initialize() {
   BuildMaterials();
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
-  My::MyGE::IPipeline::InitDesc initDesc;
+  My::MyGE::PipelineBase::InitDesc initDesc;
   initDesc.device = myDevice.Get();
   initDesc.rtFormat = GetBackBufferFormat();
   initDesc.cmdQueue = myCmdQueue.Get();
@@ -412,17 +412,19 @@ void MyDX12App::Update() {
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
 
-        for (const auto& mat : meshRenderer->materials) {
-          if (!mat) continue;
-          for (const auto& [name, tex] : mat->texture2Ds) {
-            if (!tex) continue;
-            My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
-          }
-          for (const auto& [name, tex] : mat->textureCubes) {
-            if (!tex) continue;
-            My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-                My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+        for (const auto& material : meshRenderer->materials) {
+          if (!material) continue;
+          for (const auto& [name, property] : material->properties) {
+            if (std::holds_alternative<const My::MyGE::Texture2D*>(property)) {
+              My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+                  My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+                  std::get<const My::MyGE::Texture2D*>(property));
+            } else if (std::holds_alternative<const My::MyGE::TextureCube*>(
+                           property)) {
+              My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+                  My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+                  std::get<const My::MyGE::TextureCube*>(property));
+            }
           }
         }
       },
@@ -430,15 +432,17 @@ void MyDX12App::Update() {
 
   if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>();
       skybox && skybox->material) {
-    for (const auto& [name, tex] : skybox->material->texture2Ds) {
-      if (!tex) continue;
-      My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
-    }
-    for (const auto& [name, tex] : skybox->material->textureCubes) {
-      if (!tex) continue;
-      My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-          My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex);
+    for (const auto& [name, property] : skybox->material->properties) {
+      if (std::holds_alternative<const My::MyGE::Texture2D*>(property)) {
+        My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
+            My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+            std::get<const My::MyGE::Texture2D*>(property));
+      } else if (std::holds_alternative<const My::MyGE::TextureCube*>(
+                     property)) {
+        My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
+            My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
+            std::get<const My::MyGE::TextureCube*>(property));
+      }
     }
   }
 
@@ -448,7 +452,7 @@ void MyDX12App::Update() {
   myCmdQueue.Execute(myGCmdList.Get());
   deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
 
-  std::vector<My::MyGE::IPipeline::CameraData> gameCameras;
+  std::vector<My::MyGE::PipelineBase::CameraData> gameCameras;
   My::MyECS::ArchetypeFilter camFilter{
       {My::MyECS::CmptAccessType::Of<My::MyGE::Camera>}};
   world.RunEntityJob(
@@ -470,7 +474,7 @@ void MyDX12App::Draw() {
                                        D3D12_RESOURCE_STATE_PRESENT,
                                        D3D12_RESOURCE_STATE_RENDER_TARGET);
   myGCmdList->OMSetRenderTargets(1, &CurrentBackBufferView(), FALSE, NULL);
-  myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
+  myGCmdList.SetDescriptorHeaps(My::UDX12::DescriptorHeapMngr::Instance()
                                     .GetCSUGpuDH()
                                     ->GetDescriptorHeap());
   ImGui::Render();
