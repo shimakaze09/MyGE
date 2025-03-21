@@ -4,12 +4,14 @@
 
 #include <MySRefl/MySRefl.h>
 
-template <>
+template<>
 struct My::MySRefl::TypeInfo<My::MyGE::Translation>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Translation> {
-  static constexpr AttrList attrs = {};
+    : My::MySRefl::TypeInfoBase<My::MyGE::Translation>
+{
+    static constexpr AttrList attrs = {};
 
-  static constexpr FieldList fields = {
-      Field{"value", &My::MyGE::Translation::value},
-  };
+    static constexpr FieldList fields = {
+        Field{"value", &My::MyGE::Translation::value},
+    };
 };
+

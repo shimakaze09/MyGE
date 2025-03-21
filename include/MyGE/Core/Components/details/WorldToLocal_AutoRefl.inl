@@ -4,12 +4,14 @@
 
 #include <MySRefl/MySRefl.h>
 
-template <>
+template<>
 struct My::MySRefl::TypeInfo<My::MyGE::WorldToLocal>
-    : My::MySRefl::TypeInfoBase<My::MyGE::WorldToLocal> {
-  static constexpr AttrList attrs = {};
+    : My::MySRefl::TypeInfoBase<My::MyGE::WorldToLocal>
+{
+    static constexpr AttrList attrs = {};
 
-  static constexpr FieldList fields = {
-      Field{"value", &My::MyGE::WorldToLocal::value},
-  };
+    static constexpr FieldList fields = {
+        Field{"value", &My::MyGE::WorldToLocal::value},
+    };
 };
+

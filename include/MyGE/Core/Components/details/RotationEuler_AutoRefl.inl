@@ -4,12 +4,14 @@
 
 #include <MySRefl/MySRefl.h>
 
-template <>
+template<>
 struct My::MySRefl::TypeInfo<My::MyGE::RotationEuler>
-    : My::MySRefl::TypeInfoBase<My::MyGE::RotationEuler> {
-  static constexpr AttrList attrs = {};
+    : My::MySRefl::TypeInfoBase<My::MyGE::RotationEuler>
+{
+    static constexpr AttrList attrs = {};
 
-  static constexpr FieldList fields = {
-      Field{"value", &My::MyGE::RotationEuler::value},
-  };
+    static constexpr FieldList fields = {
+        Field{"value", &My::MyGE::RotationEuler::value},
+    };
 };
+

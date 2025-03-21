@@ -4,31 +4,33 @@
 
 #include <MySRefl/MySRefl.h>
 
-template <>
+template<>
 struct My::MySRefl::TypeInfo<My::MyGE::Input>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Input> {
-  static constexpr AttrList attrs = {};
+    : My::MySRefl::TypeInfoBase<My::MyGE::Input>
+{
+    static constexpr AttrList attrs = {};
 
-  static constexpr FieldList fields = {
-      Field{"DisplaySize", &My::MyGE::Input::DisplaySize},
-      Field{"MousePos", &My::MyGE::Input::MousePos},
-      Field{"MouseDown", &My::MyGE::Input::MouseDown},
-      Field{"MouseWheel", &My::MyGE::Input::MouseWheel},
-      Field{"MouseWheelH", &My::MyGE::Input::MouseWheelH},
-      Field{"KeyCtrl", &My::MyGE::Input::KeyCtrl},
-      Field{"KeyShift", &My::MyGE::Input::KeyShift},
-      Field{"KeyAlt", &My::MyGE::Input::KeyAlt},
-      Field{"KeySuper", &My::MyGE::Input::KeySuper},
-      Field{"KeysDown", &My::MyGE::Input::KeysDown},
-      Field{"MouseInDisplay", &My::MyGE::Input::MouseInDisplay},
-      Field{"MouseInDisplayPre", &My::MyGE::Input::MouseInDisplayPre},
-      Field{"MouseClicked", &My::MyGE::Input::MouseClicked},
-      Field{"MousePosPrev", &My::MyGE::Input::MousePosPrev},
-      Field{"MouseDelta", &My::MyGE::Input::MouseDelta},
-      Field{"MouseClickedPos", &My::MyGE::Input::MouseClickedPos},
-      Field{"MouseDoubleClicked", &My::MyGE::Input::MouseDoubleClicked},
-      Field{"MouseReleased", &My::MyGE::Input::MouseReleased},
-      Field{"MouseDownDuration", &My::MyGE::Input::MouseDownDuration},
-      Field{"KeysDownDuration", &My::MyGE::Input::KeysDownDuration},
-  };
+    static constexpr FieldList fields = {
+        Field{"DisplaySize", &My::MyGE::Input::DisplaySize},
+        Field{"MousePos", &My::MyGE::Input::MousePos},
+        Field{"MouseDown", &My::MyGE::Input::MouseDown},
+        Field{"MouseWheel", &My::MyGE::Input::MouseWheel},
+        Field{"MouseWheelH", &My::MyGE::Input::MouseWheelH},
+        Field{"KeyCtrl", &My::MyGE::Input::KeyCtrl},
+        Field{"KeyShift", &My::MyGE::Input::KeyShift},
+        Field{"KeyAlt", &My::MyGE::Input::KeyAlt},
+        Field{"KeySuper", &My::MyGE::Input::KeySuper},
+        Field{"KeysDown", &My::MyGE::Input::KeysDown},
+        Field{"MouseInDisplay", &My::MyGE::Input::MouseInDisplay},
+        Field{"MouseInDisplayPre", &My::MyGE::Input::MouseInDisplayPre},
+        Field{"MouseClicked", &My::MyGE::Input::MouseClicked},
+        Field{"MousePosPrev", &My::MyGE::Input::MousePosPrev},
+        Field{"MouseDelta", &My::MyGE::Input::MouseDelta},
+        Field{"MouseClickedPos", &My::MyGE::Input::MouseClickedPos},
+        Field{"MouseDoubleClicked", &My::MyGE::Input::MouseDoubleClicked},
+        Field{"MouseReleased", &My::MyGE::Input::MouseReleased},
+        Field{"MouseDownDuration", &My::MyGE::Input::MouseDownDuration},
+        Field{"KeysDownDuration", &My::MyGE::Input::KeysDownDuration},
+    };
 };
+

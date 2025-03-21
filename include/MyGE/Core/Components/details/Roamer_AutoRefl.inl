@@ -4,16 +4,18 @@
 
 #include <MySRefl/MySRefl.h>
 
-template <>
+template<>
 struct My::MySRefl::TypeInfo<My::MyGE::Roamer>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Roamer> {
-  static constexpr AttrList attrs = {};
+    : My::MySRefl::TypeInfoBase<My::MyGE::Roamer>
+{
+    static constexpr AttrList attrs = {};
 
-  static constexpr FieldList fields = {
-      Field{"moveSpeed", &My::MyGE::Roamer::moveSpeed},
-      Field{"rotateSpeed", &My::MyGE::Roamer::rotateSpeed},
-      Field{"reverseUpDown", &My::MyGE::Roamer::reverseUpDown},
-      Field{"reverseLeftRight", &My::MyGE::Roamer::reverseLeftRight},
-      Field{"reverseFrontBack", &My::MyGE::Roamer::reverseFrontBack},
-  };
+    static constexpr FieldList fields = {
+        Field{"moveSpeed", &My::MyGE::Roamer::moveSpeed},
+        Field{"rotateSpeed", &My::MyGE::Roamer::rotateSpeed},
+        Field{"reverseUpDown", &My::MyGE::Roamer::reverseUpDown},
+        Field{"reverseLeftRight", &My::MyGE::Roamer::reverseLeftRight},
+        Field{"reverseFrontBack", &My::MyGE::Roamer::reverseFrontBack},
+    };
 };
+
