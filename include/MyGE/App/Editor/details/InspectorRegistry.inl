@@ -70,25 +70,6 @@ struct ColorTraits<rgb<T>> : ColorTraitsBase<T> {};
 template <typename T>
 struct ColorTraits<rgba<T>> : ColorTraitsBase<T> {};
 
-template <size_t Idx, typename Field, typename Variant>
-bool InspectVariantAt(Field field, Variant& var, size_t idx,
-                      InspectorRegistry::InspectContext ctx) {
-  if (idx != Idx)
-    return false;
-
-  using Value = std::variant_alternative_t<Idx, Variant>;
-  InspectVar(field, std::get<Value>(var), ctx);
-
-  return true;
-}
-
-// TODO : stop
-template <typename Field, typename Variant, size_t... Ns>
-void InspectVariant(Field field, Variant& var, std::index_sequence<Ns...>,
-                    InspectorRegistry::InspectContext ctx) {
-  (InspectVariantAt<Ns>(field, var, var.index(), ctx), ...);
-}
-
 template <typename Field, typename Value>
 void InspectVar(Field field, Value& var, InspectorRegistry::InspectContext ctx);
 template <typename Field, typename Value>
@@ -282,6 +263,25 @@ void InspectVar(Field field, const Value& var,
 }
 
 template <size_t Idx, typename Field, typename Variant>
+bool InspectVariantAt(Field field, Variant& var, size_t idx,
+                      InspectorRegistry::InspectContext ctx) {
+  if (idx != Idx)
+    return false;
+
+  using Value = std::variant_alternative_t<Idx, Variant>;
+  InspectVar(field, std::get<Value>(var), ctx);
+
+  return true;
+}
+
+// TODO : stop
+template <typename Field, typename Variant, size_t... Ns>
+void InspectVariant(Field field, Variant& var, std::index_sequence<Ns...>,
+                    InspectorRegistry::InspectContext ctx) {
+  (InspectVariantAt<Ns>(field, var, var.index(), ctx), ...);
+}
+
+template <size_t Idx, typename Field, typename Variant>
 bool InspectVariantAt1(bool& changed, Field field, Variant& var, size_t idx,
                        InspectorRegistry::InspectContext ctx) {
   if (idx != Idx)
@@ -306,7 +306,7 @@ bool InspectVariant1(Field field, Variant& var, std::index_sequence<Ns...>,
 template <typename Field, typename Value>
 void InspectVar(Field field, Value& var,
                 InspectorRegistry::InspectContext ctx) {
-  // static_assert(!std::is_const_v<Value>);
+  //static_assert(!std::is_const_v<Value>);
   if constexpr (std::is_same_v<Value, bool>)
     ImGui::Checkbox(field.name.data(), &var);
   else if constexpr (std::is_same_v<Value, uint8_t>)
@@ -380,13 +380,14 @@ void InspectVar(Field field, Value& var,
     } else {
       InspectVar(field, static_cast<std::underlying_type_t<Value>&>(var), ctx);
     }
-  } else if constexpr (std::is_pointer_v<Value>) {
-    using Type = std::remove_pointer_t<Value>;
+  } else if constexpr (is_instance_of_v<Value, std::shared_ptr>) {
+    using Element = typename Value::element_type;
+    static_assert(std::is_base_of_v<Object, Element>);
     ImGui::Text("(*)");
     ImGui::SameLine();
     // button
     if (var) {
-      const auto& path = AssetMngr::Instance().GetAssetPath(var);
+      const auto& path = AssetMngr::Instance().GetAssetPath(*var);
       if (!path.empty()) {
         auto name = path.stem().string();
         ImGui::Button(name.c_str());
@@ -402,8 +403,7 @@ void InspectVar(Field field, Value& var,
         const auto& payload_guid = *(const xg::Guid*)payload->Data;
         const auto& path = AssetMngr::Instance().GUIDToAssetPath(payload_guid);
         assert(!path.empty());
-        if (auto asset =
-                AssetMngr::Instance().LoadAsset<std::decay_t<Type>>(path))
+        if (auto asset = AssetMngr::Instance().LoadAsset<Element>(path))
           var = asset;
       }
       ImGui::EndDragDropTarget();
@@ -536,6 +536,7 @@ bool InspectVar1(Field field, Value& var,
   //static_assert(!std::is_const_v<Value>);
   if constexpr (std::is_scalar_v<Value> || std::is_same_v<Value, std::string> ||
                 std::is_same_v<Value, MyECS::Entity> ||
+                is_instance_of_v<Value, std::shared_ptr> ||
                 ArrayTraits<Value>::isArray && ValNTraits<Value>::isValN) {
     Value orig = var;
     if constexpr (std::is_same_v<Value, bool>)
@@ -611,13 +612,14 @@ bool InspectVar1(Field field, Value& var,
       } else
         InspectVar(field, static_cast<std::underlying_type_t<Value>&>(var),
                    ctx);
-    } else if constexpr (std::is_pointer_v<Value>) {
-      using Type = std::remove_pointer_t<Value>;
+    } else if constexpr (is_instance_of_v<Value, std::shared_ptr>) {
+      using Element = typename Value::element_type;
+      static_assert(std::is_base_of_v<Object, Element>);
       ImGui::Text("(*)");
       ImGui::SameLine();
       // button
       if (var) {
-        const auto& path = AssetMngr::Instance().GetAssetPath(var);
+        const auto& path = AssetMngr::Instance().GetAssetPath(*var);
         if (!path.empty()) {
           auto name = path.stem().string();
           ImGui::Button(name.c_str());
@@ -634,8 +636,7 @@ bool InspectVar1(Field field, Value& var,
           const auto& path =
               AssetMngr::Instance().GUIDToAssetPath(payload_guid);
           assert(!path.empty());
-          if (auto asset =
-                  AssetMngr::Instance().LoadAsset<std::decay_t<Type>>(path))
+          if (auto asset = AssetMngr::Instance().LoadAsset<Element>(path))
             var = asset;
         }
         ImGui::EndDragDropTarget();

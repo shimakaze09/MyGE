@@ -8,32 +8,22 @@
 using namespace My::MyGE;
 using namespace My;
 
-TextureCube::TextureCube(std::array<const Image*, 6> images) { Init(images); }
+TextureCube::TextureCube(std::array<std::shared_ptr<const Image>, 6> images) {
+  Init(images);
+}
 
-TextureCube::TextureCube(const Image* equirectangularMap) {
+TextureCube::TextureCube(std::shared_ptr<const Image> equirectangularMap) {
   Init(equirectangularMap);
 }
 
-TextureCube::~TextureCube() {
-  switch (mode.get()) {
-    case SourceMode::EquirectangularMap:
-      for (auto& img : images.val) delete img;
-      break;
-    case SourceMode::SixSidedImages:
-      break;
-    default:
-      assert(false);
-      break;
-  }
-}
-
-void TextureCube::Init(std::array<const Image*, 6> images) {
+void TextureCube::Init(std::array<std::shared_ptr<const Image>, 6> images) {
   Clear();
   mode = SourceMode::SixSidedImages;
-  for (size_t i = 0; i < 6; i++) this->images[i] = images[i];
+  for (size_t i = 0; i < 6; i++)
+    this->images[i] = images[i];
 }
 
-void TextureCube::Init(const Image* equirectangularMap) {
+void TextureCube::Init(std::shared_ptr<const Image> equirectangularMap) {
   Clear();
   mode = SourceMode::EquirectangularMap;
 #ifdef _DEBUG
@@ -70,8 +60,9 @@ void TextureCube::Init(const Image* equirectangularMap) {
       {0, 2, 0},   // front  -z
   };
 
-  std::array<Image*, 6> imgs;
-  for (size_t i = 0; i < 6; i++) images[i] = imgs[i] = new Image(s, s, c);
+  std::array<std::shared_ptr<Image>, 6> imgs;
+  for (size_t i = 0; i < 6; i++)
+    images[i] = imgs[i] = std::make_shared<Image>(s, s, c);
 
   size_t N = std::thread::hardware_concurrency();
   auto work = [&](size_t id) {
@@ -87,7 +78,8 @@ void TextureCube::Init(const Image* equirectangularMap) {
           uv[0] = 0.5f - uv[0] * invAtan[0];
           uv[1] = 0.5f + uv[1] * invAtan[1];
           auto color = equirectangularMap->SampleLinear(uv);
-          for (size_t k = 0; k < c; k++) img->At(x, y, k) = color[k];
+          for (size_t k = 0; k < c; k++)
+            img->At(x, y, k) = color[k];
         }
       }
     }
@@ -97,19 +89,12 @@ void TextureCube::Init(const Image* equirectangularMap) {
   for (size_t i = 0; i < std::thread::hardware_concurrency(); i++)
     workers.emplace_back(work, i);
 
-  for (auto& worker : workers) worker.join();
+  for (auto& worker : workers)
+    worker.join();
 }
 
 void TextureCube::Clear() {
-  switch (mode.get()) {
-    case SourceMode::EquirectangularMap:
-      for (auto& img : images.val) delete img;
-    case SourceMode::SixSidedImages:
-      for (auto& img : images.val) img = nullptr;
-      equirectangularMap = nullptr;
-      break;
-    default:
-      assert(false);
-      break;
-  }
+  for (auto& img : images.val)
+    img.reset();
+  equirectangularMap.val.reset();
 }

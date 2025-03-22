@@ -71,8 +71,8 @@ const std::vector<D3D12_INPUT_ELEMENT_DESC>& MeshLayoutMngr::GetMeshLayoutValue(
   return target->second;
 }
 
-size_t MeshLayoutMngr::GetMeshLayoutID(const Mesh* mesh) noexcept {
-  return GetMeshLayoutID(!mesh->GetUV().empty(), !mesh->GetNormals().empty(),
-                         !mesh->GetTangents().empty(),
-                         !mesh->GetColors().empty());
+size_t MeshLayoutMngr::GetMeshLayoutID(const Mesh& mesh) noexcept {
+  return GetMeshLayoutID(!mesh.GetUV().empty(), !mesh.GetNormals().empty(),
+                         !mesh.GetTangents().empty(),
+                         !mesh.GetColors().empty());
 }

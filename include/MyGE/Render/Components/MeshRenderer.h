@@ -6,7 +6,7 @@
 
 namespace My::MyGE {
 struct MeshRenderer {
-  std::vector<const Material*> materials;
+  std::vector<std::shared_ptr<Material>> materials;
 };
 }  // namespace My::MyGE
 

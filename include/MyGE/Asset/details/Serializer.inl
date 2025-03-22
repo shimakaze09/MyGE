@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../Core/Object.h"
 #include "../../Core/Traits.h"
 #include "../AssetMngr.h"
 
@@ -81,11 +82,24 @@ void WriteVar(const Value& var, Serializer::SerializeContext& ctx) {
     if (var == nullptr)
       ctx.writer.Null();
     else {
-      auto& assetMngr = AssetMngr::Instance();
-      if (assetMngr.Contains(var))
-        ctx.writer.String(
-            assetMngr.AssetPathToGUID(assetMngr.GetAssetPath(var)).str());
-      else {
+      assert("not support" && false);
+      ctx.writer.Null();
+    }
+  } else if constexpr (is_instance_of_v<Value, std::shared_ptr>) {
+    using Element = typename Value::element_type;
+    if (var == nullptr)
+      ctx.writer.Null();
+    else {
+      if constexpr (std::is_base_of_v<Object, Element>) {
+        auto& assetMngr = AssetMngr::Instance();
+        const auto& path = assetMngr.GetAssetPath(*var);
+        if (path.empty()) {
+          ctx.writer.Null();
+          return;
+        }
+
+        ctx.writer.String(assetMngr.AssetPathToGUID(path).str());
+      } else {
         assert("not support" && false);
         ctx.writer.Null();
       }
@@ -133,7 +147,7 @@ void WriteVar(const Value& var, Serializer::SerializeContext& ctx) {
     std::apply([&](const auto&... elements) { (WriteVar(elements, ctx), ...); },
                var);
     ctx.writer.EndArray();
-  } else if constexpr (My::is_instance_of_v<Value, std::variant>) {
+  } else if constexpr (is_instance_of_v<Value, std::variant>) {
     constexpr size_t N = std::variant_size_v<Value>;
     WriteVariant(var, std::make_index_sequence<N>{}, ctx);
   } else
@@ -179,15 +193,6 @@ void ReadUserType(UserType* obj, const rapidjson::Value& jsonValueField,
       if (target == jsonObject.MemberEnd())
         return;
 
-      /*if constexpr (std::is_array_v<std::remove_reference_t<decltype(var)>>) {
-						using Value = std::remove_pointer_t<std::decay_t<decltype(var)>>;
-						static constexpr size_t N = sizeof(decltype(var)) / sizeof(Value);
-						auto rst = ReadVar<std::array<Value, N>>(target->value, ctx);
-						for (size_t i = 0; i < N; i++)
-							var[i] = rst[i];
-					}
-					else
-						ReadVar(var, target->value, ctx);*/
       ReadVar(var, target->value, ctx);
     });
   } else {
@@ -230,11 +235,19 @@ void ReadVar(Value& var, const rapidjson::Value& jsonValueField,
     if (jsonValueField.IsNull())
       var = nullptr;
     else {
-      using Asset = std::remove_const_t<std::remove_pointer_t<Value>>;
-      std::string guid = jsonValueField.GetString();
-      const auto& path = AssetMngr::Instance().GUIDToAssetPath(xg::Guid{guid});
-      var = AssetMngr::Instance().LoadAsset<Asset>(path);
+      assert("not support" && false);
     }
+  } else if constexpr (is_instance_of_v<Value, std::shared_ptr>) {
+    if (jsonValueField.IsNull())
+      var = nullptr;
+    else if (jsonValueField.IsString()) {
+      using Asset = typename Value::element_type;
+      std::string guid_str = jsonValueField.GetString();
+      const auto& path =
+          AssetMngr::Instance().GUIDToAssetPath(xg::Guid{guid_str});
+      var = AssetMngr::Instance().LoadAsset<Asset>(path);
+    } else
+      assert("not support" && false);
   } else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
     auto index = jsonValueField.GetUint64();
     var = ctx.entityIdxMap.at(index);
@@ -280,7 +293,7 @@ void ReadVar(Value& var, const rapidjson::Value& jsonValueField,
           (ReadVar(elements, arr[i++], ctx), ...);
         },
         var);
-  } else if constexpr (My::is_instance_of_v<Value, std::variant>) {
+  } else if constexpr (is_instance_of_v<Value, std::variant>) {
     constexpr size_t N = std::variant_size_v<Value>;
     ReadVariant(var, std::make_index_sequence<N>{}, jsonValueField, ctx);
   } else

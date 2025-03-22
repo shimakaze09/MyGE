@@ -13,15 +13,14 @@ class TextureCube : public Texture {
  public:
   enum class SourceMode { SixSidedImages, EquirectangularMap };
   Read<TextureCube, SourceMode> mode;
-  Read<TextureCube, std::array<const Image*, 6>> images{nullptr};
-  Read<TextureCube, const Image*> equirectangularMap{nullptr};
+  Read<TextureCube, std::array<std::shared_ptr<const Image>, 6>> images;
+  Read<TextureCube, std::shared_ptr<const Image>> equirectangularMap;
 
-  TextureCube(std::array<const Image*, 6> images);
-  TextureCube(const Image* equirectangularMap);
-  ~TextureCube();
+  TextureCube(std::array<std::shared_ptr<const Image>, 6> images);
+  TextureCube(std::shared_ptr<const Image> equirectangularMap);
 
-  void Init(std::array<const Image*, 6> images);
-  void Init(const Image* equirectangularMap);
+  void Init(std::array<std::shared_ptr<const Image>, 6> images);
+  void Init(std::shared_ptr<const Image> equirectangularMap);
   void Clear();
 };
 }  // namespace My::MyGE

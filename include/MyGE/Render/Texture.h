@@ -1,9 +1,9 @@
 #pragma once
 
-#include "RenderRsrcObject.h"
+#include "../Core/Object.h"
 
 namespace My::MyGE {
-class Texture : public RenderRsrcObject {
+class Texture : public Object {
  public:
   virtual ~Texture() = default;
 

@@ -7,7 +7,7 @@
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::Shader>
     : My::MySRefl::TypeInfoBase<My::MyGE::Shader,
-                                Base<My::MyGE::RenderRsrcObject>> {
+                                Base<My::MyGE::Object>> {
   static constexpr AttrList attrs = {};
 
   static constexpr FieldList fields = {

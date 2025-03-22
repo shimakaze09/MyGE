@@ -5,7 +5,7 @@
 namespace My::MyGE {
 // singleton
 struct Skybox {
-  const Material* material;
+  std::shared_ptr<Material> material;
 };
 }  // namespace My::MyGE
 

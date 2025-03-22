@@ -412,7 +412,7 @@ struct ShaderCompiler::Impl {
 
     virtual antlrcpp::Any visitProperty_2D(
         details::ShaderParser::Property_2DContext* ctx) override {
-      const Texture2D* tex2d = ctx->val_tex2d()->accept(this);
+      std::shared_ptr<const Texture2D> tex2d = ctx->val_tex2d()->accept(this);
       if (!success) return std::pair{std::string{}, (const Texture2D*)nullptr};
       auto name = ctx->property_name()->getText();
       return std::pair{name, ShaderProperty{tex2d}};
@@ -420,7 +420,7 @@ struct ShaderCompiler::Impl {
 
     virtual antlrcpp::Any visitVal_tex2d(
         details::ShaderParser::Val_tex2dContext* ctx) override {
-      constexpr const Texture2D* ERROR = nullptr;
+      static const std::shared_ptr<const Texture2D> ERROR;
       xg::Guid guid;
       if (ctx->default_texture_2d()) {
         auto name = ctx->default_texture_2d()->getText();
@@ -450,17 +450,18 @@ struct ShaderCompiler::Impl {
         success = false;
         return ERROR;
       }
-      const Texture2D* tex2d = AssetMngr::Instance().LoadAsset<Texture2D>(path);
+      auto tex2d = AssetMngr::Instance().LoadAsset<Texture2D>(path);
       if (!tex2d) {
         success = false;
         return ERROR;
       }
-      return tex2d;
+      return std::const_pointer_cast<const Texture2D>(tex2d);
     }
 
     virtual antlrcpp::Any visitProperty_cube(
         details::ShaderParser::Property_cubeContext* ctx) override {
-      const TextureCube* texcube = ctx->val_texcube()->accept(this);
+      std::shared_ptr<const TextureCube> texcube =
+          ctx->val_texcube()->accept(this);
       if (!success)
         return std::pair{std::string{}, (const TextureCube*)nullptr};
       auto name = ctx->property_name()->getText();
@@ -469,7 +470,7 @@ struct ShaderCompiler::Impl {
 
     virtual antlrcpp::Any visitVal_texcube(
         details::ShaderParser::Val_texcubeContext* ctx) override {
-      constexpr const TextureCube* ERROR = nullptr;
+      static const std::shared_ptr<const TextureCube> ERROR = nullptr;
       xg::Guid guid;
       if (ctx->default_texture_cube()) {
         auto name = ctx->default_texture_cube()->getText();
@@ -497,13 +498,12 @@ struct ShaderCompiler::Impl {
         success = false;
         return ERROR;
       }
-      const TextureCube* texcube =
-          AssetMngr::Instance().LoadAsset<TextureCube>(path);
+      auto texcube = AssetMngr::Instance().LoadAsset<TextureCube>(path);
       if (!texcube) {
         success = false;
         return ERROR;
       }
-      return texcube;
+      return std::const_pointer_cast<const TextureCube>(texcube);
     }
 
     virtual antlrcpp::Any visitProperty_rgb(

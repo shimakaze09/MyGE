@@ -3,9 +3,12 @@
 #include <atomic>
 
 namespace My::MyGE {
-class RenderRsrcObject {
+class Object {
  public:
-  RenderRsrcObject() : id{curID++} {}
+  Object() noexcept : id{curID++} {}
+
+  virtual ~Object() noexcept {}
+
   size_t GetInstanceID() const noexcept { return id; }
 
  private:
@@ -14,4 +17,4 @@ class RenderRsrcObject {
 };
 }  // namespace My::MyGE
 
-#include "details/RenderRsrcObject_AutoRefl.inl"
+#include "details/Object_AutoRefl.inl"

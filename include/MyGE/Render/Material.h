@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Core/Object.h"
 #include "ShaderProperty.h"
 
 #include <map>
@@ -8,8 +9,8 @@
 namespace My::MyGE {
 struct Shader;
 
-struct Material {
-  const Shader* shader{nullptr};
+struct Material : Object {
+  std::shared_ptr<const Shader> shader;
   std::map<std::string, ShaderProperty, std::less<>> properties;
 };
 }  // namespace My::MyGE

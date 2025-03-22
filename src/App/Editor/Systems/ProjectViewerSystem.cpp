@@ -81,8 +81,9 @@ void ProjectViewerSystemPrintChildren(ProjectViewer* viewer,
     if (IsParentFolder(path, selectFolderPath))
       ImGui::SetNextItemOpen(true, ImGuiCond_Always);
 
-    bool nodeOpen = ImGui::TreeNodeEx(AssetMngr::Instance().LoadAsset(path),
-                                      nodeFlags, "%s", name.string().c_str());
+    bool nodeOpen = ImGui::TreeNodeEx(
+        (const void*)AssetMngr::Instance().LoadAsset(path)->GetInstanceID(),
+        nodeFlags, "%s", name.string().c_str());
 
     if (ImGui::IsItemClicked())
       viewer->selectedFolder = child;
@@ -142,16 +143,17 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
   auto texcube = AssetMngr::Instance().LoadAsset<Texture2D>(
       L"..\\assets\\_internal\\FolderViewer\\textures\\texcube.tex2d");
 
-  auto fileID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(file);
-  auto folderID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(folder);
-  auto codeID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(code);
-  auto imageID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(image);
-  auto materialID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(material);
-  auto shaderID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(shader);
-  auto hlslID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(hlsl);
-  auto sceneID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(scene);
-  auto modelID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(model);
-  auto texcubeID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(texcube);
+  auto fileID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*file);
+  auto folderID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*folder);
+  auto codeID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*code);
+  auto imageID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*image);
+  auto materialID =
+      RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*material);
+  auto shaderID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*shader);
+  auto hlslID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*hlsl);
+  auto sceneID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*scene);
+  auto modelID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*model);
+  auto texcubeID = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*texcube);
 
   ImGuiStyle& style = ImGui::GetStyle();
   ImVec2 button_sz(64, 64);
@@ -196,8 +198,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
         } else if (ext == ".tex2d") {
           auto tex2d = AssetMngr::Instance().LoadAsset<Texture2D>(path);
           My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-              My::MyGE::RsrcMngrDX12::Instance().GetUpload(), tex2d);
-          id = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(tex2d).ptr;
+              My::MyGE::RsrcMngrDX12::Instance().GetUpload(), *tex2d);
+          id = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*tex2d).ptr;
         } else if (ext == ".mat")
           id = materialID.ptr;
         else if (ext == ".shader")
@@ -327,7 +329,7 @@ void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
                 wstr + L"\\" + L"new file (" + std::to_wstring(i) + L").mat";
             i++;
           } while (std::filesystem::exists(newPath));
-          AssetMngr::Instance().CreateAsset(new Material, newPath);
+          AssetMngr::Instance().CreateAsset(Material{}, newPath);
         }
         ImGui::EndPopup();
       }

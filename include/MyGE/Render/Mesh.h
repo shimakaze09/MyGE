@@ -4,11 +4,11 @@
 
 #include <vector>
 
-#include "RenderRsrcObject.h"
+#include "../Core/Object.h"
 #include "SubMeshDescriptor.h"
 
 namespace My::MyGE {
-class Mesh : public RenderRsrcObject {
+class Mesh : public Object {
  public:
   Mesh(bool isEditable = true) : isEditable{isEditable} {}
 

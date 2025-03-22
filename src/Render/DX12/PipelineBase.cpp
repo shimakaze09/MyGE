@@ -9,11 +9,10 @@
 using namespace My::MyGE;
 
 PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
-    ShaderCBMngrDX12& shaderCBMngr, const Shader* shader,
+    ShaderCBMngrDX12& shaderCBMngr, const Shader& shader,
     const std::unordered_set<const Material*>& materials,
     const std::set<std::string_view>& commonCBs) {
   PipelineBase::ShaderCBDesc rst;
-  assert(shader);
 
   auto CalculateSize = [&](ID3D12ShaderReflection* refl) {
     D3D12_SHADER_DESC shaderDesc;
@@ -41,7 +40,7 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
     }
   };
 
-  for (size_t i = 0; i < shader->passes.size(); i++) {
+  for (size_t i = 0; i < shader.passes.size(); i++) {
     CalculateSize(RsrcMngrDX12::Instance().GetShaderRefl_vs(shader, i));
     CalculateSize(RsrcMngrDX12::Instance().GetShaderRefl_ps(shader, i));
   }
@@ -50,13 +49,13 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
   buffer->FastReserve(rst.materialCBSize * materials.size());
   for (auto material : materials) {
     size_t idx = rst.indexMap.size();
-    rst.indexMap[material] = idx;
+    rst.indexMap[material->GetInstanceID()] = idx;
   }
 
   auto UpdateShaderCBsForRefl = [&](std::set<size_t>& flags,
                                     const Material* material,
                                     ID3D12ShaderReflection* refl) {
-    size_t index = rst.indexMap.at(material);
+    size_t index = rst.indexMap.at(material->GetInstanceID());
 
     D3D12_SHADER_DESC shaderDesc;
     ThrowIfFailed(refl->GetDesc(&shaderDesc));
@@ -112,7 +111,7 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
 
   for (auto material : materials) {
     std::set<size_t> flags;
-    for (size_t i = 0; i < shader->passes.size(); i++) {
+    for (size_t i = 0; i < shader.passes.size(); i++) {
       UpdateShaderCBsForRefl(
           flags, material,
           RsrcMngrDX12::Instance().GetShaderRefl_vs(shader, i));
@@ -127,12 +126,12 @@ PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
 
 void PipelineBase::SetGraphicsRoot_CBV_SRV(
     ID3D12GraphicsCommandList* cmdList, ShaderCBMngrDX12& shaderCBMngr,
-    const ShaderCBDesc& shaderCBDescconst, const Material* material,
+    const ShaderCBDesc& shaderCBDescconst, const Material& material,
     const std::map<std::string_view, D3D12_GPU_VIRTUAL_ADDRESS>& commonCBs,
     const std::map<std::string_view, D3D12_GPU_DESCRIPTOR_HANDLE>& commonSRVs) {
-  auto buffer = shaderCBMngr.GetBuffer(material->shader);
+  auto buffer = shaderCBMngr.GetBuffer(*material.shader);
   size_t cbPos = buffer->GetResource()->GetGPUVirtualAddress() +
-                 shaderCBDescconst.indexMap.at(material) *
+                 shaderCBDescconst.indexMap.at(material.GetInstanceID()) *
                      shaderCBDescconst.materialCBSize;
 
   auto SetGraphicsRoot_Refl = [&](ID3D12ShaderReflection* refl) {
@@ -140,8 +139,8 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
     ThrowIfFailed(refl->GetDesc(&shaderDesc));
 
     auto GetSRVRootParamIndex = [&](UINT registerIndex) {
-      for (size_t i = 0; i < material->shader->rootParameters.size(); i++) {
-        const auto& param = material->shader->rootParameters[i];
+      for (size_t i = 0; i < material.shader->rootParameters.size(); i++) {
+        const auto& param = material.shader->rootParameters[i];
 
         bool flag = std::visit(
             [=](const auto& param) {
@@ -168,8 +167,8 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
     };
 
     auto GetCBVRootParamIndex = [&](UINT registerIndex) {
-      for (size_t i = 0; i < material->shader->rootParameters.size(); i++) {
-        const auto& param = material->shader->rootParameters[i];
+      for (size_t i = 0; i < material.shader->rootParameters.size(); i++) {
+        const auto& param = material.shader->rootParameters[i];
 
         bool flag = std::visit(
             [=](const auto& param) {
@@ -223,24 +222,27 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
           D3D12_GPU_DESCRIPTOR_HANDLE handle;
           handle.ptr = 0;
 
-          if (auto target = material->properties.find(rsrcDesc.Name);
-              target != material->properties.end()) {
+          if (auto target = material.properties.find(rsrcDesc.Name);
+              target != material.properties.end()) {
             auto dim = rsrcDesc.Dimension;
             switch (dim) {
               case D3D_SRV_DIMENSION_TEXTURE2D: {
-                assert(
-                    std::holds_alternative<const Texture2D*>(target->second));
-                auto tex2d = std::get<const Texture2D*>(target->second);
+                assert(std::holds_alternative<std::shared_ptr<const Texture2D>>(
+                    target->second));
+                auto tex2d =
+                    std::get<std::shared_ptr<const Texture2D>>(target->second);
                 handle =
-                    RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(tex2d);
+                    RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*tex2d);
                 break;
               }
               case D3D_SRV_DIMENSION_TEXTURECUBE: {
                 assert(
-                    std::holds_alternative<const TextureCube*>(target->second));
-                auto texcube = std::get<const TextureCube*>(target->second);
+                    std::holds_alternative<std::shared_ptr<const TextureCube>>(
+                        target->second));
+                auto texcube = std::get<std::shared_ptr<const TextureCube>>(
+                    target->second);
                 handle = RsrcMngrDX12::Instance().GetTextureCubeSrvGpuHandle(
-                    texcube);
+                    *texcube);
                 break;
               }
               default:
@@ -264,11 +266,11 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
     }
   };
 
-  for (size_t i = 0; i < material->shader->passes.size(); i++) {
+  for (size_t i = 0; i < material.shader->passes.size(); i++) {
     SetGraphicsRoot_Refl(
-        RsrcMngrDX12::Instance().GetShaderRefl_vs(material->shader, i));
+        RsrcMngrDX12::Instance().GetShaderRefl_vs(*material.shader, i));
     SetGraphicsRoot_Refl(
-        RsrcMngrDX12::Instance().GetShaderRefl_ps(material->shader, i));
+        RsrcMngrDX12::Instance().GetShaderRefl_ps(*material.shader, i));
   }
 }
 

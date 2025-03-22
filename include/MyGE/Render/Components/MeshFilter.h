@@ -1,12 +1,10 @@
 #pragma once
 
-#include <vector>
-
 #include "../Mesh.h"
 
 namespace My::MyGE {
 struct MeshFilter {
-  Mesh* mesh{nullptr};
+  std::shared_ptr<Mesh> mesh;
 };
 }  // namespace My::MyGE
 

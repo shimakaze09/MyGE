@@ -34,7 +34,7 @@ class MeshLayoutMngr {
   // uv, normal, tangent, color
   static constexpr std::array<bool, 4> DecodeMeshLayoutID(size_t ID) noexcept;
 
-  static size_t GetMeshLayoutID(const Mesh* mesh) noexcept;
+  static size_t GetMeshLayoutID(const Mesh& mesh) noexcept;
 
  private:
   MeshLayoutMngr();

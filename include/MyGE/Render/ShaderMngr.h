@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 
 namespace My::MyGE {
@@ -13,16 +14,19 @@ class ShaderMngr {
     return instance;
   }
 
-  void Register(Shader*);
-  Shader* Get(std::string_view name) const;
+  void Register(std::shared_ptr<Shader>);
+  std::shared_ptr<Shader> Get(std::string_view name) const;
 
-  const std::map<std::string, Shader*, std::less<>> GetShaderMap()
+  const std::map<std::string, std::weak_ptr<Shader>, std::less<>> GetShaderMap()
       const noexcept {
     return shaderMap;
   }
 
+  // clear expired weak_ptr
+  void Refresh();
+
  private:
   ShaderMngr() = default;
-  std::map<std::string, Shader*, std::less<>> shaderMap;
+  std::map<std::string, std::weak_ptr<Shader>, std::less<>> shaderMap;
 };
 }  // namespace My::MyGE
