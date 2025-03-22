@@ -96,7 +96,7 @@ struct AssetMngr::Impl {
 };
 
 AssetMngr::AssetMngr() : pImpl{new Impl} {
-  Serializer::Instance().RegisterUserTypes<Shader, ShaderPass, Material>();
+  Serializer::Instance().RegisterUserTypes<Material>();
 }
 
 AssetMngr::~AssetMngr() {
@@ -539,6 +539,27 @@ bool AssetMngr::CreateAsset(void* ptr, const std::filesystem::path& path) {
   }
 
   return true;
+}
+
+void AssetMngr::ReserializeAsset(const std::filesystem::path& path) {
+  if (!std::filesystem::exists(path))
+    return;
+  const auto ext = path.extension();
+  if (ext == ".mat") {
+    auto material = LoadAsset<Material>(path);
+
+    auto materialJSON = Serializer::Instance().ToJSON(material);
+
+    auto dirPath = path.parent_path();
+    if (!std::filesystem::is_directory(dirPath))
+      std::filesystem::create_directories(dirPath);
+
+    std::ofstream ofs(path);
+    assert(ofs.is_open());
+    ofs << materialJSON;
+    ofs.close();
+  } else
+    assert(false && "not support");
 }
 
 // ========================

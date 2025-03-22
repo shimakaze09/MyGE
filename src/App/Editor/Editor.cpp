@@ -19,6 +19,7 @@
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
 #include <MyGE/Render/HLSLFile.h>
+#include <MyGE/Render/Material.h>
 #include <MyGE/Render/Mesh.h>
 #include <MyGE/Render/Shader.h>
 #include <MyGE/Render/ShaderMngr.h>
@@ -105,6 +106,9 @@ struct Editor::Impl {
     Stopping,
   };
   GameState gameState = GameState::NotStart;
+
+  static void InspectMaterial(Material* material,
+                              InspectorRegistry::InspectContext ctx);
 };
 
 // Forward declare message handler from imgui_impl_win32.cpp
@@ -246,11 +250,11 @@ bool Editor::Impl::Init() {
   ImGUIMngr::Instance().Init(pEditor->MainWnd(), pEditor->myDevice.Get(),
                              DX12App::NumFrameResources, 3);
   AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
-  Impl::InitInspectorRegistry();
+  InitInspectorRegistry();
 
   RsrcMngrDX12::Instance().GetUpload().Begin();
-  Impl::LoadTextures();
-  Impl::BuildShaders();
+  LoadTextures();
+  BuildShaders();
   RsrcMngrDX12::Instance().GetUpload().End(pEditor->myCmdQueue.Get());
 
   gameRT_SRV =
@@ -752,7 +756,8 @@ void Editor::Impl::InitInspectorRegistry() {
           RotationEuler, Scale, Translation, WorldToLocal,
 
           LuaScriptQueue>();
-  InspectorRegistry::Instance().RegisterAssets<Material, Shader>();
+  InspectorRegistry::Instance().RegisterAssets<Shader>();
+  InspectorRegistry::Instance().RegisterAsset(&InspectMaterial);
 }
 
 void Editor::Impl::InitWorld(My::MyECS::World& w) {
@@ -880,5 +885,71 @@ void Editor::Impl::BuildShaders() {
     auto shader = assetMngr.LoadAsset<Shader>(path);
     RsrcMngrDX12::Instance().RegisterShader(shader);
     ShaderMngr::Instance().Register(shader);
+  }
+}
+
+void Editor::Impl::InspectMaterial(Material* material,
+                                   InspectorRegistry::InspectContext ctx) {
+  ImGui::Text("(*)");
+  ImGui::SameLine();
+  if (ImGui::Button(material->shader->name.c_str()))
+    ImGui::OpenPopup("Meterial_Shader_Seletor");
+  if (ImGui::BeginDragDropTarget()) {
+    if (const ImGuiPayload* payload =
+            ImGui::AcceptDragDropPayload(PlayloadType::GUID)) {
+      IM_ASSERT(payload->DataSize == sizeof(xg::Guid));
+      const auto& payload_guid = *(const xg::Guid*)payload->Data;
+      const auto& path = AssetMngr::Instance().GUIDToAssetPath(payload_guid);
+      assert(!path.empty());
+      if (auto shader = AssetMngr::Instance().LoadAsset<Shader>(path)) {
+        material->shader = shader;
+        material->properties = shader->properties;
+      }
+    }
+    ImGui::EndDragDropTarget();
+  }
+  if (ImGui::BeginPopup("Meterial_Shader_Seletor")) {
+    ImGui::PushID((void*)material->shader->GetInstanceID());
+    // Helper class to easy setup a text filter.
+    // You may want to implement a more feature-full filtering scheme in your own application.
+    static ImGuiTextFilter filter;
+    filter.Draw();
+    int ID = 0;
+    size_t N = ShaderMngr::Instance().GetShaderMap().size();
+    for (const auto& [name, shader] : ShaderMngr::Instance().GetShaderMap()) {
+      if (shader != material->shader && filter.PassFilter(name.c_str())) {
+        ImGui::PushID(ID);
+        ImGui::PushStyleColor(ImGuiCol_Button,
+                              (ImVec4)ImColor::HSV(ID / float(N), 0.6f, 0.6f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                              (ImVec4)ImColor::HSV(ID / float(N), 0.7f, 0.7f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                              (ImVec4)ImColor::HSV(ID / float(N), 0.8f, 0.8f));
+        if (ImGui::Button(name.c_str())) {
+          material->shader = shader;
+          material->properties = shader->properties;
+        }
+        ImGui::PopStyleColor(3);
+        ImGui::PopID();
+      }
+      ID++;
+    }
+    ImGui::PopID();
+    ImGui::EndPopup();
+  }
+  ImGui::SameLine();
+  ImGui::Text("shader");
+
+  bool changed = false;
+  MySRefl::TypeInfo<Material>::ForEachVarOf(
+      *material, [ctx, &changed](auto field, auto& var) {
+        if (field.name == "shader")
+          return;
+        if (detail::InspectVar1(field, var, ctx))
+          changed = true;
+      });
+  if (changed) {
+    const auto& path = AssetMngr::Instance().GetAssetPath(material);
+    AssetMngr::Instance().ReserializeAsset(path);
   }
 }

@@ -84,6 +84,8 @@ class AssetMngr {
   template <typename T>
   T* LoadAsset(const std::filesystem::path& path);
 
+  void ReserializeAsset(const std::filesystem::path& path);
+
   // e.g. obj, lua
   bool IsSupported(std::string_view extension) const noexcept;
 
