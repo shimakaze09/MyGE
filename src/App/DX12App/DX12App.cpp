@@ -1,6 +1,8 @@
 #include <MyGE/App/DX12App/DX12App.h>
-#include <MyGE/Core/GameTimer.h>
+
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
+
+#include <MyGE/Core/GameTimer.h>
 
 using Microsoft::WRL::ComPtr;
 using namespace My::MyGE;
@@ -21,7 +23,9 @@ DX12App::~DX12App() {
         std::move(swapchainRTVCpuDH));
 
   My::MyGE::RsrcMngrDX12::Instance().Clear();
-  My::MyGE::DescriptorHeapMngr::Instance().Clear();
+  My::MyDX12::DescriptorHeapMngr::Instance().Clear();
+
+  mApp = nullptr;
 }
 
 LRESULT CALLBACK DX12App::MainWndProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -29,6 +33,117 @@ LRESULT CALLBACK DX12App::MainWndProc(HWND hwnd, UINT msg, WPARAM wParam,
   // Forward hwnd on because we can get messages (e.g., WM_CREATE)
   // before CreateWindow returns, and thus before mhMainWnd is valid.
   return DX12App::GetApp()->MsgProc(hwnd, msg, wParam, lParam);
+}
+
+LRESULT DX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+  switch (msg) {
+      // WM_ACTIVATE is sent when the window is activated or deactivated.
+      // We pause the game when the window is deactivated and unpause it
+      // when it becomes active.
+    case WM_ACTIVATE:
+      if (LOWORD(wParam) == WA_INACTIVE) {
+        mAppPaused = true;
+        GameTimer::Instance().Stop();
+      } else {
+        mAppPaused = false;
+        GameTimer::Instance().Start();
+      }
+      return 0;
+
+      // WM_SIZE is sent when the user resizes the window.
+    case WM_SIZE:
+      // Save the new client area dimensions.
+      mClientWidth = LOWORD(lParam);
+      mClientHeight = HIWORD(lParam);
+      if (!myDevice.IsNull()) {
+        if (wParam == SIZE_MINIMIZED) {
+          mAppPaused = true;
+          mMinimized = true;
+          mMaximized = false;
+        } else if (wParam == SIZE_MAXIMIZED) {
+          mAppPaused = false;
+          mMinimized = false;
+          mMaximized = true;
+          OnResize();
+        } else if (wParam == SIZE_RESTORED) {
+
+          // Restoring from minimized state?
+          if (mMinimized) {
+            mAppPaused = false;
+            mMinimized = false;
+            OnResize();
+          }
+
+          // Restoring from maximized state?
+          else if (mMaximized) {
+            mAppPaused = false;
+            mMaximized = false;
+            OnResize();
+          } else if (mResizing) {
+            // If user is dragging the resize bars, we do not resize
+            // the buffers here because as the user continuously
+            // drags the resize bars, a stream of WM_SIZE messages are
+            // sent to the window, and it would be pointless (and slow)
+            // to resize for each WM_SIZE message received from dragging
+            // the resize bars.  So instead, we reset after the user is
+            // done resizing the window and releases the resize bars, which
+            // sends a WM_EXITSIZEMOVE message.
+          } else  // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
+          {
+            OnResize();
+          }
+        }
+      }
+      return 0;
+
+      // WM_EXITSIZEMOVE is sent when the user grabs the resize bars.
+    case WM_ENTERSIZEMOVE:
+      mAppPaused = true;
+      mResizing = true;
+      GameTimer::Instance().Stop();
+      return 0;
+
+      // WM_EXITSIZEMOVE is sent when the user releases the resize bars.
+      // Here we reset everything based on the new window dimensions.
+    case WM_EXITSIZEMOVE:
+      mAppPaused = false;
+      mResizing = false;
+      GameTimer::Instance().Start();
+      OnResize();
+      return 0;
+
+      // WM_DESTROY is sent when the window is being destroyed.
+    case WM_DESTROY:
+      PostQuitMessage(0);
+      return 0;
+
+      // The WM_MENUCHAR message is sent when a menu is active and the user presses
+      // a key that does not correspond to any mnemonic or accelerator key.
+    case WM_MENUCHAR:
+      // Don't beep when we alt-enter.
+      return MAKELRESULT(0, MNC_CLOSE);
+
+      // Catch this message so to prevent the window from becoming too small.
+    case WM_GETMINMAXINFO:
+      ((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
+      ((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
+      return 0;
+
+    case WM_LBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+      return 0;
+    case WM_LBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_RBUTTONUP:
+      return 0;
+    case WM_MOUSEMOVE:
+      return 0;
+    case WM_KEYUP:
+      return 0;
+  }
+
+  return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 int DX12App::Run() {
@@ -109,16 +224,10 @@ bool DX12App::InitMainWindow() {
     return false;
   }
 
-  // Compute window rectangle dimensions based on requested client area
-  // dimensions.
-  RECT R = {0, 0, mClientWidth, mClientHeight};
-  AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
-  int width = R.right - R.left;
-  int height = R.bottom - R.top;
-
   mhMainWnd = CreateWindow(L"MainWnd", mMainWndCaption.c_str(),
-                           WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-                           width, height, 0, 0, mhAppInst, 0);
+                           WS_MAXIMIZE | WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+                           CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 0, 0,
+                           mhAppInst, 0);
   if (!mhMainWnd) {
     MessageBox(0, L"CreateWindow Failed.", 0, 0);
     return false;
@@ -174,12 +283,12 @@ bool DX12App::InitDirect3D() {
     fr->RegisterResource(FR_CommandAllocator, allocator);
   }
 
-  // D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
-  // msQualityLevels.Format = mBackBufferFormat;
-  // msQualityLevels.SampleCount = 4;
-  // msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-  // msQualityLevels.NumQualityLevels = 0;
-  // ThrowIfFailed(myDevice->CheckFeatureSupport(
+  //D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
+  //msQualityLevels.Format = mBackBufferFormat;
+  //msQualityLevels.SampleCount = 4;
+  //msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+  //msQualityLevels.NumQualityLevels = 0;
+  //ThrowIfFailed(myDevice->CheckFeatureSupport(
   //	D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
   //	&msQualityLevels,
   //	sizeof(msQualityLevels)));
@@ -265,9 +374,9 @@ void DX12App::FlushCommandQueue() {
   // Advance the fence value to mark commands up to this fence point.
   mCurrentFence++;
 
-  // Add an instruction to the command queue to set a new fence point.  Because
-  // we are on the GPU timeline, the new fence point won't be set until the GPU
-  // finishes processing all the commands prior to this Signal().
+  // Add an instruction to the command queue to set a new fence point.  Because we
+  // are on the GPU timeline, the new fence point won't be set until the GPU finishes
+  // processing all the commands prior to this Signal().
   ThrowIfFailed(myCmdQueue->Signal(mFence.Get(), mCurrentFence));
 
   // Wait until the GPU has completed commands up to this fence point.

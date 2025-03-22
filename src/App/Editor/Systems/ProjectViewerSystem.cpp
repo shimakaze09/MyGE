@@ -1,13 +1,15 @@
-#include "ProjectViewerSystem.h"
+#include <MyGE/App/Editor/Systems/ProjectViewerSystem.h>
+
+#include <MyGE/App/Editor/PlayloadType.h>
+
+#include <MyGE/App/Editor/Components/Inspector.h>
+#include <MyGE/App/Editor/Components/ProjectViewer.h>
 
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
 #include <MyGE/Render/Texture2D.h>
-#include <_deps/imgui/imgui.h>
 
-#include "../Components/Inspector.h"
-#include "../Components/ProjectViewer.h"
-#include "../PlayloadType.h"
+#include <_deps/imgui/imgui.h>
 
 using namespace My::MyGE;
 

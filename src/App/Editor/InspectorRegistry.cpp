@@ -1,4 +1,4 @@
-#include "InspectorRegistry.h"
+#include <MyGE/App/Editor/InspectorRegistry.h>
 
 #include <MyECS/CmptType.h>
 
@@ -12,7 +12,10 @@ struct InspectorRegistry::Impl {
 };
 
 InspectorRegistry::InspectorRegistry() : pImpl{new Impl} {}
-InspectorRegistry::~InspectorRegistry() { delete pImpl; }
+
+InspectorRegistry::~InspectorRegistry() {
+  delete pImpl;
+}
 
 void InspectorRegistry::RegisterCmpt(
     MyECS::CmptType type,

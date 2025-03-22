@@ -10,7 +10,10 @@ class DX12App {
   static DX12App* GetApp() noexcept { return mApp; }
 
   HINSTANCE AppInst() const { return mhAppInst; }
+
   HWND MainWnd() const { return mhMainWnd; }
+
+  virtual bool Init() = 0;
 
   // 1. process message
   // 2. game loop
@@ -26,6 +29,7 @@ class DX12App {
  protected:
   virtual void Update() = 0;
   virtual void Draw() = 0;
+  virtual void OnResize();
 
   virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam,
                           LPARAM lParam) = 0;
@@ -33,13 +37,13 @@ class DX12App {
  protected:
   bool InitMainWindow();
   bool InitDirect3D();
-  void OnResize();
 
   float AspectRatio() const noexcept {
     return static_cast<float>(mClientWidth) / mClientHeight;
   }
 
   D3D12_VIEWPORT GetScreenViewport() const noexcept;
+
   D3D12_RECT GetScissorRect() const noexcept {
     return {0, 0, mClientWidth, mClientHeight};
   }
@@ -50,8 +54,8 @@ class DX12App {
   bool mResizing = false;         // are the resize bars being dragged?
   bool mFullscreenState = false;  // fullscreen enabled
   bool mAppPaused = false;        // is the application paused?
-  int mClientWidth = 800;
-  int mClientHeight = 600;
+  int mClientWidth = 0;
+  int mClientHeight = 0;
 
   void FlushCommandQueue();
 
@@ -61,15 +65,19 @@ class DX12App {
   ID3D12Resource* CurrentBackBuffer() const noexcept {
     return mSwapChainBuffer[curBackBuffer].Get();
   }
+
   D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const noexcept {
     return swapchainRTVCpuDH.GetCpuHandle(curBackBuffer);
   }
+
   DXGI_FORMAT GetBackBufferFormat() const noexcept { return mBackBufferFormat; }
 
   static constexpr char FR_CommandAllocator[] = "__CommandAllocator";
+
   MyDX12::FrameResourceMngr* GetFrameResourceMngr() const noexcept {
     return frameRsrcMngr.get();
   }
+
   ID3D12CommandAllocator* GetCurFrameCommandAllocator() noexcept;
 
  protected:

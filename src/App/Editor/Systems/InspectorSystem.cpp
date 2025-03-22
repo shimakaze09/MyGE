@@ -1,17 +1,19 @@
-#include "InspectorSystem.h"
+#include <MyGE/App/Editor/Systems/InspectorSystem.h>
+
+#include <MyGE/App/Editor/InspectorRegistry.h>
+
+#include <MyGE/App/Editor/Components/Hierarchy.h>
+#include <MyGE/App/Editor/Components/Inspector.h>
 
 #include <_deps/imgui/imgui.h>
-
-#include "../Components/Hierarchy.h"
-#include "../Components/Inspector.h"
-#include "../InspectorRegistry.h"
 
 using namespace My::MyGE;
 
 void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.RegisterCommand([](MyECS::World* world) {
     auto inspector = world->entityMngr.GetSingleton<Inspector>();
-    if (!inspector) return;
+    if (!inspector)
+      return;
 
     auto hierarchy = world->entityMngr.GetSingleton<Hierarchy>();
     switch (inspector->mode) {
@@ -147,7 +149,8 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
               hierarchy->world->entityMngr.Components(inspector->entity);
           for (size_t i = 0; i < cmpts.size(); i++) {
             auto type = cmpts[i].Type();
-            if (InspectorRegistry::Instance().IsRegisteredCmpt(type)) continue;
+            if (InspectorRegistry::Instance().IsRegisteredCmpt(type))
+              continue;
             auto name = hierarchy->world->entityMngr.cmptTraits.Nameof(type);
             if (name.empty())
               ImGui::Text(std::to_string(type.HashCode()).c_str());

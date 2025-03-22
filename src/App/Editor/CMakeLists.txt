@@ -1,8 +1,9 @@
 ADD_TARGET(
-        TEST
-        MODE EXE
+        MODE STATIC
+        SOURCE
+        "${PROJECT_SOURCE_DIR}/include/MyGE/App/Editor"
         LIB
         My::MyGE_App_DX12App
-        C_OPTION_PRIVATE
+        C_OPTION
         /bigobj
 )
