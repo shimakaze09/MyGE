@@ -30,6 +30,7 @@ using Microsoft::WRL::ComPtr;
 
 struct AnimateMeshSystem {
   size_t cnt = 0;
+
   static void OnUpdate(My::MyECS::Schedule& schedule) {
     schedule.RegisterEntityJob(
         [](My::MyGE::MeshFilter* meshFilter,
@@ -47,9 +48,11 @@ struct AnimateMeshSystem {
         "AnimateMesh");
     schedule.RegisterCommand([](My::MyECS::World* w) {
       auto time = w->entityMngr.GetSingleton<My::MyGE::WorldTime>();
-      if (!time) return;
+      if (!time)
+        return;
 
-      if (time->elapsedTime < 10.f) return;
+      if (time->elapsedTime < 10.f)
+        return;
 
       w->systemMngr.Deactivate(w->systemMngr.GetIndex<AnimateMeshSystem>());
     });
@@ -61,7 +64,7 @@ class MyDX12App : public My::MyGE::DX12App {
   MyDX12App(HINSTANCE hInstance);
   ~MyDX12App();
 
-  bool Initialize();
+  virtual bool Init() override;
 
  private:
   void OnResize();
@@ -134,117 +137,9 @@ LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   // to your main application.
   auto imgui_ctx = ImGui::GetCurrentContext();
   switch (msg) {
-      // WM_ACTIVATE is sent when the window is activated or deactivated.
-      // We pause the game when the window is deactivated and unpause it
-      // when it becomes active.
-    case WM_ACTIVATE:
-      if (LOWORD(wParam) == WA_INACTIVE) {
-        mAppPaused = true;
-        My::MyGE::GameTimer::Instance().Stop();
-      } else {
-        mAppPaused = false;
-        My::MyGE::GameTimer::Instance().Start();
-      }
-      return 0;
-
-      // WM_SIZE is sent when the user resizes the window.
-    case WM_SIZE:
-      // Save the new client area dimensions.
-      mClientWidth = LOWORD(lParam);
-      mClientHeight = HIWORD(lParam);
-      if (!myDevice.IsNull()) {
-        if (wParam == SIZE_MINIMIZED) {
-          mAppPaused = true;
-          mMinimized = true;
-          mMaximized = false;
-        } else if (wParam == SIZE_MAXIMIZED) {
-          mAppPaused = false;
-          mMinimized = false;
-          mMaximized = true;
-          OnResize();
-        } else if (wParam == SIZE_RESTORED) {
-          // Restoring from minimized state?
-          if (mMinimized) {
-            mAppPaused = false;
-            mMinimized = false;
-            OnResize();
-          }
-
-          // Restoring from maximized state?
-          else if (mMaximized) {
-            mAppPaused = false;
-            mMaximized = false;
-            OnResize();
-          } else if (mResizing) {
-            // If user is dragging the resize bars, we do not resize
-            // the buffers here because as the user continuously
-            // drags the resize bars, a stream of WM_SIZE messages are
-            // sent to the window, and it would be pointless (and slow)
-            // to resize for each WM_SIZE message received from dragging
-            // the resize bars.  So instead, we reset after the user is
-            // done resizing the window and releases the resize bars, which
-            // sends a WM_EXITSIZEMOVE message.
-          } else  // API call such as SetWindowPos or
-                  // mSwapChain->SetFullscreenState.
-          {
-            OnResize();
-          }
-        }
-      }
-      return 0;
-
-      // WM_EXITSIZEMOVE is sent when the user grabs the resize bars.
-    case WM_ENTERSIZEMOVE:
-      mAppPaused = true;
-      mResizing = true;
-      My::MyGE::GameTimer::Instance().Stop();
-      return 0;
-
-      // WM_EXITSIZEMOVE is sent when the user releases the resize bars.
-      // Here we reset everything based on the new window dimensions.
-    case WM_EXITSIZEMOVE:
-      mAppPaused = false;
-      mResizing = false;
-      My::MyGE::GameTimer::Instance().Start();
-      OnResize();
-      return 0;
-
-      // WM_DESTROY is sent when the window is being destroyed.
-    case WM_DESTROY:
-      PostQuitMessage(0);
-      return 0;
-
-      // The WM_MENUCHAR message is sent when a menu is active and the user
-      // presses a key that does not correspond to any mnemonic or accelerator
-      // key.
-    case WM_MENUCHAR:
-      // Don't beep when we alt-enter.
-      return MAKELRESULT(0, MNC_CLOSE);
-
-      // Catch this message so to prevent the window from becoming too small.
-    case WM_GETMINMAXINFO:
-      ((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
-      ((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
-      return 0;
-
-    case WM_LBUTTONDOWN:
-    case WM_MBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-      if (imguiWantCaptureMouse) return 0;
-      OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-      return 0;
-    case WM_LBUTTONUP:
-    case WM_MBUTTONUP:
-    case WM_RBUTTONUP:
-      if (imguiWantCaptureMouse) return 0;
-      OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-      return 0;
-    case WM_MOUSEMOVE:
-      if (imguiWantCaptureMouse) return 0;
-      OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-      return 0;
     case WM_KEYUP:
-      if (imguiWantCaptureKeyboard) return 0;
+      if (imguiWantCaptureKeyboard)
+        return 0;
       if (wParam == VK_ESCAPE) {
         PostQuitMessage(0);
       }
@@ -252,7 +147,7 @@ LRESULT MyDX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       return 0;
   }
 
-  return DefWindowProc(hwnd, msg, wParam, lParam);
+  return DX12App::MsgProc(hwnd, msg, wParam, lParam);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
@@ -264,11 +159,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     MyDX12App theApp(hInstance);
-    if (!theApp.Initialize()) return 1;
+    if (!theApp.Init())
+      return 1;
 
     int rst = theApp.Run();
     return rst;
-  } catch (My::UDX12::Util::Exception& e) {
+  } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     return 1;
   }
@@ -277,15 +173,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 MyDX12App::MyDX12App(HINSTANCE hInstance) : DX12App(hInstance) {}
 
 MyDX12App::~MyDX12App() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 
   My::MyGE::ImGUIMngr::Instance().Clear();
 }
 
-bool MyDX12App::Initialize() {
-  if (!InitMainWindow()) return false;
+bool MyDX12App::Init() {
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
                                        NumFrameResources, 1);
@@ -341,7 +240,8 @@ void MyDX12App::Update() {
   // 1. Show the big demo window (Most of the sample code is in
   // ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear
   // ImGui!).
-  if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
+  if (show_demo_window)
+    ImGui::ShowDemoWindow(&show_demo_window);
 
   // 2. Show a simple window that we create ourselves. We use a Begin/End pair
   // to created a named window.
@@ -383,7 +283,8 @@ void MyDX12App::Update() {
                                 // window will have a closing button that will
                                 // clear the bool when clicked)
     ImGui::Text("Hello from another window!");
-    if (ImGui::Button("Close Me")) show_another_window = false;
+    if (ImGui::Button("Close Me"))
+      show_another_window = false;
     ImGui::End();
   }
 
@@ -407,13 +308,15 @@ void MyDX12App::Update() {
   world.RunEntityJob(
       [&](const My::MyGE::MeshFilter* meshFilter,
           const My::MyGE::MeshRenderer* meshRenderer) {
-        if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
+        if (!meshFilter->mesh || meshRenderer->materials.empty())
+          return;
 
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
             upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
-          if (!material) continue;
+          if (!material)
+            continue;
           for (const auto& [name, property] : material->properties) {
             if (std::holds_alternative<const My::MyGE::Texture2D*>(property)) {
               My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
@@ -474,7 +377,7 @@ void MyDX12App::Draw() {
                                        D3D12_RESOURCE_STATE_PRESENT,
                                        D3D12_RESOURCE_STATE_RENDER_TARGET);
   myGCmdList->OMSetRenderTargets(1, &CurrentBackBufferView(), FALSE, NULL);
-  myGCmdList.SetDescriptorHeaps(My::UDX12::DescriptorHeapMngr::Instance()
+  myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
                                     .GetCSUGpuDH()
                                     ->GetDescriptorHeap());
   ImGui::Render();
@@ -500,7 +403,9 @@ void MyDX12App::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(MainWnd());
 }
 
-void MyDX12App::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void MyDX12App::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void MyDX12App::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -552,7 +457,8 @@ void MyDX12App::BuildWorld() {
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem, AnimateMeshSystem>();
-  for (auto idx : indices) world.systemMngr.Activate(idx);
+  for (auto idx : indices)
+    world.systemMngr.Activate(idx);
 
   {  // skybox
     auto [e, skybox] = world.entityMngr.Create<My::MyGE::Skybox>();
@@ -570,9 +476,7 @@ void MyDX12App::BuildWorld() {
     cam = std::get<My::MyECS::Entity>(e);
   }
 
-  {
-    world.entityMngr.Create<My::MyGE::WorldTime>();
-  }
+  { world.entityMngr.Create<My::MyGE::WorldTime>(); }
 
   auto quadMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
       "../assets/models/quad.obj");
