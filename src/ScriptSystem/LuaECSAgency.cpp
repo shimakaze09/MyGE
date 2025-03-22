@@ -15,7 +15,8 @@ const My::MyECS::SystemFunc* LuaECSAgency::RegisterEntityJob(
       [bytes = std::move(bytes), cmptLocator = std::move(cmptLocator)](
           MyECS::World* w, MyECS::SingletonsView singletonsView,
           MyECS::ChunkView chunk) {
-        if (chunk.EntityNum() == 0) return;
+        if (chunk.EntityNum() == 0)
+          return;
 
         auto luaCtx = LuaCtxMngr::Instance().GetContext(w);
         auto L = luaCtx->Request();
@@ -63,13 +64,13 @@ const My::MyECS::SystemFunc* LuaECSAgency::RegisterChunkJob(
   auto bytes = systemFunc.dump();
   auto sysfunc = s->RegisterChunkJob(
       [bytes](MyECS::World* w, MyECS::SingletonsView singletonsView,
-              MyECS::ChunkView chunk) {
+              size_t entityBeginIndexInQuery, MyECS::ChunkView chunk) {
         auto luaCtx = LuaCtxMngr::Instance().GetContext(w);
         auto L = luaCtx->Request();
         {
           sol::state_view lua(L);
           sol::function f = lua.load(bytes.as_string_view());
-          f.call(w, singletonsView, chunk);
+          f.call(w, singletonsView, entityBeginIndexInQuery, chunk);
         }
         luaCtx->Recycle(L);
       },

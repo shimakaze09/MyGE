@@ -744,7 +744,7 @@ void Editor::Update() {
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
   auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
 
-  auto UpdateRenderResource = [&](My::MyECS::World* w) {
+  auto UpdateRenderResource = [&](const My::MyECS::World* w) {
     w->RunEntityJob(
         [&](const My::MyGE::MeshFilter* meshFilter,
             const My::MyGE::MeshRenderer* meshRenderer) {

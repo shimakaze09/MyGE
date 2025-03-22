@@ -11,7 +11,7 @@ struct LuaECSAgency {
       MyECS::ArchetypeFilter, MyECS::CmptLocator, MyECS::SingletonLocator,
       bool isParallel);
 
-  // World, SingletonsView, ChunkView
+  // World, SingletonsView, entityBeginIndexInQuery, ChunkView
   static const MyECS::SystemFunc* RegisterChunkJob(
       MyECS::Schedule*, sol::function systemFunc, std::string name,
       MyECS::ArchetypeFilter, MyECS::SingletonLocator, bool isParallel);

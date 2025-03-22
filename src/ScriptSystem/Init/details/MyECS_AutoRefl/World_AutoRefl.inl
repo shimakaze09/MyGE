@@ -49,12 +49,5 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
                                      std::move(archetypeFilter), isParallel,
                                      std::move(singletonLocator));
                 })},
-      Field{"RunJob",
-            My::DecayLambda([](My::MyECS::World* world,
-                               std::function<void(My::MyECS::World*,
-                                                  My::MyECS::SingletonsView)>
-                                   func,
-                               My::MyECS::SingletonLocator singletonLocator) {
-              world->RunJob(std::move(func), std::move(singletonLocator));
-            })}};
+  };
 };

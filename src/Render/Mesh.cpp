@@ -46,7 +46,8 @@ void Mesh::SetSubMeshCount(size_t num) {
     }
   } else {
     size_t cnt = submeshes.size() - num;
-    for (size_t i = 0; i < cnt; i++) submeshes.pop_back();
+    for (size_t i = 0; i < cnt; i++)
+      submeshes.pop_back();
   }
 }
 
@@ -68,7 +69,8 @@ void Mesh::GenNormals() {
   normals.resize(positions.size(), normalf(0, 0, 0));
 
   for (const auto& submesh : GetSubMeshes()) {
-    if (submesh.topology != MeshTopology::Triangles) continue;
+    if (submesh.topology != MeshTopology::Triangles)
+      continue;
 
     assert(submesh.indexCount % 3 == 0);
     for (size_t i = 0; i < submesh.indexCount; i += 3) {
@@ -87,7 +89,8 @@ void Mesh::GenNormals() {
   }
 
   for (auto& normal : normals) {
-    if (normal.norm2() == 0) return;
+    if (normal.norm2() == 0)
+      return;
 
     normal.normalize_self();
   }
@@ -96,16 +99,20 @@ void Mesh::GenNormals() {
 void Mesh::GenUV() {
   uv.resize(positions.size());
   pointf3 center = pointf3::combine(positions, 1.f / positions.size());
-  for (size_t i = 0; i < positions.size(); i++)
-    uv.at(i) = (positions[i] - center)
-                   .normalize()
-                   .cast_to<normalf>()
-                   .to_sphere_texcoord();
+  for (size_t i = 0; i < positions.size(); i++) {
+    auto coord = (positions[i] - center)
+                     .normalize()
+                     .cast_to<normalf>()
+                     .to_sphere_coordinate();
+    uv.at(i) = {coord[1] / (2 * PI<float>), coord[0] / PI<float>};
+  }
 }
 
 void Mesh::GenTangents() {
-  if (normals.empty()) GenNormals();
-  if (uv.empty()) GenUV();
+  if (normals.empty())
+    GenNormals();
+  if (uv.empty())
+    GenUV();
 
   const size_t vertexNum = positions.size();
   const size_t triangleCount = indices.size() / 3;
@@ -114,7 +121,8 @@ void Mesh::GenTangents() {
   std::vector<vecf3> tanT(vertexNum, vecf3{0, 0, 0});
 
   for (const auto& submesh : GetSubMeshes()) {
-    if (submesh.topology != MeshTopology::Triangles) continue;
+    if (submesh.topology != MeshTopology::Triangles)
+      continue;
 
     assert(submesh.indexCount % 3 == 0);
     for (size_t i = 0; i < submesh.indexCount; i += 3) {
@@ -192,10 +200,14 @@ void Mesh::UpdateVertexBuffer() {
 
   size_t stride = 0;
   stride += sizeof(decltype(positions)::value_type);
-  if (!uv.empty()) stride += sizeof(decltype(uv)::value_type);
-  if (!normals.empty()) stride += sizeof(decltype(normals)::value_type);
-  if (!tangents.empty()) stride += sizeof(decltype(tangents)::value_type);
-  if (!colors.empty()) stride += sizeof(decltype(colors)::value_type);
+  if (!uv.empty())
+    stride += sizeof(decltype(uv)::value_type);
+  if (!normals.empty())
+    stride += sizeof(decltype(normals)::value_type);
+  if (!tangents.empty())
+    stride += sizeof(decltype(tangents)::value_type);
+  if (!colors.empty())
+    stride += sizeof(decltype(colors)::value_type);
 
   vertexBuffer.resize(stride * positions.size());
 
