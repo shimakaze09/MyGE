@@ -689,6 +689,7 @@ FodyWeavers.xsd
 
 # Dependencies
 _deps/
+bin/logs/
 
 # Miscs
 *Config.h
