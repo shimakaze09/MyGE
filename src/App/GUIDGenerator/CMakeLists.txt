@@ -1,5 +1,6 @@
 ADD_TARGET(
-  MODE EXE
-  LIB
-    My::MyGE__deps_crossguid
+        MODE EXE
+        OUTPUT_NAME GUIDGenerator
+        LIB
+        My::MyGE__deps_crossguid
 )

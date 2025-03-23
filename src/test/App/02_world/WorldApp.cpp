@@ -152,7 +152,7 @@ bool WorldApp::Initialize() {
   world.RunEntityJob(
       [&](const My::MyGE::MeshFilter* meshFilter) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-            upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+            upload, deleteBatch, myGCmdList.Get(), *meshFilter->mesh);
       },
       false);
 
@@ -212,21 +212,25 @@ void WorldApp::Update() {
           return;
 
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-            upload, deleteBatch, myGCmdList.Get(), meshFilter->mesh);
+            upload, deleteBatch, myGCmdList.Get(), *meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
           if (!material)
             continue;
           for (const auto& [name, property] : material->properties) {
-            if (std::holds_alternative<const My::MyGE::Texture2D*>(property)) {
+            if (std::holds_alternative<
+                    std::shared_ptr<const My::MyGE::Texture2D>>(property)) {
               My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
                   My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
-                  std::get<const My::MyGE::Texture2D*>(property));
-            } else if (std::holds_alternative<const My::MyGE::TextureCube*>(
+                  *std::get<std::shared_ptr<const My::MyGE::Texture2D>>(
+                      property));
+            } else if (std::holds_alternative<
+                           std::shared_ptr<const My::MyGE::TextureCube>>(
                            property)) {
               My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
                   My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
-                  std::get<const My::MyGE::TextureCube*>(property));
+                  *std::get<std::shared_ptr<const My::MyGE::TextureCube>>(
+                      property));
             }
           }
         }
@@ -236,15 +240,16 @@ void WorldApp::Update() {
   if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>();
       skybox && skybox->material) {
     for (const auto& [name, property] : skybox->material->properties) {
-      if (std::holds_alternative<const My::MyGE::Texture2D*>(property)) {
+      if (std::holds_alternative<std::shared_ptr<const My::MyGE::Texture2D>>(
+              property)) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
             My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
-            std::get<const My::MyGE::Texture2D*>(property));
-      } else if (std::holds_alternative<const My::MyGE::TextureCube*>(
-                     property)) {
+            *std::get<std::shared_ptr<const My::MyGE::Texture2D>>(property));
+      } else if (std::holds_alternative<
+                     std::shared_ptr<const My::MyGE::TextureCube>>(property)) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
             My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
-            std::get<const My::MyGE::TextureCube*>(property));
+            *std::get<std::shared_ptr<const My::MyGE::TextureCube>>(property));
       }
     }
   }
@@ -377,7 +382,7 @@ void WorldApp::LoadTextures() {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
         My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
+        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
   }
 
   auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
@@ -386,7 +391,8 @@ void WorldApp::LoadTextures() {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
         My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(path));
+        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(
+            path));
   }
 }
 
@@ -396,7 +402,7 @@ void WorldApp::BuildShaders() {
   for (const auto& guid : shaderGUIDs) {
     const auto& path = assetMngr.GUIDToAssetPath(guid);
     auto shader = assetMngr.LoadAsset<My::MyGE::Shader>(path);
-    My::MyGE::RsrcMngrDX12::Instance().RegisterShader(shader);
+    My::MyGE::RsrcMngrDX12::Instance().RegisterShader(*shader);
     My::MyGE::ShaderMngr::Instance().Register(shader);
   }
 }
