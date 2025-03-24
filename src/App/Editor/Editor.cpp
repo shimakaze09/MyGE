@@ -6,6 +6,7 @@
 
 #include <MyGE/App/Editor/Systems/HierarchySystem.h>
 #include <MyGE/App/Editor/Systems/InspectorSystem.h>
+#include <MyGE/App/Editor/Systems/LoggerSystem.h>
 #include <MyGE/App/Editor/Systems/ProjectViewerSystem.h>
 
 #include <MyGE/App/Editor/InspectorRegistry.h>
@@ -36,6 +37,9 @@
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/imgui_impl_dx12.h>
 #include <_deps/imgui/imgui_impl_win32.h>
+
+#include <MyGE/Core/StringsSink.h>
+#include <MyGE/spdlog.h>
 
 #include <MyGE/ScriptSystem/LuaContext.h>
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
@@ -249,6 +253,7 @@ Editor::Impl::~Impl() {
 bool Editor::Impl::Init() {
   ImGUIMngr::Instance().Init(pEditor->MainWnd(), pEditor->myDevice.Get(),
                              DX12App::NumFrameResources, 3);
+
   AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
   InitInspectorRegistry();
 
@@ -277,6 +282,9 @@ bool Editor::Impl::Init() {
   ImGui::SetCurrentContext(sceneImGuiCtx);
   ImGui::GetIO().IniFilename = "imgui_App_Editor_scene.ini";
   ImGui::SetCurrentContext(nullptr);
+
+  auto logger = spdlog::synchronous_factory::create<StringsSink>("logger");
+  spdlog::details::registry::instance().set_default_logger(logger);
 
   BuildWorld();
 
@@ -633,7 +641,7 @@ void Editor::Impl::Update() {
   deleteBatch.Commit(pEditor->myDevice.Get(), pEditor->myCmdQueue.Get());
 
   {
-  std::vector<PipelineBase::CameraData> gameCameras;
+    std::vector<PipelineBase::CameraData> gameCameras;
     My::MyECS::ArchetypeFilter camFilter{
         {My::MyECS::CmptAccessType::Of<Camera>}};
     curGameWorld->RunEntityJob(
@@ -859,6 +867,8 @@ void Editor::Impl::BuildWorld() {
     }
     editorWorld.entityMngr.Create<Inspector>();
     editorWorld.entityMngr.Create<ProjectViewer>();
+    auto [logSys] = editorWorld.systemMngr.Register<LoggerSystem>();
+    editorWorld.systemMngr.Activate(logSys);
   }
 }
 

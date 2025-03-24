@@ -51,6 +51,7 @@ ADD_TARGET(
         My::MyECS_core
         My::MyDX12_core
         My::MyGE__deps_imgui
+        My::MyGE__deps_spdlog
         DEFINE
         NOMINMAX
 )
