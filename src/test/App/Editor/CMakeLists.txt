@@ -1,4 +1,4 @@
-Ubpa_AddTarget(
+ADD_TARGET(
         TEST
         MODE EXE
         LIB
