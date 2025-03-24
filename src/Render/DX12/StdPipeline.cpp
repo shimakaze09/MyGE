@@ -139,15 +139,16 @@ struct StdPipeline::Impl {
 
   struct IBLData {
     D3D12_GPU_DESCRIPTOR_HANDLE lastSkybox{0};
+    size_t nextIdx{static_cast<size_t>(-1)};
 
-    static constexpr size_t IrradianceMapSize = 256;
+    static constexpr size_t IrradianceMapSize = 128;
     static constexpr size_t PreFilterMapSize = 512;
     static constexpr UINT PreFilterMapMipLevels = 5;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> irradianceMapResource;
     Microsoft::WRL::ComPtr<ID3D12Resource> prefilterMapResource;
     // irradiance map rtv : 0 ~ 5
-    // prefilter map rtv  : 6 ~ 6 + 6 * PreFilterMapMipLevels
+    // prefilter map rtv  : 6 ~ 5 + 6 * PreFilterMapMipLevels
     MyDX12::DescriptorHeapAllocation RTVsDH;
     // irradiance map srv : 0
     // prefilter map rtv  : 1
@@ -1020,9 +1021,9 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
       .RegisterPassRsrc(skyboxPass, deferLightedSkyRT,
                         D3D12_RESOURCE_STATE_RENDER_TARGET, rtvNull)
 
-      .RegisterPassRsrcState(skyboxPass, irradianceMap,
+      .RegisterPassRsrcState(forwardPass, irradianceMap,
                              D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-      .RegisterPassRsrcState(skyboxPass, prefilterMap,
+      .RegisterPassRsrcState(forwardPass, prefilterMap,
                              D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
       .RegisterPassRsrc(forwardPass, forwardDS,
                         D3D12_RESOURCE_STATE_DEPTH_WRITE, dsvDesc)
@@ -1070,115 +1071,115 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
     DrawObjects(cmdList, "Deferred", 3, DXGI_FORMAT_R32G32B32A32_FLOAT);
   });
 
-  fgExecutor.RegisterPassFunc(
-      iblPass, [&](ID3D12GraphicsCommandList* cmdList,
-                   const MyDX12::FG::PassRsrcs& /*rsrcs*/) {
-        if (iblData->lastSkybox.ptr == renderContext.skybox.ptr)
-          return;
+  fgExecutor.RegisterPassFunc(iblPass, [&](ID3D12GraphicsCommandList* cmdList,
+                                           const MyDX12::FG::
+                                               PassRsrcs& /*rsrcs*/) {
+    if (iblData->lastSkybox.ptr == renderContext.skybox.ptr) {
+      if (iblData->nextIdx >= 6 * (1 + IBLData::PreFilterMapMipLevels))
+        return;
+    } else {
+      if (renderContext.skybox.ptr == defaultSkybox.ptr) {
+        iblData->lastSkybox.ptr = defaultSkybox.ptr;
+        return;
+      }
+      iblData->lastSkybox = renderContext.skybox;
+      iblData->nextIdx = 0;
+    }
 
-        if (renderContext.skybox.ptr == defaultSkybox.ptr) {
-          iblData->lastSkybox.ptr = defaultSkybox.ptr;
-          return;
-        }
-        iblData->lastSkybox = renderContext.skybox;
+    auto heap = MyDX12::DescriptorHeapMngr::Instance()
+                    .GetCSUGpuDH()
+                    ->GetDescriptorHeap();
+    cmdList->SetDescriptorHeaps(1, &heap);
 
-        auto heap = MyDX12::DescriptorHeapMngr::Instance()
-                        .GetCSUGpuDH()
-                        ->GetDescriptorHeap();
-        cmdList->SetDescriptorHeaps(1, &heap);
+    if (iblData->nextIdx < 6) {  // irradiance
+      cmdList->SetGraphicsRootSignature(
+          RsrcMngrDX12::Instance().GetShaderRootSignature(*irradianceShader));
+      cmdList->SetPipelineState(
+          RsrcMngrDX12::Instance().GetPSO(ID_PSO_irradiance));
 
-        {  // irradiance
-          cmdList->SetGraphicsRootSignature(
-              RsrcMngrDX12::Instance().GetShaderRootSignature(
-                  *irradianceShader));
-          cmdList->SetPipelineState(
-              RsrcMngrDX12::Instance().GetPSO(ID_PSO_irradiance));
+      D3D12_VIEWPORT viewport;
+      viewport.MinDepth = 0.f;
+      viewport.MaxDepth = 1.f;
+      viewport.TopLeftX = 0.f;
+      viewport.TopLeftY = 0.f;
+      viewport.Width = Impl::IBLData::IrradianceMapSize;
+      viewport.Height = Impl::IBLData::IrradianceMapSize;
+      D3D12_RECT rect = {0, 0, Impl::IBLData::IrradianceMapSize,
+                         Impl::IBLData::IrradianceMapSize};
+      cmdList->RSSetViewports(1, &viewport);
+      cmdList->RSSetScissorRects(1, &rect);
 
-          D3D12_VIEWPORT viewport;
-          viewport.MinDepth = 0.f;
-          viewport.MaxDepth = 1.f;
-          viewport.TopLeftX = 0.f;
-          viewport.TopLeftY = 0.f;
-          viewport.Width = Impl::IBLData::IrradianceMapSize;
-          viewport.Height = Impl::IBLData::IrradianceMapSize;
-          D3D12_RECT rect = {0, 0, Impl::IBLData::IrradianceMapSize,
-                             Impl::IBLData::IrradianceMapSize};
-          cmdList->RSSetViewports(1, &viewport);
-          cmdList->RSSetScissorRects(1, &rect);
+      auto buffer = shaderCBMngr.GetCommonBuffer();
 
-          auto buffer = shaderCBMngr.GetCommonBuffer();
+      cmdList->SetGraphicsRootDescriptorTable(0, renderContext.skybox);
+      //for (UINT i = 0; i < 6; i++) {
+      UINT i = iblData->nextIdx;
+      // Specify the buffers we are going to render to.
+      cmdList->OMSetRenderTargets(1, &iblData->RTVsDH.GetCpuHandle(i), false,
+                                  nullptr);
+      auto address =
+          buffer->GetResource()->GetGPUVirtualAddress() +
+          i * MyDX12::Util::CalcConstantBufferByteSize(sizeof(QuadPositionLs));
+      cmdList->SetGraphicsRootConstantBufferView(1, address);
 
-          cmdList->SetGraphicsRootDescriptorTable(0, renderContext.skybox);
-          for (UINT i = 0; i < 6; i++) {
-            // Specify the buffers we are going to render to.
-            cmdList->OMSetRenderTargets(1, &iblData->RTVsDH.GetCpuHandle(i),
-                                        false, nullptr);
-            auto address = buffer->GetResource()->GetGPUVirtualAddress() +
-                           i * MyDX12::Util::CalcConstantBufferByteSize(
-                                   sizeof(QuadPositionLs));
-            cmdList->SetGraphicsRootConstantBufferView(1, address);
+      cmdList->IASetVertexBuffers(0, 0, nullptr);
+      cmdList->IASetIndexBuffer(nullptr);
+      cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      cmdList->DrawInstanced(6, 1, 0, 0);
+      //}
+    } else {  // prefilter
+      cmdList->SetGraphicsRootSignature(
+          RsrcMngrDX12::Instance().GetShaderRootSignature(*prefilterShader));
+      cmdList->SetPipelineState(
+          RsrcMngrDX12::Instance().GetPSO(ID_PSO_prefilter));
 
-            cmdList->IASetVertexBuffers(0, 0, nullptr);
-            cmdList->IASetIndexBuffer(nullptr);
-            cmdList->IASetPrimitiveTopology(
-                D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-            cmdList->DrawInstanced(6, 1, 0, 0);
-          }
-        }
+      auto buffer = shaderCBMngr.GetCommonBuffer();
 
-        {  // prefilter
-          cmdList->SetGraphicsRootSignature(
-              RsrcMngrDX12::Instance().GetShaderRootSignature(
-                  *prefilterShader));
-          cmdList->SetPipelineState(
-              RsrcMngrDX12::Instance().GetPSO(ID_PSO_prefilter));
+      cmdList->SetGraphicsRootDescriptorTable(0, renderContext.skybox);
+      //size_t size = Impl::IBLData::PreFilterMapSize;
+      //for (UINT mip = 0; mip < Impl::IBLData::PreFilterMapMipLevels; mip++) {
+      UINT mip = (iblData->nextIdx - 6) / 6;
+      size_t size = Impl::IBLData::PreFilterMapSize >> mip;
+      auto mipinfo =
+          buffer->GetResource()->GetGPUVirtualAddress() +
+          6 * MyDX12::Util::CalcConstantBufferByteSize(sizeof(QuadPositionLs)) +
+          mip * MyDX12::Util::CalcConstantBufferByteSize(sizeof(MipInfo));
+      cmdList->SetGraphicsRootConstantBufferView(2, mipinfo);
 
-          auto buffer = shaderCBMngr.GetCommonBuffer();
+      D3D12_VIEWPORT viewport;
+      viewport.MinDepth = 0.f;
+      viewport.MaxDepth = 1.f;
+      viewport.TopLeftX = 0.f;
+      viewport.TopLeftY = 0.f;
+      viewport.Width = (float)size;
+      viewport.Height = (float)size;
+      D3D12_RECT rect = {0, 0, (LONG)size, (LONG)size};
+      cmdList->RSSetViewports(1, &viewport);
+      cmdList->RSSetScissorRects(1, &rect);
 
-          cmdList->SetGraphicsRootDescriptorTable(0, renderContext.skybox);
-          size_t size = Impl::IBLData::PreFilterMapSize;
-          for (UINT mip = 0; mip < Impl::IBLData::PreFilterMapMipLevels;
-               mip++) {
-            auto mipinfo =
-                buffer->GetResource()->GetGPUVirtualAddress() +
-                6 * MyDX12::Util::CalcConstantBufferByteSize(
-                        sizeof(QuadPositionLs)) +
-                mip * MyDX12::Util::CalcConstantBufferByteSize(sizeof(MipInfo));
-            cmdList->SetGraphicsRootConstantBufferView(2, mipinfo);
+      //for (UINT i = 0; i < 6; i++) {
+      UINT i = iblData->nextIdx % 6;
+      auto positionLs =
+          buffer->GetResource()->GetGPUVirtualAddress() +
+          i * MyDX12::Util::CalcConstantBufferByteSize(sizeof(QuadPositionLs));
+      cmdList->SetGraphicsRootConstantBufferView(1, positionLs);
 
-            D3D12_VIEWPORT viewport;
-            viewport.MinDepth = 0.f;
-            viewport.MaxDepth = 1.f;
-            viewport.TopLeftX = 0.f;
-            viewport.TopLeftY = 0.f;
-            viewport.Width = (float)size;
-            viewport.Height = (float)size;
-            D3D12_RECT rect = {0, 0, (LONG)size, (LONG)size};
-            cmdList->RSSetViewports(1, &viewport);
-            cmdList->RSSetScissorRects(1, &rect);
+      // Specify the buffers we are going to render to.
+      cmdList->OMSetRenderTargets(
+          1, &iblData->RTVsDH.GetCpuHandle(6 * (1 + mip) + i), false, nullptr);
 
-            for (UINT i = 0; i < 6; i++) {
-              auto positionLs = buffer->GetResource()->GetGPUVirtualAddress() +
-                                i * MyDX12::Util::CalcConstantBufferByteSize(
-                                        sizeof(QuadPositionLs));
-              cmdList->SetGraphicsRootConstantBufferView(1, positionLs);
+      cmdList->IASetVertexBuffers(0, 0, nullptr);
+      cmdList->IASetIndexBuffer(nullptr);
+      cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      cmdList->DrawInstanced(6, 1, 0, 0);
+      //}
 
-              // Specify the buffers we are going to render to.
-              cmdList->OMSetRenderTargets(
-                  1, &iblData->RTVsDH.GetCpuHandle(6 * (1 + mip) + i), false,
-                  nullptr);
+      size /= 2;
+      //}
+    }
 
-              cmdList->IASetVertexBuffers(0, 0, nullptr);
-              cmdList->IASetIndexBuffer(nullptr);
-              cmdList->IASetPrimitiveTopology(
-                  D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-              cmdList->DrawInstanced(6, 1, 0, 0);
-            }
-
-            size /= 2;
-          }
-        }
-      });
+    iblData->nextIdx++;
+  });
 
   fgExecutor.RegisterPassFunc(
       deferLightingPass, [&](ID3D12GraphicsCommandList* cmdList,
