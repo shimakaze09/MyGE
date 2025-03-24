@@ -19,7 +19,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
   int rst;
   try {
     Editor app(hInstance);
-    if (!app.Init()) return 1;
+    if (!app.Init())
+      return 1;
 
     app.GetGameWorld()->entityMngr.cmptTraits.Register<TestInspector>();
     InspectorRegistry::Instance().RegisterCmpts<TestInspector>();
@@ -33,7 +34,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 #ifndef NDEBUG
   Microsoft::WRL::ComPtr<IDXGIDebug> debug;
   DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug));
-  debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
+  if (debug)
+    debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
 #endif
 
   return rst;
