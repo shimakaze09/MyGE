@@ -260,6 +260,15 @@ bool Editor::Impl::Init() {
   RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
   BuildShaders();
+  PipelineBase::InitDesc initDesc;
+  initDesc.device = pEditor->uDevice.Get();
+  initDesc.rtFormat = gameRTFormat;
+  initDesc.cmdQueue = pEditor->uCmdQueue.Get();
+  initDesc.numFrame = DX12App::NumFrameResources;
+  gamePipeline = std::make_unique<StdPipeline>(
+      RsrcMngrDX12::Instance().GetUpload(), initDesc);
+  scenePipeline = std::make_unique<StdPipeline>(
+      RsrcMngrDX12::Instance().GetUpload(), initDesc);
   RsrcMngrDX12::Instance().GetUpload().End(pEditor->myCmdQueue.Get());
 
   gameRT_SRV =
@@ -287,14 +296,6 @@ bool Editor::Impl::Init() {
   spdlog::details::registry::instance().set_default_logger(logger);
 
   BuildWorld();
-
-  PipelineBase::InitDesc initDesc;
-  initDesc.device = pEditor->myDevice.Get();
-  initDesc.rtFormat = gameRTFormat;
-  initDesc.cmdQueue = pEditor->myCmdQueue.Get();
-  initDesc.numFrame = DX12App::NumFrameResources;
-  gamePipeline = std::make_unique<StdPipeline>(initDesc);
-  scenePipeline = std::make_unique<StdPipeline>(initDesc);
 
   return true;
 }

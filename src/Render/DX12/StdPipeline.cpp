@@ -1,5 +1,7 @@
 #include <MyGE/Render/DX12/StdPipeline.h>
 
+#include "../_deps/LTCTex.h"
+
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
 #include <MyGE/Render/DX12/RsrcMngrDX12.h>
 #include <MyGE/Render/DX12/ShaderCBMngrDX12.h>
@@ -38,12 +40,12 @@ using namespace My::MyECS;
 using namespace My;
 
 struct StdPipeline::Impl {
-  Impl(InitDesc initDesc)
+  Impl(DirectX::ResourceUploadBatch& upload, InitDesc initDesc)
       : initDesc{initDesc},
         frameRsrcMngr{initDesc.numFrame, initDesc.device},
         fg{"Standard Pipeline"},
         shaderCBMngr{initDesc.device} {
-    BuildTextures();
+    BuildTextures(upload);
     BuildFrameResources();
     BuildShaders();
     BuildPSOs();
@@ -139,7 +141,7 @@ struct StdPipeline::Impl {
 
   struct IBLData {
     D3D12_GPU_DESCRIPTOR_HANDLE lastSkybox{0};
-    size_t nextIdx{static_cast<size_t>(-1)};
+    UINT nextIdx{static_cast<UINT>(-1)};
 
     static constexpr size_t IrradianceMapSize = 128;
     static constexpr size_t PreFilterMapSize = 512;
@@ -192,10 +194,14 @@ struct StdPipeline::Impl {
   static constexpr char StdPipeline_cbPerCamera[] = "StdPipeline_cbPerCamera";
   static constexpr char StdPipeline_cbLightArray[] = "StdPipeline_cbLightArray";
   static constexpr char StdPipeline_srvIBL[] = "StdPipeline_IrradianceMap";
+  static constexpr char StdPipeline_srvLTC[] = "StdPipeline_LTC0";
 
   const std::set<std::string_view> commonCBs{StdPipeline_cbPerObject,
                                              StdPipeline_cbPerCamera,
                                              StdPipeline_cbLightArray};
+
+  Texture2D ltcTexes[2];
+  MyDX12::DescriptorHeapAllocation ltcHandles;  // 2
 
   RenderContext renderContext;
   D3D12_GPU_DESCRIPTOR_HANDLE defaultSkybox;
@@ -203,8 +209,8 @@ struct StdPipeline::Impl {
   MyDX12::FrameResourceMngr frameRsrcMngr;
 
   MyDX12::FG::Executor fgExecutor;
-  MyFG::Compiler fgCompiler;
-  MyFG::FrameGraph fg;
+  UFG::Compiler fgCompiler;
+  UFG::FrameGraph fg;
 
   std::shared_ptr<Shader> deferLightingShader;
   std::shared_ptr<Shader> skyboxShader;
@@ -218,7 +224,7 @@ struct StdPipeline::Impl {
 
   const DXGI_FORMAT dsFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-  void BuildTextures();
+  void BuildTextures(DirectX::ResourceUploadBatch& upload);
   void BuildFrameResources();
   void BuildShaders();
   void BuildPSOs();
@@ -267,9 +273,30 @@ StdPipeline::Impl::~Impl() {
   }
   MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
       std::move(defaultIBLSRVDH));
+  RsrcMngrDX12::Instance().UnregisterTexture2D(ltcTexes[0]);
+  RsrcMngrDX12::Instance().UnregisterTexture2D(ltcTexes[1]);
+  MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
+      std::move(ltcHandles));
 }
 
-void StdPipeline::Impl::BuildTextures() {
+void StdPipeline::Impl::BuildTextures(DirectX::ResourceUploadBatch& upload) {
+  ltcTexes[0].image =
+      std::make_shared<Image>(LTCTex::SIZE, LTCTex::SIZE, 4, LTCTex::data1);
+  ltcTexes[1].image =
+      std::make_shared<Image>(LTCTex::SIZE, LTCTex::SIZE, 4, LTCTex::data2);
+  RsrcMngrDX12::Instance().RegisterTexture2D(upload, ltcTexes[0]);
+  RsrcMngrDX12::Instance().RegisterTexture2D(upload, ltcTexes[1]);
+  ltcHandles =
+      MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(2);
+  auto ltc0 = RsrcMngrDX12::Instance().GetTexture2DResource(ltcTexes[0]);
+  auto ltc1 = RsrcMngrDX12::Instance().GetTexture2DResource(ltcTexes[1]);
+  initDesc.device->CreateShaderResourceView(
+      ltc0, &MyDX12::Desc::SRV::Tex2D(ltc0->GetDesc().Format),
+      ltcHandles.GetCpuHandle(static_cast<uint32_t>(0)));
+  initDesc.device->CreateShaderResourceView(
+      ltc1, &MyDX12::Desc::SRV::Tex2D(ltc1->GetDesc().Format),
+      ltcHandles.GetCpuHandle(static_cast<uint32_t>(1)));
+
   auto skyboxBlack = AssetMngr::Instance().LoadAsset<Material>(
       LR"(..\assets\_internal\materials\skyBlack.mat)");
   auto blackTexCube = std::get<std::shared_ptr<const TextureCube>>(
@@ -1228,13 +1255,15 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
           cmdList->SetGraphicsRootDescriptorTable(
               2, iblData->SRVDH.GetGpuHandle());
 
+        cmdList->SetGraphicsRootDescriptorTable(3, ltcHandles.GetGpuHandle());
+
         auto cbLights = frameRsrcMngr.GetCurrentFrameResource()
                             ->GetResource<ShaderCBMngrDX12>("ShaderCBMngrDX12")
                             .GetCommonBuffer()
                             ->GetResource()
                             ->GetGPUVirtualAddress() +
                         renderContext.lightOffset;
-        cmdList->SetGraphicsRootConstantBufferView(3, cbLights);
+        cmdList->SetGraphicsRootConstantBufferView(4, cbLights);
 
         auto cbPerCamera =
             frameRsrcMngr.GetCurrentFrameResource()
@@ -1242,7 +1271,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
                 .GetCommonBuffer()
                 ->GetResource();
         cmdList->SetGraphicsRootConstantBufferView(
-            4, cbPerCamera->GetGPUVirtualAddress());
+            5, cbPerCamera->GetGPUVirtualAddress());
 
         cmdList->IASetVertexBuffers(0, 0, nullptr);
         cmdList->IASetIndexBuffer(nullptr);
@@ -1419,7 +1448,8 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList,
         {{StdPipeline_cbPerObject, objCBAddress},
          {StdPipeline_cbPerCamera, cameraCBAdress},
          {StdPipeline_cbLightArray, lightCBAdress}},
-        {{StdPipeline_srvIBL, ibl}});
+        {{StdPipeline_srvIBL, ibl},
+         {StdPipeline_srvLTC, ltcHandles.GetGpuHandle()}});
     if (shader->passes[obj.passIdx].renderState.stencilState.enable)
       cmdList->OMSetStencilRef(
           shader->passes[obj.passIdx].renderState.stencilState.ref);
@@ -1437,8 +1467,9 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList,
     Draw(obj);
 }
 
-StdPipeline::StdPipeline(InitDesc initDesc)
-    : PipelineBase{initDesc}, pImpl{new Impl{initDesc}} {}
+StdPipeline::StdPipeline(DirectX::ResourceUploadBatch& upload,
+                         InitDesc initDesc)
+    : PipelineBase{initDesc}, pImpl{new Impl{upload, initDesc}} {}
 
 StdPipeline::~StdPipeline() {
   delete pImpl;

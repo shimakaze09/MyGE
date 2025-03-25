@@ -17,6 +17,13 @@ FOREACH (cmpt ${components})
     LIST(APPEND refls ${dst})
 ENDFOREACH ()
 
+DOWNLOAD_ZIP_PRO(
+        https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/LTCTex.zip
+        LTCTex.zip
+        "${CMAKE_CURRENT_SOURCE_DIR}/_deps"
+        SHA256 e03bda5817c6258a8c31a84d5b30385c8fb97dac827b0b708d908994ee419b4b
+)
+
 ADD_TARGET(
         MODE STATIC
         SOURCE
