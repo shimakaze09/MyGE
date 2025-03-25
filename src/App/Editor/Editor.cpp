@@ -767,7 +767,7 @@ void Editor::Impl::InitInspectorRegistry() {
 
           // transform
           Children, LocalToParent, LocalToWorld, Parent, Rotation,
-          RotationEuler, Scale, Translation, WorldToLocal,
+          RotationEuler, Scale, NonUniformScale, Translation, WorldToLocal,
 
           LuaScriptQueue>();
   InspectorRegistry::Instance().RegisterAssets<Shader>();
@@ -792,7 +792,7 @@ void Editor::Impl::InitWorld(My::MyECS::World& w) {
   w.entityMngr.cmptTraits.Register<
       // transform
       Children, LocalToParent, LocalToWorld, Parent, Rotation, RotationEuler,
-      Scale, Translation, WorldToLocal,
+      Scale, NonUniformScale, Translation, WorldToLocal,
 
       // core
       Camera, MeshFilter, MeshRenderer, WorldTime, Name, Skybox, Light, Input,
@@ -814,7 +814,7 @@ void Editor::Impl::BuildWorld() {
 
           // transform
           Children, LocalToParent, LocalToWorld, Parent, Rotation,
-          RotationEuler, Scale, Translation, WorldToLocal,
+          RotationEuler, Scale, NonUniformScale, Translation, WorldToLocal,
 
           LuaScriptQueue,
 

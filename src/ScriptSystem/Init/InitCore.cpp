@@ -13,6 +13,7 @@ void My::MyGE::detail::InitCore(lua_State* L) {
   MyLuaPP::Register<Rotation>(L);
   MyLuaPP::Register<RotationEuler>(L);
   MyLuaPP::Register<Scale>(L);
+  MyLuaPP::Register<NonUniformScale>(L);
   MyLuaPP::Register<Translation>(L);
   MyLuaPP::Register<WorldTime>(L);
   MyLuaPP::Register<WorldToLocal>(L);

@@ -463,7 +463,8 @@ void GameStarter::BuildWorld() {
       // transform
       My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
       My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
-      My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
+      My::MyGE::Scale, My::MyGE::NonUniformScale, My::MyGE::Translation,
+      My::MyGE::WorldToLocal>();
 
   /*world.entityMngr.Create<My::MyGE::WorldTime>();
 
@@ -484,6 +485,7 @@ void GameStarter::BuildWorld() {
 		My::MyGE::Translation,
 		My::MyGE::Rotation,
 		My::MyGE::Scale
+		
 	>();
 	std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;*/
 
@@ -496,7 +498,8 @@ void GameStarter::BuildWorld() {
           // transform
           My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
           My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
-          My::MyGE::Scale, My::MyGE::Translation, My::MyGE::WorldToLocal>();
+          My::MyGE::Scale, My::MyGE::NonUniformScale, My::MyGE::Translation,
+          My::MyGE::WorldToLocal>();
   //OutputDebugStringA(My::MyGE::Serializer::Instance().ToJSON(&world).c_str());
   auto scene = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Scene>(
       L"..\\assets\\scenes\\Game.scene");

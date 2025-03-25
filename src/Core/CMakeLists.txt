@@ -20,6 +20,7 @@ SET(components
         Rotation
         RotationEuler
         Scale
+        NonUniformScale
         Translation
         WorldTime
         WorldToLocal

@@ -5,6 +5,7 @@
 #include "LocalToParent.h"
 #include "LocalToWorld.h"
 #include "Name.h"
+#include "NonUniformScale.h"
 #include "Parent.h"
 #include "Roamer.h"
 #include "Rotation.h"
