@@ -110,7 +110,8 @@ struct StdPipeline::Impl {
     };
 
     struct Disk {
-      static constexpr auto pRadius = &ShaderLight::f0;
+      static constexpr auto pWidth = &ShaderLight::f0;
+      static constexpr auto pHeight = &ShaderLight::f1;
     };
   };
 
@@ -794,9 +795,13 @@ void StdPipeline::Impl::UpdateRenderContext(
                     l2w->value * pointf3{0.f};
                 renderContext.lights.lights[cur_diskLight].dir =
                     (l2w->value * vecf3{0, 1, 0}).normalize();
+                renderContext.lights.lights[cur_diskLight].horizontal =
+                    (l2w->value * vecf3{1, 0, 0}).normalize();
                 renderContext.lights.lights[cur_diskLight].range = light->range;
                 renderContext.lights.lights[cur_diskLight].*
-                    ShaderLight::Disk::pRadius = light->radius;
+                    ShaderLight::Disk::pWidth = light->width;
+                renderContext.lights.lights[cur_diskLight].*
+                    ShaderLight::Disk::pHeight = light->height;
                 cur_diskLight++;
                 break;
               default:

@@ -12,7 +12,6 @@ struct Light {
   float range{10.f};
   float width{1.f};
   float height{1.f};
-  float radius{1.f};
   float innerSpotAngle{21.802f};
   float outerSpotAngle{30.f};
 };

@@ -30,7 +30,6 @@ struct My::MySRefl::TypeInfo<My::MyGE::Light>
       Field{"range", &My::MyGE::Light::range},
       Field{"width", &My::MyGE::Light::width},
       Field{"height", &My::MyGE::Light::height},
-      Field{"radius", &My::MyGE::Light::radius},
       Field{"innerSpotAngle", &My::MyGE::Light::innerSpotAngle},
       Field{"outerSpotAngle", &My::MyGE::Light::outerSpotAngle},
   };
