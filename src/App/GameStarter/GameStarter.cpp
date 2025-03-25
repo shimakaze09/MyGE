@@ -199,14 +199,16 @@ bool GameStarter::Init() {
   My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
   BuildShaders();
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
   My::MyGE::PipelineBase::InitDesc initDesc;
   initDesc.device = myDevice.Get();
   initDesc.rtFormat = GetBackBufferFormat();
   initDesc.cmdQueue = myCmdQueue.Get();
   initDesc.numFrame = NumFrameResources;
-  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(
+      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), initDesc);
+
+  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
 
   // Do the initial resize code.
   OnResize();

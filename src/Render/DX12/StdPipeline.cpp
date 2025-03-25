@@ -695,6 +695,8 @@ void StdPipeline::Impl::UpdateRenderContext(
     renderContext.lights.rectLightNum = 0;
     renderContext.lights.diskLightNum = 0;
 
+    MyECS::ArchetypeFilter filter;
+    filter.all = {MyECS::CmptAccessType::Of<MyECS::Latest<LocalToWorld>>};
     for (auto world : worlds) {
       world->RunEntityJob(
           [&](const Light* light) {
@@ -719,7 +721,7 @@ void StdPipeline::Impl::UpdateRenderContext(
                 break;
             }
           },
-          false);
+          false, filter);
     }
 
     size_t offset_diectionalLight = 0;
@@ -744,7 +746,7 @@ void StdPipeline::Impl::UpdateRenderContext(
                 renderContext.lights.lights[cur_diectionalLight].color =
                     light->color * light->intensity;
                 renderContext.lights.lights[cur_diectionalLight].dir =
-                    (l2w->value * vecf3{0, 0, 1}).normalize();
+                    (l2w->value * vecf3{0, 0, 1}).safe_normalize();
                 cur_diectionalLight++;
                 break;
               case LightType::Point:
@@ -778,9 +780,9 @@ void StdPipeline::Impl::UpdateRenderContext(
                 renderContext.lights.lights[cur_rectLight].position =
                     l2w->value * pointf3{0.f};
                 renderContext.lights.lights[cur_rectLight].dir =
-                    (l2w->value * vecf3{0, 1, 0}).normalize();
+                    (l2w->value * vecf3{0, 1, 0}).safe_normalize();
                 renderContext.lights.lights[cur_rectLight].horizontal =
-                    (l2w->value * vecf3{1, 0, 0}).normalize();
+                    (l2w->value * vecf3{1, 0, 0}).safe_normalize();
                 renderContext.lights.lights[cur_rectLight].range = light->range;
                 renderContext.lights.lights[cur_rectLight].*
                     ShaderLight::Rect::pWidth = light->width;
@@ -794,9 +796,9 @@ void StdPipeline::Impl::UpdateRenderContext(
                 renderContext.lights.lights[cur_diskLight].position =
                     l2w->value * pointf3{0.f};
                 renderContext.lights.lights[cur_diskLight].dir =
-                    (l2w->value * vecf3{0, 1, 0}).normalize();
+                    (l2w->value * vecf3{0, 1, 0}).safe_normalize();
                 renderContext.lights.lights[cur_diskLight].horizontal =
-                    (l2w->value * vecf3{1, 0, 0}).normalize();
+                    (l2w->value * vecf3{1, 0, 0}).safe_normalize();
                 renderContext.lights.lights[cur_diskLight].range = light->range;
                 renderContext.lights.lights[cur_diskLight].*
                     ShaderLight::Disk::pWidth = light->width;

@@ -156,18 +156,18 @@ bool WorldApp::Initialize() {
       },
       false);
 
-  // commit upload, delete ...
-  upload.End(myCmdQueue.raw.Get());
-  myGCmdList->Close();
-  myCmdQueue.Execute(myGCmdList.raw.Get());
-  deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
-
   My::MyGE::PipelineBase::InitDesc initDesc;
   initDesc.device = myDevice.raw.Get();
   initDesc.rtFormat = mBackBufferFormat;
   initDesc.cmdQueue = myCmdQueue.raw.Get();
   initDesc.numFrame = gNumFrameResources;
-  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(upload, initDesc);
+
+  // commit upload, delete ...
+  upload.End(myCmdQueue.raw.Get());
+  myGCmdList->Close();
+  myCmdQueue.Execute(myGCmdList.raw.Get());
+  deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
 
   // Do the initial resize code.
   OnResize();

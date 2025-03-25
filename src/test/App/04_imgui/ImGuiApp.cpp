@@ -329,14 +329,15 @@ bool ImGUIApp::Initialize() {
   LoadTextures();
   BuildShaders();
   BuildMaterials();
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.raw.Get());
 
   My::MyGE::PipelineBase::InitDesc initDesc;
   initDesc.device = myDevice.raw.Get();
   initDesc.rtFormat = mBackBufferFormat;
   initDesc.cmdQueue = myCmdQueue.raw.Get();
   initDesc.numFrame = gNumFrameResources;
-  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(
+      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), initDesc);
+  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.raw.Get());
 
   // Do the initial resize code.
   OnResize();
