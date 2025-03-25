@@ -1,12 +1,13 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "LuaScript.h"
 
 namespace My::MyGE {
 struct LuaScriptQueue {
-  std::vector<const LuaScript*> value;
+  std::vector<std::shared_ptr<LuaScript>> value;
 };
 }  // namespace My::MyGE
 
