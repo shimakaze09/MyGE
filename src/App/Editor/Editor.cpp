@@ -304,9 +304,10 @@ void Editor::Impl::OnGameResize() {
   My::rgbaf background = {0.f, 0.f, 0.f, 1.f};
   auto rtType = My::MyDX12::FG::RsrcType::RT2D(
       gameRTFormat, gameWidth, (UINT)gameHeight, background.data());
+  const auto defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
   ThrowIfFailed(pEditor->myDevice->CreateCommittedResource(
-      &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
-      &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
+      &defaultHeapProp, D3D12_HEAP_FLAG_NONE, &rtType.desc,
+      D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(gameRT.ReleaseAndGetAddressOf())));
   pEditor->myDevice->CreateShaderResourceView(gameRT.Get(), nullptr,
                                               gameRT_SRV.GetCpuHandle());
@@ -329,9 +330,10 @@ void Editor::Impl::OnSceneResize() {
   My::rgbaf background = {0.f, 0.f, 0.f, 1.f};
   auto rtType = My::MyDX12::FG::RsrcType::RT2D(
       sceneRTFormat, sceneWidth, (UINT)sceneHeight, background.data());
+  const auto defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
   ThrowIfFailed(pEditor->myDevice->CreateCommittedResource(
-      &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
-      &rtType.desc, D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
+      &defaultHeapProp, D3D12_HEAP_FLAG_NONE, &rtType.desc,
+      D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(sceneRT.ReleaseAndGetAddressOf())));
   pEditor->myDevice->CreateShaderResourceView(sceneRT.Get(), nullptr,
                                               sceneRT_SRV.GetCpuHandle());
@@ -686,8 +688,8 @@ void Editor::Impl::Draw() {
       pEditor->myGCmdList.ResourceBarrierTransition(
           gameRT.Get(), D3D12_RESOURCE_STATE_PRESENT,
           D3D12_RESOURCE_STATE_RENDER_TARGET);
-      pEditor->myGCmdList->OMSetRenderTargets(1, &gameRT_RTV.GetCpuHandle(),
-                                              FALSE, NULL);
+      const auto gameRTHandle = gameRT_RTV.GetCpuHandle();
+      pEditor->myGCmdList->OMSetRenderTargets(1, &gameRTHandle, FALSE, NULL);
       pEditor->myGCmdList.SetDescriptorHeaps(
           My::MyDX12::DescriptorHeapMngr::Instance()
               .GetCSUGpuDH()
@@ -709,8 +711,8 @@ void Editor::Impl::Draw() {
       pEditor->myGCmdList.ResourceBarrierTransition(
           sceneRT.Get(), D3D12_RESOURCE_STATE_PRESENT,
           D3D12_RESOURCE_STATE_RENDER_TARGET);
-      pEditor->myGCmdList->OMSetRenderTargets(1, &sceneRT_RTV.GetCpuHandle(),
-                                              FALSE, NULL);
+      const auto sceneRTHandle = sceneRT_RTV.GetCpuHandle();
+      pEditor->myGCmdList->OMSetRenderTargets(1, &sceneRTHandle, FALSE, NULL);
       pEditor->myGCmdList.SetDescriptorHeaps(
           My::MyDX12::DescriptorHeapMngr::Instance()
               .GetCSUGpuDH()
@@ -733,8 +735,8 @@ void Editor::Impl::Draw() {
         D3D12_RESOURCE_STATE_RENDER_TARGET);
     pEditor->myGCmdList->ClearRenderTargetView(pEditor->CurrentBackBufferView(),
                                                DirectX::Colors::Black, 0, NULL);
-    pEditor->myGCmdList->OMSetRenderTargets(
-        1, &pEditor->CurrentBackBufferView(), FALSE, NULL);
+    const auto curBack = pEditor->CurrentBackBufferView();
+    pEditor->myGCmdList->OMSetRenderTargets(1, &curBack, FALSE, NULL);
     pEditor->myGCmdList.SetDescriptorHeaps(
         My::MyDX12::DescriptorHeapMngr::Instance()
             .GetCSUGpuDH()

@@ -18,7 +18,10 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 }
 
 D3DApp* D3DApp::mApp = nullptr;
-D3DApp* D3DApp::GetApp() { return mApp; }
+
+D3DApp* D3DApp::GetApp() {
+  return mApp;
+}
 
 D3DApp::D3DApp(HINSTANCE hInstance) : mhAppInst(hInstance) {
   // Only one D3DApp can be constructed.
@@ -27,18 +30,25 @@ D3DApp::D3DApp(HINSTANCE hInstance) : mhAppInst(hInstance) {
 }
 
 D3DApp::~D3DApp() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 }
 
-HINSTANCE D3DApp::AppInst() const { return mhAppInst; }
+HINSTANCE D3DApp::AppInst() const {
+  return mhAppInst;
+}
 
-HWND D3DApp::MainWnd() const { return mhMainWnd; }
+HWND D3DApp::MainWnd() const {
+  return mhMainWnd;
+}
 
 float D3DApp::AspectRatio() const {
   return static_cast<float>(mClientWidth) / mClientHeight;
 }
 
-bool D3DApp::Get4xMsaaState() const { return m4xMsaaState; }
+bool D3DApp::Get4xMsaaState() const {
+  return m4xMsaaState;
+}
 
 void D3DApp::Set4xMsaaState(bool value) {
   if (m4xMsaaState != value) {
@@ -79,9 +89,11 @@ int D3DApp::Run() {
 }
 
 bool D3DApp::Initialize() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   // Do the initial resize code.
   OnResize();
@@ -118,7 +130,8 @@ void D3DApp::OnResize() {
   ThrowIfFailed(myGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
   // Release the previous resources we will be recreating.
-  for (int i = 0; i < SwapChainBufferCount; ++i) mSwapChainBuffer[i].Reset();
+  for (int i = 0; i < SwapChainBufferCount; ++i)
+    mSwapChainBuffer[i].Reset();
   mDepthStencilBuffer.Reset();
 
   // Resize the swap chain.
@@ -163,9 +176,10 @@ void D3DApp::OnResize() {
   optClear.Format = mDepthStencilFormat;
   optClear.DepthStencil.Depth = 1.0f;
   optClear.DepthStencil.Stencil = 0;
+  const auto defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
   ThrowIfFailed(myDevice->CreateCommittedResource(
-      &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
-      &depthStencilDesc, D3D12_RESOURCE_STATE_COMMON, &optClear,
+      &defaultHeapProp, D3D12_HEAP_FLAG_NONE, &depthStencilDesc,
+      D3D12_RESOURCE_STATE_COMMON, &optClear,
       IID_PPV_ARGS(mDepthStencilBuffer.GetAddressOf())));
 
   // Create descriptor to mip level 0 of entire resource using the format of the
@@ -180,10 +194,9 @@ void D3DApp::OnResize() {
 
   // Transition the resource from its initial state to be used as a depth
   // buffer.
-  myGCmdList->ResourceBarrier(
-      1, &CD3DX12_RESOURCE_BARRIER::Transition(
-             mDepthStencilBuffer.Get(), D3D12_RESOURCE_STATE_COMMON,
-             D3D12_RESOURCE_STATE_DEPTH_WRITE));
+  DirectX::TransitionResource(myGCmdList.Get(), mDepthStencilBuffer.Get(),
+                              D3D12_RESOURCE_STATE_COMMON,
+                              D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
   // Execute the resize commands.
   ThrowIfFailed(myGCmdList->Close());

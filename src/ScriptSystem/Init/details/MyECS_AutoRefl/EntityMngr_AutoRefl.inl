@@ -31,7 +31,9 @@ struct My::MySRefl::TypeInfo<My::MyECS::EntityMngr>
       },
       Field{"Detach", &My::MyECS::EntityMngr::Detach},
       Field{"Have", &My::MyECS::EntityMngr::Have},
-      Field{"Get", &My::MyECS::EntityMngr::Get},
+      Field{"Get", static_cast<My::MyECS::CmptPtr (My::MyECS::EntityMngr::*)(
+                       My::MyECS::Entity, My::MyECS::CmptType) const>(
+                       &My::MyECS::EntityMngr::Get)},
       Field{"Components", &My::MyECS::EntityMngr::Components},
       Field{"Exist", &My::MyECS::EntityMngr::Exist},
       Field{"Destroy", &My::MyECS::EntityMngr::Destroy},

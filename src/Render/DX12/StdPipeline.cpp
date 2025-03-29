@@ -352,9 +352,10 @@ void StdPipeline::Impl::BuildFrameResources() {
       auto rsrcDesc = MyDX12::Desc::RSRC::TextureCube(
           IBLData::IrradianceMapSize, IBLData::IrradianceMapSize, 1,
           DXGI_FORMAT_R32G32B32A32_FLOAT);
+      const auto defaultHeapProp =
+          CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
       initDesc.device->CreateCommittedResource(
-          &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-          D3D12_HEAP_FLAG_NONE, &rsrcDesc,
+          &defaultHeapProp, D3D12_HEAP_FLAG_NONE, &rsrcDesc,
           D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &clearColor,
           IID_PPV_ARGS(&iblData->irradianceMapResource));
       for (UINT i = 0; i < 6; i++) {
@@ -373,9 +374,10 @@ void StdPipeline::Impl::BuildFrameResources() {
       auto rsrcDesc = MyDX12::Desc::RSRC::TextureCube(
           IBLData::PreFilterMapSize, IBLData::PreFilterMapSize,
           IBLData::PreFilterMapMipLevels, DXGI_FORMAT_R32G32B32A32_FLOAT);
+      const auto defaultHeapProp =
+          CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
       initDesc.device->CreateCommittedResource(
-          &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-          D3D12_HEAP_FLAG_NONE, &rsrcDesc,
+          &defaultHeapProp, D3D12_HEAP_FLAG_NONE, &rsrcDesc,
           D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &clearColor,
           IID_PPV_ARGS(&iblData->prefilterMapResource));
       for (UINT mip = 0; mip < IBLData::PreFilterMapMipLevels; mip++) {
@@ -1147,10 +1149,10 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
 
       cmdList->SetGraphicsRootDescriptorTable(0, renderContext.skybox);
       //for (UINT i = 0; i < 6; i++) {
-      UINT i = iblData->nextIdx;
+      UINT i = static_cast<UINT>(iblData->nextIdx);
       // Specify the buffers we are going to render to.
-      cmdList->OMSetRenderTargets(1, &iblData->RTVsDH.GetCpuHandle(i), false,
-                                  nullptr);
+      const auto iblRTVHandle = iblData->RTVsDH.GetCpuHandle(i);
+      cmdList->OMSetRenderTargets(1, &iblRTVHandle, false, nullptr);
       auto address =
           buffer->GetResource()->GetGPUVirtualAddress() +
           i * MyDX12::Util::CalcConstantBufferByteSize(sizeof(QuadPositionLs));
@@ -1172,7 +1174,7 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
       cmdList->SetGraphicsRootDescriptorTable(0, renderContext.skybox);
       //size_t size = Impl::IBLData::PreFilterMapSize;
       //for (UINT mip = 0; mip < Impl::IBLData::PreFilterMapMipLevels; mip++) {
-      UINT mip = (iblData->nextIdx - 6) / 6;
+      UINT mip = static_cast<UINT>((iblData->nextIdx - 6) / 6);
       size_t size = Impl::IBLData::PreFilterMapSize >> mip;
       auto mipinfo =
           buffer->GetResource()->GetGPUVirtualAddress() +
@@ -1199,8 +1201,8 @@ void StdPipeline::Impl::Render(const ResizeData& resizeData,
       cmdList->SetGraphicsRootConstantBufferView(1, positionLs);
 
       // Specify the buffers we are going to render to.
-      cmdList->OMSetRenderTargets(
-          1, &iblData->RTVsDH.GetCpuHandle(6 * (1 + mip) + i), false, nullptr);
+      const auto iblRTVHandle = iblData->RTVsDH.GetCpuHandle(6 * (1 + mip) + i);
+      cmdList->OMSetRenderTargets(1, &iblRTVHandle, false, nullptr);
 
       cmdList->IASetVertexBuffers(0, 0, nullptr);
       cmdList->IASetIndexBuffer(nullptr);
@@ -1441,8 +1443,10 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList,
 
     auto& meshGPUBuffer = RsrcMngrDX12::Instance().GetMeshGPUBuffer(*obj.mesh);
     const auto& submesh = obj.mesh->GetSubMeshes().at(obj.submeshIdx);
-    cmdList->IASetVertexBuffers(0, 1, &meshGPUBuffer.VertexBufferView());
-    cmdList->IASetIndexBuffer(&meshGPUBuffer.IndexBufferView());
+    const auto meshVBView = meshGPUBuffer.VertexBufferView();
+    const auto meshIBView = meshGPUBuffer.IndexBufferView();
+    cmdList->IASetVertexBuffers(0, 1, &meshVBView);
+    cmdList->IASetIndexBuffer(&meshIBView);
     // submesh.topology
     cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

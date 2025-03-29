@@ -377,10 +377,11 @@ void MyDX12App::Draw() {
 
   pipeline->Render(CurrentBackBuffer());
 
+  const auto curBack = CurrentBackBufferView();
   myGCmdList.ResourceBarrierTransition(CurrentBackBuffer(),
                                        D3D12_RESOURCE_STATE_PRESENT,
                                        D3D12_RESOURCE_STATE_RENDER_TARGET);
-  myGCmdList->OMSetRenderTargets(1, &CurrentBackBufferView(), FALSE, NULL);
+  myGCmdList->OMSetRenderTargets(1, &curBack, FALSE, NULL);
   myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
                                     .GetCSUGpuDH()
                                     ->GetDescriptorHeap());

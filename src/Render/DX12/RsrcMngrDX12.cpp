@@ -245,8 +245,10 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
       tex2D.image->height.get(), channelMap[tex2D.image->channel - 1], data,
       &tex.resource);
 
+  const auto tex2DSRVDesc =
+      MyDX12::Desc::SRV::Tex2D(tex.resource->GetDesc().Format);
   pImpl->device->CreateShaderResourceView(
-      tex.resource, &MyDX12::Desc::SRV::Tex2D(tex.resource->GetDesc().Format),
+      tex.resource, &tex2DSRVDesc,
       tex.allocationSRV.GetCpuHandle(static_cast<uint32_t>(0)));
 
   pImpl->texture2DMap.emplace_hint(
@@ -304,8 +306,10 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTextureCube(
                                                channelMap[c - 1], datas.data(),
                                                &tex.resource);
 
+  const auto texCubeSRVDesc =
+      MyDX12::Desc::SRV::TexCube(tex.resource->GetDesc().Format);
   pImpl->device->CreateShaderResourceView(
-      tex.resource, &MyDX12::Desc::SRV::TexCube(tex.resource->GetDesc().Format),
+      tex.resource, &texCubeSRVDesc,
       tex.allocationSRV.GetCpuHandle(static_cast<uint32_t>(0)));
 
   pImpl->textureCubeMap.emplace_hint(
