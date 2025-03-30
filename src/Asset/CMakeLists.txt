@@ -1,15 +1,3 @@
-# myshader
-SET(target_dir "${PROJECT_SOURCE_DIR}/src/Asset/ShaderCompiler/_deps")
-IF (NOT EXISTS ${target_dir})
-    ANTLR4_GENERATE(
-            GEN_VISITOR
-            GEN_LISTENER
-            G4 "${PROJECT_SOURCE_DIR}/cmake/Shader.g4"
-            NAMESPACE My::MyGE::details
-            DIR ${target_dir}
-    )
-ENDIF ()
-
 # deps
 SET(libs "")
 SET(defines "")
@@ -22,11 +10,11 @@ ELSE ()
     MESSAGE(STATUS "[MyGE/Asset] not found assimp")
 ENDIF ()
 
+# target
 ADD_TARGET(
         MODE STATIC
         SOURCE
         "${PROJECT_SOURCE_DIR}/include/MyGE/Asset"
-        "${PROJECT_SOURCE_DIR}/cmake/Shader.g4"
         ${myshader_parser_files}
         INC
         "${PROJECT_SOURCE_DIR}/include"

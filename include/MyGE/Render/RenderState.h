@@ -1,6 +1,8 @@
 #pragma once
 
 namespace My::MyGE {
+enum class FillMode { WIREFRAME = 2, SOLID = 3 };
+
 enum class CullMode { NONE = 1, FRONT = 2, BACK = 3 };
 
 enum class CompareFunc {
@@ -76,6 +78,8 @@ struct StencilState {
 };
 
 struct RenderState {
+  FillMode fillMode{FillMode::SOLID};
+
   CullMode cullMode{CullMode::BACK};
 
   CompareFunc zTest{CompareFunc::LESS};

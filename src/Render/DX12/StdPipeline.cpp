@@ -1449,7 +1449,24 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList,
     cmdList->IASetVertexBuffers(0, 1, &meshVBView);
     cmdList->IASetIndexBuffer(&meshIBView);
     // submesh.topology
-    cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    D3D12_PRIMITIVE_TOPOLOGY d3d12Topology;
+    switch (submesh.topology) {
+      case My::MyGE::MeshTopology::Triangles:
+        d3d12Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        break;
+      case My::MyGE::MeshTopology::Lines:
+        d3d12Topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+        break;
+      case My::MyGE::MeshTopology::LineStrip:
+        d3d12Topology = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+        break;
+      case My::MyGE::MeshTopology::Points:
+        d3d12Topology = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+        break;
+      default:
+        break;
+    }
+    cmdList->IASetPrimitiveTopology(d3d12Topology);
 
     D3D12_GPU_VIRTUAL_ADDRESS objCBAddress =
         commonBuffer->GetResource()->GetGPUVirtualAddress() +

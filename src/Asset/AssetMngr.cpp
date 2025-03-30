@@ -1,6 +1,6 @@
 #include <MyGE/Asset/AssetMngr.h>
 
-#include "ShaderCompiler/ShaderCompiler.h"
+#include "MyShaderCompiler/MyShaderCompiler.h"
 
 #include <MyGE/Asset/Serializer.h>
 
@@ -319,7 +319,7 @@ std::shared_ptr<Object> AssetMngr::LoadAsset(
     return text;
   } else if (ext == ".shader") {
     auto shaderText = Impl::LoadText(path);
-    auto [success, rstShader] = ShaderCompiler::Instance().Compile(shaderText);
+    auto [success, rstShader] = MyShaderCompiler::Instance().Compile(shaderText);
     if (!success)
       return nullptr;
     auto shader = std::make_shared<Shader>(std::move(rstShader));

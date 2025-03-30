@@ -276,6 +276,8 @@ void PipelineBase::SetGraphicsRoot_CBV_SRV(
 
 void PipelineBase::SetPSODescForRenderState(
     D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc, const RenderState& renderState) {
+  desc.RasterizerState.FillMode =
+      static_cast<D3D12_FILL_MODE>(renderState.fillMode);
   desc.RasterizerState.CullMode =
       static_cast<D3D12_CULL_MODE>(renderState.cullMode);
   desc.DepthStencilState.DepthFunc =

@@ -1,0 +1,1 @@
+grun MyShader shader -gui < test.myshader
