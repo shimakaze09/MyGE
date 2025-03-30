@@ -534,7 +534,8 @@ void Editor::Impl::Update() {
           hierarchy->world = runningGameWorld.get();
         curGameWorld = runningGameWorld.get();
         runningGameWorld->systemMngr.Activate(
-            runningGameWorld->systemMngr.GetIndex<LuaScriptQueueSystem>());
+            runningGameWorld->systemMngr.systemTraits.GetID(
+                MyECS::SystemTraits::StaticNameof<LuaScriptQueueSystem>()));
         auto ctx = LuaCtxMngr::Instance().Register(runningGameWorld.get());
         sol::state_view lua{ctx->Main()};
         lua["world"] = runningGameWorld.get();
@@ -777,7 +778,7 @@ void Editor::Impl::InitInspectorRegistry() {
 }
 
 void Editor::Impl::InitWorld(My::MyECS::World& w) {
-  auto indices = w.systemMngr.Register<
+  auto indices = w.systemMngr.systemTraits.Register<
       // transform
       LocalToParentSystem, RotationEulerSystem, TRSToLocalToParentSystem,
       TRSToLocalToWorldSystem, WorldToLocalSystem,
@@ -789,7 +790,7 @@ void Editor::Impl::InitWorld(My::MyECS::World& w) {
       HierarchySystem, InspectorSystem, ProjectViewerSystem>();
   for (auto idx : indices)
     w.systemMngr.Activate(idx);
-  w.systemMngr.Register<LuaScriptQueueSystem>();
+  w.systemMngr.systemTraits.Register<LuaScriptQueueSystem>();
 
   w.entityMngr.cmptTraits.Register<
       // transform
@@ -870,7 +871,8 @@ void Editor::Impl::BuildWorld() {
     }
     editorWorld.entityMngr.Create<Inspector>();
     editorWorld.entityMngr.Create<ProjectViewer>();
-    auto [logSys] = editorWorld.systemMngr.Register<LoggerSystem>();
+    auto [logSys] =
+        editorWorld.systemMngr.systemTraits.Register<LoggerSystem>();
     editorWorld.systemMngr.Activate(logSys);
   }
 }

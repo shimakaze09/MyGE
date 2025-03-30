@@ -6,62 +6,58 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::LuaBuffer>
-    : My::MySRefl::TypeInfoBase<My::MyGE::LuaBuffer> {
+    : TypeInfoBase<My::MyGE::LuaBuffer> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[24] = "My::MyGE::LuaBuffer";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"ptr", &My::MyGE::LuaBuffer::ptr},
-      Field{"size", &My::MyGE::LuaBuffer::size},
-      Field{Name::constructor, WrapConstructor<My::MyGE::LuaBuffer()>()},
-      Field{Name::constructor,
-            WrapConstructor<My::MyGE::LuaBuffer(void*, uint64_t)>()},
-      Field{Name::constructor,
-            WrapConstructor<My::MyGE::LuaBuffer(MyECS::Entity*, size_t)>()},
-      Field{"GetEntity", &My::MyGE::LuaBuffer::GetEntity},
-      Field{"SetEntity", &My::MyGE::LuaBuffer::SetEntity},
-      Field{"GetPointer", &My::MyGE::LuaBuffer::GetPointer},
-      Field{"SetPointer", &My::MyGE::LuaBuffer::SetPointer},
-      Field{"GetBuffer",
-            static_cast<My::MyGE::LuaBuffer (My::MyGE::LuaBuffer::*)(size_t)
-                            const>(&My::MyGE::LuaBuffer::GetBuffer)},
+      Field{TSTR("ptr"), &Type::ptr},
+      Field{TSTR("size"), &Type::size},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(void*, uint64_t)>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(MyECS::Entity*, size_t)>()},
+      Field{TSTR("GetEntity"), &Type::GetEntity},
+      Field{TSTR("SetEntity"), &Type::SetEntity},
+      Field{TSTR("GetPointer"), &Type::GetPointer},
+      Field{TSTR("SetPointer"), &Type::SetPointer},
+      Field{TSTR("GetBuffer"),
+            static_cast<MyGE::LuaBuffer (Type::*)(size_t) const>(
+                &Type::GetBuffer)},
+      Field{TSTR("SetBuffer"),
+            static_cast<void (Type::*)(size_t, MyGE::LuaBuffer)>(
+                &Type::SetBuffer)},
+      Field{TSTR("GetBuffer"),
+            static_cast<MyGE::LuaBuffer (Type::*)(size_t, uint64_t) const>(
+                &Type::GetBuffer)},
       Field{
-          "SetBuffer",
-          static_cast<void (My::MyGE::LuaBuffer::*)(
-              size_t, My::MyGE::LuaBuffer)>(&My::MyGE::LuaBuffer::SetBuffer),
-      },
-      Field{
-          "GetBuffer",
-          static_cast<My::MyGE::LuaBuffer (My::MyGE::LuaBuffer::*)(
-              size_t, uint64_t) const>(&My::MyGE::LuaBuffer::GetBuffer),
-      },
-      Field{
-          "SetBuffer",
-          static_cast<void (My::MyGE::LuaBuffer::*)(size_t, void*, size_t)>(
-              &My::MyGE::LuaBuffer::SetBuffer),
-      },
-      Field{"GetBool", &My::MyGE::LuaBuffer::GetBool},
-      Field{"SetBool", &My::MyGE::LuaBuffer::SetBool},
-      Field{"GetInt8", &My::MyGE::LuaBuffer::GetInt8},
-      Field{"SetInt8", &My::MyGE::LuaBuffer::SetInt8},
-      Field{"GetInt16", &My::MyGE::LuaBuffer::GetInt16},
-      Field{"SetInt16", &My::MyGE::LuaBuffer::SetInt16},
-      Field{"GetInt32", &My::MyGE::LuaBuffer::GetInt32},
-      Field{"SetInt32", &My::MyGE::LuaBuffer::SetInt32},
-      Field{"GetInt64", &My::MyGE::LuaBuffer::GetInt64},
-      Field{"SetInt64", &My::MyGE::LuaBuffer::SetInt64},
-      Field{"GetUInt8", &My::MyGE::LuaBuffer::GetUInt8},
-      Field{"SetUInt8", &My::MyGE::LuaBuffer::SetUInt8},
-      Field{"GetUInt16", &My::MyGE::LuaBuffer::GetUInt16},
-      Field{"SetUInt16", &My::MyGE::LuaBuffer::SetUInt16},
-      Field{"GetUInt32", &My::MyGE::LuaBuffer::GetUInt32},
-      Field{"SetUInt32", &My::MyGE::LuaBuffer::SetUInt32},
-      Field{"GetUInt64", &My::MyGE::LuaBuffer::GetUInt64},
-      Field{"SetUInt64", &My::MyGE::LuaBuffer::SetUInt64},
-      Field{"GetFloat", &My::MyGE::LuaBuffer::GetFloat},
-      Field{"SetFloat", &My::MyGE::LuaBuffer::SetFloat},
-      Field{"GetDouble", &My::MyGE::LuaBuffer::GetDouble},
-      Field{"SetDouble", &My::MyGE::LuaBuffer::SetDouble},
-      Field{"GetCString", &My::MyGE::LuaBuffer::GetCString},
-      Field{"SetCString", &My::MyGE::LuaBuffer::SetCString},
+          TSTR("SetBuffer"),
+          static_cast<void (Type::*)(size_t, void*, size_t)>(&Type::SetBuffer)},
+      Field{TSTR("GetBool"), &Type::GetBool},
+      Field{TSTR("SetBool"), &Type::SetBool},
+      Field{TSTR("GetInt8"), &Type::GetInt8},
+      Field{TSTR("SetInt8"), &Type::SetInt8},
+      Field{TSTR("GetInt16"), &Type::GetInt16},
+      Field{TSTR("SetInt16"), &Type::SetInt16},
+      Field{TSTR("GetInt32"), &Type::GetInt32},
+      Field{TSTR("SetInt32"), &Type::SetInt32},
+      Field{TSTR("GetInt64"), &Type::GetInt64},
+      Field{TSTR("SetInt64"), &Type::SetInt64},
+      Field{TSTR("GetUInt8"), &Type::GetUInt8},
+      Field{TSTR("SetUInt8"), &Type::SetUInt8},
+      Field{TSTR("GetUInt16"), &Type::GetUInt16},
+      Field{TSTR("SetUInt16"), &Type::SetUInt16},
+      Field{TSTR("GetUInt32"), &Type::GetUInt32},
+      Field{TSTR("SetUInt32"), &Type::SetUInt32},
+      Field{TSTR("GetUInt64"), &Type::GetUInt64},
+      Field{TSTR("SetUInt64"), &Type::SetUInt64},
+      Field{TSTR("GetFloat"), &Type::GetFloat},
+      Field{TSTR("SetFloat"), &Type::SetFloat},
+      Field{TSTR("GetDouble"), &Type::GetDouble},
+      Field{TSTR("SetDouble"), &Type::SetDouble},
+      Field{TSTR("GetCString"), &Type::GetCString},
+      Field{TSTR("SetCString"), &Type::SetCString},
   };
 };

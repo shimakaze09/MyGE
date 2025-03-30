@@ -6,53 +6,41 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::RTDCmptTraits>
-    : My::MySRefl::TypeInfoBase<My::MyECS::RTDCmptTraits> {
+    : TypeInfoBase<My::MyECS::RTDCmptTraits> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[26] = "My::MyECS::RTDCmptTraits";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"DefaultAlignment", &My::MyECS::RTDCmptTraits::DefaultAlignment},
-      Field{"Clear", &My::MyECS::RTDCmptTraits::Clear},
-
-      Field{"RegisterSize", &My::MyECS::RTDCmptTraits::RegisterSize},
-      Field{"RegisterAlignment", &My::MyECS::RTDCmptTraits::RegisterAlignment},
-      Field{"RegisterDefaultConstructor",
-            &My::MyECS::RTDCmptTraits::RegisterDefaultConstructor},
-      Field{"RegisterCopyConstructor",
-            &My::MyECS::RTDCmptTraits::RegisterCopyConstructor},
-      Field{"RegisterMoveConstructor",
-            &My::MyECS::RTDCmptTraits::RegisterMoveConstructor},
-      Field{"RegisterMoveAssignment",
-            &My::MyECS::RTDCmptTraits::RegisterMoveAssignment},
-      Field{"RegisterDestructor",
-            &My::MyECS::RTDCmptTraits::RegisterDestructor},
-      Field{"RegisterName", &My::MyECS::RTDCmptTraits::RegisterName},
-
-      Field{"GetSizeofs", &My::MyECS::RTDCmptTraits::GetSizeofs},
-      Field{"GetAlignments", &My::MyECS::RTDCmptTraits::GetAlignments},
-      Field{"GetDefaultConstructors",
-            &My::MyECS::RTDCmptTraits::GetDefaultConstructors},
-      Field{"GetCopyConstructors",
-            &My::MyECS::RTDCmptTraits::GetCopyConstructors},
-      Field{"GetMoveConstructors",
-            &My::MyECS::RTDCmptTraits::GetMoveConstructors},
-      Field{"GetMoveAssignments",
-            &My::MyECS::RTDCmptTraits::GetMoveAssignments},
-      Field{"GetDestructors", &My::MyECS::RTDCmptTraits::GetDestructors},
-      Field{"GetNames", &My::MyECS::RTDCmptTraits::GetNames},
-
-      Field{"Sizeof", &My::MyECS::RTDCmptTraits::Sizeof},
-      Field{"Alignof", &My::MyECS::RTDCmptTraits::Alignof},
-      Field{"CopyConstruct", &My::MyECS::RTDCmptTraits::CopyConstruct},
-      Field{"MoveConstruct", &My::MyECS::RTDCmptTraits::MoveConstruct},
-      Field{"MoveAssign", &My::MyECS::RTDCmptTraits::MoveAssign},
-      Field{"Destruct", &My::MyECS::RTDCmptTraits::Destruct},
-      Field{"Nameof", &My::MyECS::RTDCmptTraits::Nameof},
-
-      Field{
-          "Deregister",
-          static_cast<My::MyECS::RTDCmptTraits& (
-              My::MyECS::RTDCmptTraits::*)(My::MyECS::CmptType) noexcept>(
-              &My::MyECS::RTDCmptTraits::Deregister),
-      },
+      Field{TSTR("DefaultAlignment"), &Type::DefaultAlignment},
+      Field{TSTR("Clear"), &Type::Clear},
+      Field{TSTR("RegisterSize"), &Type::RegisterSize},
+      Field{TSTR("RegisterAlignment"), &Type::RegisterAlignment},
+      Field{TSTR("RegisterDefaultConstructor"),
+            &Type::RegisterDefaultConstructor},
+      Field{TSTR("RegisterCopyConstructor"), &Type::RegisterCopyConstructor},
+      Field{TSTR("RegisterMoveConstructor"), &Type::RegisterMoveConstructor},
+      Field{TSTR("RegisterMoveAssignment"), &Type::RegisterMoveAssignment},
+      Field{TSTR("RegisterDestructor"), &Type::RegisterDestructor},
+      Field{TSTR("RegisterName"), &Type::RegisterName},
+      Field{TSTR("GetSizeofs"), &Type::GetSizeofs},
+      Field{TSTR("GetAlignments"), &Type::GetAlignments},
+      Field{TSTR("GetDefaultConstructors"), &Type::GetDefaultConstructors},
+      Field{TSTR("GetCopyConstructors"), &Type::GetCopyConstructors},
+      Field{TSTR("GetMoveConstructors"), &Type::GetMoveConstructors},
+      Field{TSTR("GetMoveAssignments"), &Type::GetMoveAssignments},
+      Field{TSTR("GetDestructors"), &Type::GetDestructors},
+      Field{TSTR("GetNames"), &Type::GetNames},
+      Field{TSTR("Sizeof"), &Type::Sizeof},
+      Field{TSTR("Alignof"), &Type::Alignof},
+      Field{TSTR("DefaultConstruct"), &Type::DefaultConstruct},
+      Field{TSTR("CopyConstruct"), &Type::CopyConstruct},
+      Field{TSTR("MoveConstruct"), &Type::MoveConstruct},
+      Field{TSTR("MoveAssign"), &Type::MoveAssign},
+      Field{TSTR("Destruct"), &Type::Destruct},
+      Field{TSTR("Nameof"), &Type::Nameof},
+      Field{TSTR("Deregister"),
+            static_cast<MyECS::RTDCmptTraits& (
+                Type::*)(MyECS::CmptType) noexcept>(&Type::Deregister)},
   };
 };

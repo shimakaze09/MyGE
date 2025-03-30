@@ -5,14 +5,16 @@
 #include <MySRefl/MySRefl.h>
 
 template<>
-struct My::MySRefl::TypeInfo<My::MyGE::WorldTime>
-    : My::MySRefl::TypeInfoBase<My::MyGE::WorldTime>
+struct My::MySRefl::TypeInfo<My::MyGE::WorldTime> :
+    TypeInfoBase<My::MyGE::WorldTime>
 {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+    static constexpr char name[20] = "My::MyGE::WorldTime";
+#endif
     static constexpr AttrList attrs = {};
-
     static constexpr FieldList fields = {
-        Field{"elapsedTime", &My::MyGE::WorldTime::elapsedTime},
-        Field{"deltaTime", &My::MyGE::WorldTime::deltaTime},
+        Field {TSTR("elapsedTime"), &Type::elapsedTime},
+        Field {TSTR("deltaTime"), &Type::deltaTime},
     };
 };
 

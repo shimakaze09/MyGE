@@ -6,33 +6,30 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGraphviz::Subgraph>
-    : My::MySRefl::TypeInfoBase<My::MyGraphviz::Subgraph> {
+    : TypeInfoBase<My::MyGraphviz::Subgraph> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[26] = "My::MyGraphviz::Subgraph";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyGraphviz::Subgraph(
-                                   My::MyGraphviz::Registry*, std::string)>()},
-      Field{Name::destructor, WrapDestructor<My::MyGraphviz::Subgraph>()},
-      Field{"GetID", &My::MyGraphviz::Subgraph::GetID},
-      Field{"GetSubgraph", &My::MyGraphviz::Subgraph::GetSubgraph},
-      Field{"GetRegistry", &My::MyGraphviz::Subgraph::GetRegistry},
-      Field{"GenSubgraph", &My::MyGraphviz::Subgraph::GenSubgraph},
-      Field{"RegisterGraphAttr", &My::MyGraphviz::Subgraph::RegisterGraphAttr},
-      Field{"RegisterGraphNodeAttr",
-            &My::MyGraphviz::Subgraph::RegisterGraphNodeAttr},
-      Field{"RegisterGraphEdgeAttr",
-            &My::MyGraphviz::Subgraph::RegisterGraphEdgeAttr},
-      Field{"DeregisterGraphAttr",
-            &My::MyGraphviz::Subgraph::DeregisterGraphAttr},
-      Field{"DeregisterGraphNodeAttr",
-            &My::MyGraphviz::Subgraph::DeregisterGraphNodeAttr},
-      Field{"DeregisterGraphEdgeAttr",
-            &My::MyGraphviz::Subgraph::DeregisterGraphEdgeAttr},
-      Field{"HaveNode", &My::MyGraphviz::Subgraph::HaveNode},
-      Field{"HaveEdge", &My::MyGraphviz::Subgraph::HaveEdge},
-      Field{"AddNode", &My::MyGraphviz::Subgraph::AddNode},
-      Field{"AddEdge", &My::MyGraphviz::Subgraph::AddEdge},
-      Field{"EraseNode", &My::MyGraphviz::Subgraph::EraseNode},
-      Field{"EraseEdge", &My::MyGraphviz::Subgraph::EraseEdge},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(MyGraphviz::Registry*, std::string)>()},
+      Field{TSTR(MyMeta::destructor), WrapDestructor<Type>()},
+      Field{TSTR("GetID"), &Type::GetID},
+      Field{TSTR("GetSubgraph"), &Type::GetSubgraph},
+      Field{TSTR("GetRegistry"), &Type::GetRegistry},
+      Field{TSTR("GenSubgraph"), &Type::GenSubgraph},
+      Field{TSTR("RegisterGraphAttr"), &Type::RegisterGraphAttr},
+      Field{TSTR("RegisterGraphNodeAttr"), &Type::RegisterGraphNodeAttr},
+      Field{TSTR("RegisterGraphEdgeAttr"), &Type::RegisterGraphEdgeAttr},
+      Field{TSTR("DeregisterGraphAttr"), &Type::DeregisterGraphAttr},
+      Field{TSTR("DeregisterGraphNodeAttr"), &Type::DeregisterGraphNodeAttr},
+      Field{TSTR("DeregisterGraphEdgeAttr"), &Type::DeregisterGraphEdgeAttr},
+      Field{TSTR("HaveNode"), &Type::HaveNode},
+      Field{TSTR("HaveEdge"), &Type::HaveEdge},
+      Field{TSTR("AddNode"), &Type::AddNode},
+      Field{TSTR("AddEdge"), &Type::AddEdge},
+      Field{TSTR("EraseNode"), &Type::EraseNode},
+      Field{TSTR("EraseEdge"), &Type::EraseEdge},
   };
 };

@@ -6,134 +6,265 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::CullMode>
-    : My::MySRefl::TypeInfoBase<My::MyGE::CullMode> {
+    : TypeInfoBase<My::MyGE::CullMode> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[23] = "My::MyGE::CullMode";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"NONE", My::MyGE::CullMode::NONE},
-      Field{"FRONT", My::MyGE::CullMode::FRONT},
-      Field{"BACK", My::MyGE::CullMode::BACK},
+      Field{TSTR("NONE"), Type::NONE},
+      Field{TSTR("FRONT"), Type::FRONT},
+      Field{TSTR("BACK"), Type::BACK},
   };
 };
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::CompareFunc>
-    : My::MySRefl::TypeInfoBase<My::MyGE::CompareFunc> {
+    : TypeInfoBase<My::MyGE::CompareFunc> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[26] = "My::MyGE::CompareFunc";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"NEVER", My::MyGE::CompareFunc::NEVER},
-      Field{"LESS", My::MyGE::CompareFunc::LESS},
-      Field{"EQUAL", My::MyGE::CompareFunc::EQUAL},
-      Field{"LESS_EQUAL", My::MyGE::CompareFunc::LESS_EQUAL},
-      Field{"GREATER", My::MyGE::CompareFunc::GREATER},
-      Field{"NOT_EQUAL", My::MyGE::CompareFunc::NOT_EQUAL},
-      Field{"GREATER_EQUAL", My::MyGE::CompareFunc::GREATER_EQUAL},
-      Field{"ALWAYS", My::MyGE::CompareFunc::ALWAYS},
+      Field{TSTR("NEVER"), Type::NEVER},
+      Field{TSTR("LESS"), Type::LESS},
+      Field{TSTR("EQUAL"), Type::EQUAL},
+      Field{TSTR("LESS_EQUAL"), Type::LESS_EQUAL},
+      Field{TSTR("GREATER"), Type::GREATER},
+      Field{TSTR("NOT_EQUAL"), Type::NOT_EQUAL},
+      Field{TSTR("GREATER_EQUAL"), Type::GREATER_EQUAL},
+      Field{TSTR("ALWAYS"), Type::ALWAYS},
   };
 };
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGE::Blend>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Blend> {
+struct My::MySRefl::TypeInfo<My::MyGE::Blend> : TypeInfoBase<My::MyGE::Blend> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[20] = "My::MyGE::Blend";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"ZERO", My::MyGE::Blend::ZERO},
-      Field{"ONE", My::MyGE::Blend::ONE},
-      Field{"SRC_COLOR", My::MyGE::Blend::SRC_COLOR},
-      Field{"INV_SRC_COLOR", My::MyGE::Blend::INV_SRC_COLOR},
-      Field{"SRC_ALPHA", My::MyGE::Blend::SRC_ALPHA},
-      Field{"INV_SRC_ALPHA", My::MyGE::Blend::INV_SRC_ALPHA},
-      Field{"DEST_ALPHA", My::MyGE::Blend::DEST_ALPHA},
-      Field{"INV_DEST_ALPHA", My::MyGE::Blend::INV_DEST_ALPHA},
-      Field{"DEST_COLOR", My::MyGE::Blend::DEST_COLOR},
-      Field{"INV_DEST_COLOR", My::MyGE::Blend::INV_DEST_COLOR},
-      Field{"SRC_ALPHA_SAT", My::MyGE::Blend::SRC_ALPHA_SAT},
-      Field{"BLEND_FACTOR", My::MyGE::Blend::BLEND_FACTOR},
-      Field{"INV_BLEND_FACTOR", My::MyGE::Blend::INV_BLEND_FACTOR},
-      Field{"SRC1_COLOR", My::MyGE::Blend::SRC1_COLOR},
-      Field{"INV_SRC1_COLOR", My::MyGE::Blend::INV_SRC1_COLOR},
-      Field{"SRC1_ALPHA", My::MyGE::Blend::SRC1_ALPHA},
-      Field{"INV_SRC1_ALPHA", My::MyGE::Blend::INV_SRC1_ALPHA},
+      Field{TSTR("ZERO"), Type::ZERO},
+      Field{TSTR("ONE"), Type::ONE},
+      Field{TSTR("SRC_COLOR"), Type::SRC_COLOR},
+      Field{TSTR("INV_SRC_COLOR"), Type::INV_SRC_COLOR},
+      Field{TSTR("SRC_ALPHA"), Type::SRC_ALPHA},
+      Field{TSTR("INV_SRC_ALPHA"), Type::INV_SRC_ALPHA},
+      Field{TSTR("DEST_ALPHA"), Type::DEST_ALPHA},
+      Field{TSTR("INV_DEST_ALPHA"), Type::INV_DEST_ALPHA},
+      Field{TSTR("DEST_COLOR"), Type::DEST_COLOR},
+      Field{TSTR("INV_DEST_COLOR"), Type::INV_DEST_COLOR},
+      Field{TSTR("SRC_ALPHA_SAT"), Type::SRC_ALPHA_SAT},
+      Field{TSTR("BLEND_FACTOR"), Type::BLEND_FACTOR},
+      Field{TSTR("INV_BLEND_FACTOR"), Type::INV_BLEND_FACTOR},
+      Field{TSTR("SRC1_COLOR"), Type::SRC1_COLOR},
+      Field{TSTR("INV_SRC1_COLOR"), Type::INV_SRC1_COLOR},
+      Field{TSTR("SRC1_ALPHA"), Type::SRC1_ALPHA},
+      Field{TSTR("INV_SRC1_ALPHA"), Type::INV_SRC1_ALPHA},
   };
 };
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::BlendOp>
-    : My::MySRefl::TypeInfoBase<My::MyGE::BlendOp> {
+    : TypeInfoBase<My::MyGE::BlendOp> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[22] = "My::MyGE::BlendOp";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"ADD", My::MyGE::BlendOp::ADD},
-      Field{"SUBTRACT", My::MyGE::BlendOp::SUBTRACT},
-      Field{"REV_SUBTRACT", My::MyGE::BlendOp::REV_SUBTRACT},
-      Field{"MIN", My::MyGE::BlendOp::MIN},
-      Field{"MAX", My::MyGE::BlendOp::MAX},
+      Field{TSTR("ADD"), Type::ADD},
+      Field{TSTR("SUBTRACT"), Type::SUBTRACT},
+      Field{TSTR("REV_SUBTRACT"), Type::REV_SUBTRACT},
+      Field{TSTR("MIN"), Type::MIN},
+      Field{TSTR("MAX"), Type::MAX},
   };
 };
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::BlendState>
-    : My::MySRefl::TypeInfoBase<My::MyGE::BlendState> {
+    : TypeInfoBase<My::MyGE::BlendState> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[25] = "My::MyGE::BlendState";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"enable", &My::MyGE::BlendState::enable},
-      Field{"src", &My::MyGE::BlendState::src},
-      Field{"dest", &My::MyGE::BlendState::dest},
-      Field{"op", &My::MyGE::BlendState::op},
-      Field{"srcAlpha", &My::MyGE::BlendState::srcAlpha},
-      Field{"destAlpha", &My::MyGE::BlendState::destAlpha},
-      Field{"opAlpha", &My::MyGE::BlendState::opAlpha},
+      Field{TSTR("enable"), &Type::enable,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> bool {
+                       return {false};
+                     }},
+            }},
+      Field{TSTR("src"), &Type::src,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::Blend {
+                       return {My::MyGE::Blend::SRC_ALPHA};
+                     }},
+            }},
+      Field{TSTR("dest"), &Type::dest,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::Blend {
+                       return {My::MyGE::Blend::INV_SRC_ALPHA};
+                     }},
+            }},
+      Field{TSTR("op"), &Type::op,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::BlendOp {
+                       return {My::MyGE::BlendOp::ADD};
+                     }},
+            }},
+      Field{TSTR("srcAlpha"), &Type::srcAlpha,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::Blend {
+                       return {My::MyGE::Blend::ONE};
+                     }},
+            }},
+      Field{TSTR("destAlpha"), &Type::destAlpha,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::Blend {
+                       return {My::MyGE::Blend::INV_SRC_ALPHA};
+                     }},
+            }},
+      Field{TSTR("opAlpha"), &Type::opAlpha,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::BlendOp {
+                       return {My::MyGE::BlendOp::ADD};
+                     }},
+            }},
   };
 };
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::StencilOp>
-    : My::MySRefl::TypeInfoBase<My::MyGE::StencilOp> {
+    : TypeInfoBase<My::MyGE::StencilOp> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[24] = "My::MyGE::StencilOp";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"KEEP", My::MyGE::StencilOp::KEEP},
-      Field{"ZERO", My::MyGE::StencilOp::ZERO},
-      Field{"REPLACE", My::MyGE::StencilOp::REPLACE},
-      Field{"INCR_SAT", My::MyGE::StencilOp::INCR_SAT},
-      Field{"DECR_SAT", My::MyGE::StencilOp::DECR_SAT},
-      Field{"INVERT", My::MyGE::StencilOp::INVERT},
-      Field{"INCR", My::MyGE::StencilOp::INCR},
-      Field{"DECR", My::MyGE::StencilOp::DECR},
+      Field{TSTR("KEEP"), Type::KEEP},
+      Field{TSTR("ZERO"), Type::ZERO},
+      Field{TSTR("REPLACE"), Type::REPLACE},
+      Field{TSTR("INCR_SAT"), Type::INCR_SAT},
+      Field{TSTR("DECR_SAT"), Type::DECR_SAT},
+      Field{TSTR("INVERT"), Type::INVERT},
+      Field{TSTR("INCR"), Type::INCR},
+      Field{TSTR("DECR"), Type::DECR},
   };
 };
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::StencilState>
-    : My::MySRefl::TypeInfoBase<My::MyGE::StencilState> {
+    : TypeInfoBase<My::MyGE::StencilState> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[27] = "My::MyGE::StencilState";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"enable", &My::MyGE::StencilState::enable},
-      Field{"ref", &My::MyGE::StencilState::ref},
-      Field{"readMask", &My::MyGE::StencilState::readMask},
-      Field{"writeMask", &My::MyGE::StencilState::writeMask},
-      Field{"failOp", &My::MyGE::StencilState::failOp},
-      Field{"depthFailOp", &My::MyGE::StencilState::depthFailOp},
-      Field{"passOp", &My::MyGE::StencilState::passOp},
-      Field{"func", &My::MyGE::StencilState::func},
+      Field{TSTR("enable"), &Type::enable,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> bool {
+                       return {false};
+                     }},
+            }},
+      Field{TSTR("ref"), &Type::ref,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> uint8_t {
+                       return {0};
+                     }},
+            }},
+      Field{TSTR("readMask"), &Type::readMask,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> uint8_t {
+                       return {0xff};
+                     }},
+            }},
+      Field{TSTR("writeMask"), &Type::writeMask,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> uint8_t {
+                       return {0xff};
+                     }},
+            }},
+      Field{TSTR("failOp"), &Type::failOp,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::StencilOp {
+                       return {My::MyGE::StencilOp::KEEP};
+                     }},
+            }},
+      Field{TSTR("depthFailOp"), &Type::depthFailOp,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::StencilOp {
+                       return {My::MyGE::StencilOp::KEEP};
+                     }},
+            }},
+      Field{TSTR("passOp"), &Type::passOp,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::StencilOp {
+                       return {My::MyGE::StencilOp::KEEP};
+                     }},
+            }},
+      Field{TSTR("func"), &Type::func,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::CompareFunc {
+                       return {My::MyGE::CompareFunc::ALWAYS};
+                     }},
+            }},
   };
 };
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::RenderState>
-    : My::MySRefl::TypeInfoBase<My::MyGE::RenderState> {
+    : TypeInfoBase<My::MyGE::RenderState> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[26] = "My::MyGE::RenderState";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"cullMode", &My::MyGE::RenderState::cullMode},
-      Field{"zTest", &My::MyGE::RenderState::zTest},
-      Field{"zWrite", &My::MyGE::RenderState::zWrite},
-      Field{"stencilState", &My::MyGE::RenderState::stencilState},
-      Field{"blendStates", &My::MyGE::RenderState::blendStates},
-      Field{"colorMask", &My::MyGE::RenderState::colorMask},
+      Field{TSTR("cullMode"), &Type::cullMode,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::CullMode {
+                       return {My::MyGE::CullMode::BACK};
+                     }},
+            }},
+      Field{TSTR("zTest"), &Type::zTest,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> My::MyGE::CompareFunc {
+                       return {My::MyGE::CompareFunc::LESS};
+                     }},
+            }},
+      Field{TSTR("zWrite"), &Type::zWrite,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> bool {
+                       return {true};
+                     }},
+            }},
+      Field{TSTR("stencilState"), &Type::stencilState},
+      Field{TSTR("blendStates"), &Type::blendStates},
+      Field{TSTR("colorMask"), &Type::colorMask,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() {
+                       static const uint8_t value[8]{0x0f, 0x0f, 0x0f, 0x0f,
+                                                     0x0f, 0x0f, 0x0f, 0x0f};
+                       return value;
+                     }},
+            }},
   };
 };

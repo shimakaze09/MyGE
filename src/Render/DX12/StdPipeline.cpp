@@ -210,8 +210,8 @@ struct StdPipeline::Impl {
   MyDX12::FrameResourceMngr frameRsrcMngr;
 
   MyDX12::FG::Executor fgExecutor;
-  UFG::Compiler fgCompiler;
-  UFG::FrameGraph fg;
+  MyFG::Compiler fgCompiler;
+  MyFG::FrameGraph fg;
 
   std::shared_ptr<Shader> deferLightingShader;
   std::shared_ptr<Shader> skyboxShader;
@@ -291,12 +291,12 @@ void StdPipeline::Impl::BuildTextures(DirectX::ResourceUploadBatch& upload) {
       MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(2);
   auto ltc0 = RsrcMngrDX12::Instance().GetTexture2DResource(ltcTexes[0]);
   auto ltc1 = RsrcMngrDX12::Instance().GetTexture2DResource(ltcTexes[1]);
+  const auto ltc0SRVDesc = MyDX12::Desc::SRV::Tex2D(ltc0->GetDesc().Format);
+  const auto ltc1SRVDesc = MyDX12::Desc::SRV::Tex2D(ltc1->GetDesc().Format);
   initDesc.device->CreateShaderResourceView(
-      ltc0, &MyDX12::Desc::SRV::Tex2D(ltc0->GetDesc().Format),
-      ltcHandles.GetCpuHandle(static_cast<uint32_t>(0)));
+      ltc0, &ltc0SRVDesc, ltcHandles.GetCpuHandle(static_cast<uint32_t>(0)));
   initDesc.device->CreateShaderResourceView(
-      ltc1, &MyDX12::Desc::SRV::Tex2D(ltc1->GetDesc().Format),
-      ltcHandles.GetCpuHandle(static_cast<uint32_t>(1)));
+      ltc1, &ltc1SRVDesc, ltcHandles.GetCpuHandle(static_cast<uint32_t>(1)));
 
   auto skyboxBlack = AssetMngr::Instance().LoadAsset<Material>(
       LR"(..\assets\_internal\materials\skyBlack.mat)");
@@ -675,7 +675,8 @@ void StdPipeline::Impl::UpdateRenderContext(
                 continue;
               RenderContext::EntityData data;
               data.l2w = L2Ws[i].value;
-              data.w2l = W2Ls ? W2Ls[i].value : L2Ws[i].value.inverse();
+              data.w2l =
+                  !W2Ls.empty() ? W2Ls[i].value : L2Ws[i].value.inverse();
               renderContext.entity2data.emplace_hint(
                   target, std::pair{obj.entity.Idx(), data});
             }
@@ -703,19 +704,19 @@ void StdPipeline::Impl::UpdateRenderContext(
       world->RunEntityJob(
           [&](const Light* light) {
             switch (light->type) {
-              case LightType::Directional:
+              case Light::Type::Directional:
                 renderContext.lights.diectionalLightNum++;
                 break;
-              case LightType::Point:
+              case Light::Type::Point:
                 renderContext.lights.pointLightNum++;
                 break;
-              case LightType::Spot:
+              case Light::Type::Spot:
                 renderContext.lights.spotLightNum++;
                 break;
-              case LightType::Rect:
+              case Light::Type::Rect:
                 renderContext.lights.rectLightNum++;
                 break;
-              case LightType::Disk:
+              case Light::Type::Disk:
                 renderContext.lights.diskLightNum++;
                 break;
               default:
@@ -744,14 +745,14 @@ void StdPipeline::Impl::UpdateRenderContext(
       world->RunEntityJob(
           [&](const Light* light, const LocalToWorld* l2w) {
             switch (light->type) {
-              case LightType::Directional:
+              case Light::Type::Directional:
                 renderContext.lights.lights[cur_diectionalLight].color =
                     light->color * light->intensity;
                 renderContext.lights.lights[cur_diectionalLight].dir =
                     (l2w->value * vecf3{0, 0, 1}).safe_normalize();
                 cur_diectionalLight++;
                 break;
-              case LightType::Point:
+              case Light::Type::Point:
                 renderContext.lights.lights[cur_pointLight].color =
                     light->color * light->intensity;
                 renderContext.lights.lights[cur_pointLight].position =
@@ -760,13 +761,13 @@ void StdPipeline::Impl::UpdateRenderContext(
                     light->range;
                 cur_pointLight++;
                 break;
-              case LightType::Spot:
+              case Light::Type::Spot:
                 renderContext.lights.lights[cur_spotLight].color =
                     light->color * light->intensity;
                 renderContext.lights.lights[cur_spotLight].position =
                     l2w->value * pointf3{0.f};
                 renderContext.lights.lights[cur_spotLight].dir =
-                    (l2w->value * vecf3{0, 1, 0}).normalize();
+                    (l2w->value * vecf3{0, 1, 0}).safe_normalize();
                 renderContext.lights.lights[cur_spotLight].range = light->range;
                 renderContext.lights.lights[cur_spotLight].*
                     ShaderLight::Spot::pCosHalfInnerSpotAngle =
@@ -776,7 +777,7 @@ void StdPipeline::Impl::UpdateRenderContext(
                     std::cos(to_radian(light->outerSpotAngle) / 2.f);
                 cur_spotLight++;
                 break;
-              case LightType::Rect:
+              case Light::Type::Rect:
                 renderContext.lights.lights[cur_rectLight].color =
                     light->color * light->intensity;
                 renderContext.lights.lights[cur_rectLight].position =
@@ -792,7 +793,7 @@ void StdPipeline::Impl::UpdateRenderContext(
                     ShaderLight::Rect::pHeight = light->height;
                 cur_rectLight++;
                 break;
-              case LightType::Disk:
+              case Light::Type::Disk:
                 renderContext.lights.lights[cur_diskLight].color =
                     light->color * light->intensity;
                 renderContext.lights.lights[cur_diskLight].position =

@@ -6,16 +6,14 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::AccessMode>
-    : My::MySRefl::TypeInfoBase<My::MyECS::AccessMode> {
+    : TypeInfoBase<My::MyECS::AccessMode> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[23] = "My::MyECS::AccessMode";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"LAST_FRAME", My::MyECS::AccessMode::LAST_FRAME},
-      Field{"WRITE", My::MyECS::AccessMode::WRITE},
-      Field{"LATEST", My::MyECS::AccessMode::LATEST},
-      Field{"LAST_FRAME_SINGLETON",
-            My::MyECS::AccessMode::LAST_FRAME_SINGLETON},
-      Field{"WRITE_SINGLETON", My::MyECS::AccessMode::WRITE_SINGLETON},
-      Field{"LATEST_SINGLETON", My::MyECS::AccessMode::LATEST_SINGLETON},
+      Field{TSTR("LAST_FRAME"), Type::LAST_FRAME},
+      Field{TSTR("WRITE"), Type::WRITE},
+      Field{TSTR("LATEST"), Type::LATEST},
   };
 };

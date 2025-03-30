@@ -5,13 +5,17 @@
 #include <MySRefl/MySRefl.h>
 
 template<>
-struct My::MySRefl::TypeInfo<My::MyGE::LocalToParent>
-    : My::MySRefl::TypeInfoBase<My::MyGE::LocalToParent>
+struct My::MySRefl::TypeInfo<My::MyGE::LocalToParent> :
+    TypeInfoBase<My::MyGE::LocalToParent>
 {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+    static constexpr char name[24] = "My::MyGE::LocalToParent";
+#endif
     static constexpr AttrList attrs = {};
-
     static constexpr FieldList fields = {
-        Field{"value", &My::MyGE::LocalToParent::value},
+        Field {TSTR("value"), &Type::value, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->transformf{ return {transformf::eye()}; }},
+        }},
     };
 };
 

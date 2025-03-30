@@ -5,13 +5,15 @@
 #include <MySRefl/MySRefl.h>
 
 template<>
-struct My::MySRefl::TypeInfo<My::MyGE::Children>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Children>
+struct My::MySRefl::TypeInfo<My::MyGE::Children> :
+    TypeInfoBase<My::MyGE::Children>
 {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+    static constexpr char name[19] = "My::MyGE::Children";
+#endif
     static constexpr AttrList attrs = {};
-
     static constexpr FieldList fields = {
-        Field{"value", &My::MyGE::Children::value},
+        Field {TSTR("value"), &Type::value},
     };
 };
 

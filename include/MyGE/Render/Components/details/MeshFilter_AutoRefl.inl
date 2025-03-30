@@ -6,10 +6,12 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::MeshFilter>
-    : My::MySRefl::TypeInfoBase<My::MyGE::MeshFilter> {
+    : TypeInfoBase<My::MyGE::MeshFilter> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[25] = "My::MyGE::MeshFilter";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"mesh", &My::MyGE::MeshFilter::mesh},
+      Field{TSTR("mesh"), &Type::mesh},
   };
 };

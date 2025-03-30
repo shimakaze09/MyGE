@@ -27,7 +27,7 @@ ADD_TARGET(
         SOURCE
         "${PROJECT_SOURCE_DIR}/include/MyGE/Asset"
         "${PROJECT_SOURCE_DIR}/cmake/Shader.g4"
-        ${ushader_parser_files}
+        ${myshader_parser_files}
         INC
         "${PROJECT_SOURCE_DIR}/include"
         LIB

@@ -7,21 +7,33 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::World>
-    : My::MySRefl::TypeInfoBase<My::MyECS::World> {
+    : TypeInfoBase<My::MyECS::World> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[18] = "My::MyECS::World";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::World()>()},
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::World(const My::MyECS::World&)>()},
-      Field{"entityMngr", &My::MyECS::World::entityMngr},
-      Field{"systemMngr", &My::MyECS::World::systemMngr},
-      Field{"Update", &My::MyECS::World::Update},
-      Field{"DumpUpdateJobGraph", &My::MyECS::World::DumpUpdateJobGraph},
-      Field{"GenUpdateFrameGraph", &My::MyECS::World::GenUpdateFrameGraph},
-      Field{"AddCommand", &My::MyECS::World::AddCommand},
-      // Field{"Accept", &My::MyECS::World::Accept},
-      Field{"RunEntityJob",
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(const MyECS::World&)>()},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type(MyECS::World&&)>()},
+      Field{TSTR(MyMeta::destructor), WrapDestructor<Type>()},
+      Field{TSTR("systemMngr"), &Type::systemMngr},
+      Field{TSTR("entityMngr"), &Type::entityMngr},
+      Field{TSTR("Update"), &Type::Update},
+      Field{
+          TSTR("AddCommand"), &Type::AddCommand,
+          AttrList{
+              Attr{TSTR(MyMeta::default_functions),
+                   std::tuple{[](Type* __this, std::function<void()> command) {
+                     return __this->AddCommand(
+                         std::forward<std::function<void()>>(command));
+                   }}},
+          }},
+      Field{TSTR("DumpUpdateJobGraph"), &Type::DumpUpdateJobGraph},
+      Field{TSTR("GenUpdateFrameGraph"), &Type::GenUpdateFrameGraph},
+      Field{TSTR("Accept"), &Type::Accept},
+      Field{TSTR("RunEntityJob"),
             My::DecayLambda(
                 [](My::MyECS::World* world,
                    std::function<void(
@@ -36,7 +48,7 @@ struct My::MySRefl::TypeInfo<My::MyECS::World>
                       std::move(func), isParallel, std::move(archetypeFilter),
                       std::move(cmptLocator), std::move(singletonLocator));
                 })},
-      Field{"RunChunkJob",
+      Field{TSTR("RunChunkJob"),
             My::DecayLambda(
                 [](My::MyECS::World* world,
                    std::function<void(My::MyECS::World*, My::MyECS::ChunkView,

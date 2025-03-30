@@ -163,8 +163,7 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
             auto parentChildren =
                 hierarchy->world->entityMngr.Get<Children>(payload_e_p->value);
             parentChildren->value.erase(payload_e);
-            hierarchy->world->entityMngr.Detach(
-                payload_e, &MyECS::CmptType::Of<Parent>, 1);
+            hierarchy->world->entityMngr.Detach<Parent>(payload_e);
           }
         }
         ImGui::EndDragDropTarget();

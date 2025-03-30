@@ -6,20 +6,20 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::Entity>
-    : My::MySRefl::TypeInfoBase<My::MyECS::Entity> {
+    : TypeInfoBase<My::MyECS::Entity> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[19] = "My::MyECS::Entity";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::Entity(size_t, size_t)>()},
-      Field{Name::constructor, WrapConstructor<My::MyECS::Entity()>()},
-      Field{"Idx", &My::MyECS::Entity::Idx},
-      Field{"Version", &My::MyECS::Entity::Version},
-      Field{"Invalid", &My::MyECS::Entity::Invalid},
-      Field{"Valid", &My::MyECS::Entity::Valid},
-      Field{"operator==", &My::MyECS::Entity::operator== },
-            Field{
-                "operator<",
-                &My::MyECS::Entity::operator<},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type(size_t, size_t)>()},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR("Idx"), &Type::Idx}, Field{TSTR("Version"), &Type::Version},
+      Field{TSTR("Invalid"), &Type::Invalid},
+      Field{TSTR("Valid"), &Type::Valid},
+      Field{TSTR("operator=="), &Type::operator== },
+            Field {
+              TSTR("operator<"),
+              &Type::operator<},
       };
 };

@@ -6,15 +6,17 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::LuaMemory>
-    : My::MySRefl::TypeInfoBase<My::MyGE::LuaMemory> {
+    : TypeInfoBase<My::MyGE::LuaMemory> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[24] = "My::MyGE::LuaMemory";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"Malloc", &My::MyGE::LuaMemory::Malloc},
-      Field{"Free", &My::MyGE::LuaMemory::Free},
-      Field{"Offset", &My::MyGE::LuaMemory::Offset},
-      Field{"Copy", &My::MyGE::LuaMemory::Copy},
-      Field{"Set", &My::MyGE::LuaMemory::Set},
-      Field{"StrCpy", &My::MyGE::LuaMemory::StrCpy},
+      Field{TSTR("Malloc"), &Type::Malloc},
+      Field{TSTR("Free"), &Type::Free},
+      Field{TSTR("Offset"), &Type::Offset},
+      Field{TSTR("Copy"), &Type::Copy},
+      Field{TSTR("Set"), &Type::Set},
+      Field{TSTR("StrCpy"), &Type::StrCpy},
   };
 };

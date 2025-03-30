@@ -6,18 +6,22 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::CmptLocator>
-    : My::MySRefl::TypeInfoBase<My::MyECS::CmptLocator> {
+    : TypeInfoBase<My::MyECS::CmptLocator> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[24] = "My::MyECS::CmptLocator";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::CmptLocator(
-                const My::MyECS::CmptAccessType *, size_t)>()},
-      Field{Name::constructor, WrapConstructor<My::MyECS::CmptLocator()>()},
-      Field{"HashCode", &My::MyECS::CmptLocator::HashCode},
-      Field{"CmptAccessTypes", &My::MyECS::CmptLocator::CmptAccessTypes},
-      Field{
-          "operator==",
-          &My::MyECS::CmptLocator::operator== },
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(Span<const MyECS::CmptAccessType>)>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(MyECS::CmptAccessTypeSet)>()},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR("HashCode"), &Type::HashCode},
+      Field{TSTR("CmptAccessTypes"), &Type::CmptAccessTypes},
+      Field {
+        TSTR("operator=="),
+        &Type::operator== },
+        Field{TSTR("HasWriteCmptType"), &Type::HasWriteCmptType},
       };
 };

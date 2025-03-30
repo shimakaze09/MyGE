@@ -5,17 +5,29 @@
 #include <MySRefl/MySRefl.h>
 
 template<>
-struct My::MySRefl::TypeInfo<My::MyGE::Roamer>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Roamer>
+struct My::MySRefl::TypeInfo<My::MyGE::Roamer> :
+    TypeInfoBase<My::MyGE::Roamer>
 {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+    static constexpr char name[17] = "My::MyGE::Roamer";
+#endif
     static constexpr AttrList attrs = {};
-
     static constexpr FieldList fields = {
-        Field{"moveSpeed", &My::MyGE::Roamer::moveSpeed},
-        Field{"rotateSpeed", &My::MyGE::Roamer::rotateSpeed},
-        Field{"reverseUpDown", &My::MyGE::Roamer::reverseUpDown},
-        Field{"reverseLeftRight", &My::MyGE::Roamer::reverseLeftRight},
-        Field{"reverseFrontBack", &My::MyGE::Roamer::reverseFrontBack},
+        Field {TSTR("moveSpeed"), &Type::moveSpeed, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->float{ return {1.f}; }},
+        }},
+        Field {TSTR("rotateSpeed"), &Type::rotateSpeed, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->float{ return {1.f}; }},
+        }},
+        Field {TSTR("reverseUpDown"), &Type::reverseUpDown, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->bool{ return {false}; }},
+        }},
+        Field {TSTR("reverseLeftRight"), &Type::reverseLeftRight, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->bool{ return {false}; }},
+        }},
+        Field {TSTR("reverseFrontBack"), &Type::reverseFrontBack, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->bool{ return {false}; }},
+        }},
     };
 };
 

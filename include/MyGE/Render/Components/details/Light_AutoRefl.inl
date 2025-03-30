@@ -5,32 +5,83 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGE::LightType>
-    : My::MySRefl::TypeInfoBase<My::MyGE::LightType> {
+struct My::MySRefl::TypeInfo<My::MyGE::Light::Type>
+    : TypeInfoBase<My::MyGE::Light::Type> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[26] = "My::MyGE::Light::Type";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"Directional", My::MyGE::LightType::Directional},
-      Field{"Point", My::MyGE::LightType::Point},
-      Field{"Spot", My::MyGE::LightType::Spot},
-      Field{"Rect", My::MyGE::LightType::Rect},
-      Field{"Disk", My::MyGE::LightType::Disk},
+      Field{TSTR("Directional"), Type::Directional},
+      Field{TSTR("Point"), Type::Point},
+      Field{TSTR("Spot"), Type::Spot},
+      Field{TSTR("Rect"), Type::Rect},
+      Field{TSTR("Disk"), Type::Disk},
   };
 };
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGE::Light>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Light> {
+struct My::MySRefl::TypeInfo<My::MyGE::Light> : TypeInfoBase<My::MyGE::Light> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[20] = "My::MyGE::Light";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"type", &My::MyGE::Light::type},
-      Field{"color", &My::MyGE::Light::color},
-      Field{"intensity", &My::MyGE::Light::intensity},
-      Field{"range", &My::MyGE::Light::range},
-      Field{"width", &My::MyGE::Light::width},
-      Field{"height", &My::MyGE::Light::height},
-      Field{"innerSpotAngle", &My::MyGE::Light::innerSpotAngle},
-      Field{"outerSpotAngle", &My::MyGE::Light::outerSpotAngle},
+      Field{TSTR("type"), &Type::type,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> MyGE::Light::Type {
+                       return {MyGE::Light::Type::Directional};
+                     }},
+            }},
+      Field{TSTR("color"), &Type::color,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> rgbf {
+                       return {1.f};
+                     }},
+            }},
+      Field{TSTR("intensity"), &Type::intensity,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {1.f};
+                     }},
+            }},
+      Field{TSTR("range"), &Type::range,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {10.f};
+                     }},
+            }},
+      Field{TSTR("width"), &Type::width,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {1.f};
+                     }},
+            }},
+      Field{TSTR("height"), &Type::height,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {1.f};
+                     }},
+            }},
+      Field{TSTR("innerSpotAngle"), &Type::innerSpotAngle,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {21.802f};
+                     }},
+            }},
+      Field{TSTR("outerSpotAngle"), &Type::outerSpotAngle,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {30.f};
+                     }},
+            }},
   };
 };

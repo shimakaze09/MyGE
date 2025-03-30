@@ -56,7 +56,8 @@ struct AnimateMeshSystem {
       if (time->elapsedTime < 10.f)
         return;
 
-      w->systemMngr.Deactivate(w->systemMngr.GetIndex<AnimateMeshSystem>());
+      w->systemMngr.Deactivate(w->systemMngr.systemTraits.GetID(
+          My::MyECS::SystemTraits::StaticNameof<AnimateMeshSystem>()));
     });
   }
 };
@@ -103,7 +104,7 @@ class ImGUIApp : public D3DApp {
   std::unique_ptr<My::MyGE::PipelineBase> pipeline;
   std::shared_ptr<My::MyGE::Mesh> dynamicMesh;
 
-  std::unique_ptr<My::MyX12::FrameResourceMngr> frameRsrcMngr;
+  std::unique_ptr<My::MyDX12::FrameResourceMngr> frameRsrcMngr;
 
   bool show_demo_window = true;
   bool show_another_window = false;
@@ -280,7 +281,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
     int rst = theApp.Run();
     My::MyGE::RsrcMngrDX12::Instance().Clear();
     return rst;
-  } catch (My::MyX12::Util::Exception& e) {
+  } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     My::MyGE::RsrcMngrDX12::Instance().Clear();
     return 0;
@@ -305,14 +306,14 @@ bool ImGUIApp::Initialize() {
 
   My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
-  My::MyX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024, 1024,
-                                                 1024, 1024, 1024);
+  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
+                                                  1024, 1024, 1024, 1024);
 
   My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
                                        gNumFrameResources, 1);
   gameImGuiCtx = My::MyGE::ImGUIMngr::Instance().GetContexts().at(0);
 
-  frameRsrcMngr = std::make_unique<My::MyX12::FrameResourceMngr>(
+  frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
       gNumFrameResources, myDevice.raw.Get());
   for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
@@ -514,7 +515,7 @@ void ImGUIApp::Draw() {
                                        D3D12_RESOURCE_STATE_PRESENT,
                                        D3D12_RESOURCE_STATE_RENDER_TARGET);
   myGCmdList->OMSetRenderTargets(1, &curBack, FALSE, NULL);
-  myGCmdList.SetDescriptorHeaps(My::MyX12::DescriptorHeapMngr::Instance()
+  myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
                                     .GetCSUGpuDH()
                                     ->GetDescriptorHeap());
   ImGui::Render();
@@ -595,13 +596,13 @@ void ImGUIApp::UpdateCamera() {
 }
 
 void ImGUIApp::BuildWorld() {
-  auto indices = world.systemMngr.Register<
+  auto systemIDs = world.systemMngr.systemTraits.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem, AnimateMeshSystem>();
-  for (auto idx : indices)
-    world.systemMngr.Activate(idx);
+  for (auto ID : systemIDs)
+    world.systemMngr.Activate(ID);
 
   {  // skybox
     auto [e, skybox] = world.entityMngr.Create<My::MyGE::Skybox>();

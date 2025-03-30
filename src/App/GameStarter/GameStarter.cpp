@@ -450,13 +450,13 @@ void GameStarter::UpdateCamera() {
 }
 
 void GameStarter::BuildWorld() {
-  auto indices = world.systemMngr.Register<
+  auto systemIDs = world.systemMngr.systemTraits.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem>();
-  for (auto idx : indices)
-    world.systemMngr.Activate(idx);
+  for (auto ID : systemIDs)
+    world.systemMngr.Activate(ID);
 
   world.entityMngr.cmptTraits.Register<
       // core

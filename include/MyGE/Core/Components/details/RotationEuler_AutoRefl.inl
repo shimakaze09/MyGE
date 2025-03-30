@@ -4,14 +4,20 @@
 
 #include <MySRefl/MySRefl.h>
 
-template<>
+template <>
 struct My::MySRefl::TypeInfo<My::MyGE::RotationEuler>
-    : My::MySRefl::TypeInfoBase<My::MyGE::RotationEuler>
-{
-    static constexpr AttrList attrs = {};
-
-    static constexpr FieldList fields = {
-        Field{"value", &My::MyGE::RotationEuler::value},
-    };
+    : TypeInfoBase<My::MyGE::RotationEuler> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[28] = "My::MyGE::RotationEuler";
+#endif
+  static constexpr AttrList attrs = {};
+  static constexpr FieldList fields = {
+      Field{TSTR("value"), &Type::value,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> eulerf {
+                       return {0.f};
+                     }},
+            }},
+  };
 };
-

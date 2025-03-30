@@ -6,30 +6,26 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::SystemMngr>
-    : My::MySRefl::TypeInfoBase<My::MyECS::SystemMngr> {
+    : TypeInfoBase<My::MyECS::SystemMngr> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[23] = "My::MyECS::SystemMngr";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::SystemMngr()>()},
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::SystemMngr(My::MyECS::SystemMngr&)>()},
-      Field{"GetSystems", &My::MyECS::SystemMngr::GetSystems},
-      Field{"GetActiveSystemIndices",
-            &My::MyECS::SystemMngr::GetActiveSystemIndices},
-      Field{"GetNameToIndexMap", &My::MyECS::SystemMngr::GetNameToIndexMap},
-      Field{"GetIndex",
-            static_cast<size_t (My::MyECS::SystemMngr::*)(std::string_view)
-                            const>(&My::MyECS::SystemMngr::GetIndex)},
-      Field{"Clear", &My::MyECS::SystemMngr::Clear},
-      Field{"Register", static_cast<size_t (My::MyECS::SystemMngr::*)(
-                            std::string, My::MyECS::SystemMngr::Func)>(
-                            &My::MyECS::SystemMngr::Register)},
-      Field{"Unregister", static_cast<void (My::MyECS::SystemMngr::*)(size_t)>(
-                              &My::MyECS::SystemMngr::Unregister)},
-      Field{"Unregister",
-            static_cast<void (My::MyECS::SystemMngr::*)(std::string_view)>(
-                &My::MyECS::SystemMngr::Unregister)},
-      Field{"Activate", &My::MyECS::SystemMngr::Activate},
-      Field{"Deactivate", &My::MyECS::SystemMngr::Deactivate},
+      Field{TSTR("systemTraits"), &Type::systemTraits},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type(MyECS::World*)>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(const MyECS::SystemMngr&, MyECS::World*)>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(MyECS::SystemMngr&&, MyECS::World*)>()},
+      Field{TSTR(MyMeta::destructor), WrapDestructor<Type>()},
+      Field{TSTR("Create"), &Type::Create},
+      Field{TSTR("Activate"), &Type::Activate},
+      Field{TSTR("Deactivate"), &Type::Deactivate},
+      Field{TSTR("Destroy"), &Type::Destroy},
+      Field{TSTR("IsAlive"), &Type::IsAlive},
+      Field{TSTR("IsActive"), &Type::IsActive},
+      Field{TSTR("GetAliveSystemIDs"), &Type::GetAliveSystemIDs},
+      Field{TSTR("GetActiveSystemsIDs"), &Type::GetActiveSystemsIDs},
   };
 };

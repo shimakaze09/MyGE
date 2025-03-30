@@ -6,12 +6,16 @@
 
 template <typename T>
 struct My::MySRefl::TypeInfo<My::MyGE::LuaArray<T>>
-    : My::MySRefl::TypeInfoBase<My::MyGE::LuaArray<T>> {
+    : TypeInfoBase<My::MyGE::LuaArray<T>> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  // [!] all instance types have the same name
+  static constexpr char name[23] = "My::MyGE::LuaArray";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"PushBack", &My::MyGE::LuaArray<T>::PushBack},
-      Field{"Data", &My::MyGE::LuaArray<T>::Data},
-      Field{"Size", &My::MyGE::LuaArray<T>::Size},
+      Field{TSTR("PushBack"), &My::MyGE::LuaArray<T>::PushBack},
+      Field{TSTR("Data"), &My::MyGE::LuaArray<T>::Data},
+      Field{TSTR("Size"), &My::MyGE::LuaArray<T>::Size},
+      Field{TSTR("ToConstSpan"), &My::MyGE::LuaArray<T>::ToConstSpan},
   };
 };

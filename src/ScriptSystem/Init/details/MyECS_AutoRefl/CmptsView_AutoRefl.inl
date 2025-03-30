@@ -6,15 +6,16 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::CmptsView>
-    : My::MySRefl::TypeInfoBase<My::MyECS::CmptsView> {
+    : TypeInfoBase<My::MyECS::CmptsView> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[22] = "My::MyECS::CmptsView";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::CmptsView(
-                const My::MyECS::CmptAccessPtr *, size_t)>()},
-      Field{"GetCmpt", &My::MyECS::CmptsView::GetCmpt},
-      Field{"Components", &My::MyECS::CmptsView::Components},
-      Field{"NumberOfComponents", &My::MyECS::CmptsView::NumberOfComponents},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(Span<const MyECS::CmptAccessPtr>)>()},
+      Field{TSTR("GetCmpt"), &Type::GetCmpt},
+      Field{TSTR("Components"), &Type::Components},
   };
 };

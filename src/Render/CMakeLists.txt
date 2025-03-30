@@ -3,7 +3,6 @@ SET(components
         MeshFilter
         MeshRenderer
         Skybox
-        Light
 )
 
 SET(refls "")

@@ -149,7 +149,8 @@ bool Serializer::ToWorld(MyECS::World* world, string_view json) {
       cmptTypes[i] = CmptType{cmptID};
     }
 
-    auto entity = world->entityMngr.Create(cmptTypes.data(), cmptTypes.size());
+    auto entity =
+        world->entityMngr.Create(Span{cmptTypes.data(), cmptTypes.size()});
     for (size_t i = 0; i < cmptTypes.size(); i++) {
       if (pImpl->deserializer.IsRegistered(cmptTypes[i].HashCode())) {
         pImpl->deserializer.Visit(

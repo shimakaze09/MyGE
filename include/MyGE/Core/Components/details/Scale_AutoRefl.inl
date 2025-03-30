@@ -5,13 +5,17 @@
 #include <MySRefl/MySRefl.h>
 
 template<>
-struct My::MySRefl::TypeInfo<My::MyGE::Scale>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Scale>
+struct My::MySRefl::TypeInfo<My::MyGE::Scale> :
+    TypeInfoBase<My::MyGE::Scale>
 {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+    static constexpr char name[16] = "My::MyGE::Scale";
+#endif
     static constexpr AttrList attrs = {};
-
     static constexpr FieldList fields = {
-        Field{"value", &My::MyGE::Scale::value},
+        Field {TSTR("value"), &Type::value, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->float{ return {1.f}; }},
+        }},
     };
 };
 

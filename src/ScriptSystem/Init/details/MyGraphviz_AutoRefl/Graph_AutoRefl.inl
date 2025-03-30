@@ -6,18 +6,22 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGraphviz::Graph>
-    : My::MySRefl::TypeInfoBase<My::MyGraphviz::Graph,
-                                Base<My::MyGraphviz::Subgraph>> {
+    : TypeInfoBase<My::MyGraphviz::Graph, Base<MyGraphviz::Subgraph>> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[23] = "My::MyGraphviz::Graph";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            WrapConstructor<My::MyGraphviz::Graph(std::string, bool)>()},
-      Field{Name::destructor, WrapDestructor<My::MyGraphviz::Graph>()},
-      // Field{Name::constructor,
-      // WrapConstructor<My::MyGraphviz::Graph(My::MyGraphviz::Graph &&)>()},
-      // Field{"operator=", &My::MyGraphviz::Graph::operator=},
-      Field{"Dump", &My::MyGraphviz::Graph::Dump},
-      Field{"IsDigraph", &My::MyGraphviz::Graph::IsDigraph},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(std::string, bool)>(),
+            AttrList{
+                Attr{TSTR(MyMeta::default_functions),
+                     std::tuple{WrapConstructor<Type(std::string)>()}},
+            }},
+      Field{TSTR(MyMeta::destructor), WrapDestructor<Type>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(MyGraphviz::Graph&&)>()},
+      Field{TSTR("Dump"), &Type::Dump},
+      Field{TSTR("IsDigraph"), &Type::IsDigraph},
   };
 };

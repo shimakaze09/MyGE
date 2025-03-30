@@ -10,7 +10,7 @@ class ShaderCompiler {
     return instance;
   }
 
-  std::tuple<bool, Shader> Compile(std::string_view ushader);
+  std::tuple<bool, Shader> Compile(std::string_view myshader);
 
  private:
   ShaderCompiler();

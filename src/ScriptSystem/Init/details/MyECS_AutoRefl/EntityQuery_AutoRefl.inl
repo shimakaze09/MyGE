@@ -6,18 +6,16 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::EntityQuery>
-    : My::MySRefl::TypeInfoBase<My::MyECS::EntityQuery> {
+    : TypeInfoBase<My::MyECS::EntityQuery> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[24] = "My::MyECS::EntityQuery";
+#endif
   static constexpr AttrList attrs = {};
-
-  static constexpr FieldList fields = {
-      Field{"filter", &My::MyECS::EntityQuery::filter},
-      Field{"locator", &My::MyECS::EntityQuery::locator},
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::EntityQuery(My::MyECS::ArchetypeFilter,
-                                                   My::MyECS::CmptLocator)>()},
-      Field{"HashCode", &My::MyECS::EntityQuery::HashCode},
-      Field{
-          "operator==",
-          &My::MyECS::EntityQuery::operator== },
-      };
+  static constexpr FieldList fields = {Field{TSTR("filter"), &Type::filter},
+                                       Field{TSTR("locator"), &Type::locator},
+                                       Field{TSTR("HashCode"), &Type::HashCode},
+                                       Field {
+                                         TSTR("operator=="),
+                                         &Type::operator== },
+                                       };
 };

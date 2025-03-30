@@ -5,15 +5,17 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGE::ShaderPass>
-    : My::MySRefl::TypeInfoBase<My::MyGE::ShaderPass> {
+struct My::MySRefl::TypeInfo<My::MyGE::Shader>
+    : TypeInfoBase<My::MyGE::Shader, Base<My::MyGE::Object>> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[21] = "My::MyGE::Shader";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"vertexName", &My::MyGE::ShaderPass::vertexName},
-      Field{"fragmentName", &My::MyGE::ShaderPass::fragmentName},
-      Field{"renderState", &My::MyGE::ShaderPass::renderState},
-      Field{"tags", &My::MyGE::ShaderPass::tags},
-      Field{"queue", &My::MyGE::ShaderPass::queue},
+      Field{TSTR("hlslFile"), &Type::hlslFile},
+      Field{TSTR("name"), &Type::name},
+      Field{TSTR("rootParameters"), &Type::rootParameters},
+      Field{TSTR("properties"), &Type::properties},
+      Field{TSTR("passes"), &Type::passes},
   };
 };

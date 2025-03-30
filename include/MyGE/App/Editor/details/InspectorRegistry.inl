@@ -1,14 +1,18 @@
 #pragma once
 
-#include <MyECS/Entity.h>
+#include "../PlayloadType.h"
+
 #include <MyGE/Asset/AssetMngr.h>
-#include <MyGE/Core/Components/Name.h>
-#include <MyGE/Core/Traits.h>
-#include <MySTL/tuple.h>
+
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/misc/cpp/imgui_stdlib.h>
 
-#include "../PlayloadType.h"
+#include <MyGE/Core/Traits.h>
+
+#include <MyECS/Entity.h>
+
+#include <MyGE/Core/Components/Name.h>
+#include <MySTL/tuple.h>
 
 #include <variant>
 
@@ -76,11 +80,21 @@ template <typename Field, typename Value>
 bool InspectVar1(Field field, Value& var,
                  InspectorRegistry::InspectContext ctx);
 
+static constexpr char FieldValueAsName[] = "InstectorRegistry_FieldValueAsName";
+
+template <typename Fld>
+std::string_view GetFieldName(Fld field) {
+  if constexpr (Fld::NameIs(TSTR(FieldValueAsName)))
+    return field.value;
+  else
+    return field.name;
+}
+
 template <typename Cmpt>
 void InspectCmpt(Cmpt* cmpt, InspectorRegistry::InspectContext ctx) {
   if constexpr (HasDefinition<MySRefl::TypeInfo<Cmpt>>::value) {
     ImGui::PushID((const void*)MyECS::CmptType::Of<Cmpt>.HashCode());
-    if (ImGui::CollapsingHeader(MySRefl::TypeInfo<Cmpt>::name.data())) {
+    if (ImGui::CollapsingHeader(MySRefl::TypeInfo<Cmpt>::name)) {
       MySRefl::TypeInfo<Cmpt>::ForEachVarOf(
           *cmpt, [ctx](auto field, auto& var) { InspectVar(field, var, ctx); });
     }
@@ -106,7 +120,7 @@ template <typename Field, typename UserType>
 void InspectUserType(Field field, UserType* obj,
                      InspectorRegistry::InspectContext ctx) {
   if constexpr (HasDefinition<MySRefl::TypeInfo<UserType>>::value) {
-    if (ImGui::TreeNode(field.name.data())) {
+    if (ImGui::TreeNode(GetFieldName(field).data())) {
       ImGui::PushID((const void*)GetID<UserType>());
       MySRefl::TypeInfo<UserType>::ForEachVarOf(
           *obj, [ctx](auto field, auto& var) { InspectVar(field, var, ctx); });
@@ -114,7 +128,7 @@ void InspectUserType(Field field, UserType* obj,
       ImGui::PopID();
     }
   } else
-    ImGui::Text(field.name.data());
+    ImGui::Text(GetFieldName(field).data());
 }
 
 template <typename Field, typename Value>
@@ -123,16 +137,16 @@ void InspectVar(Field field, const Value& var,
   if constexpr (std::is_same_v<Value, bool>) {
     ImGui::Button(var ? "true" : "false", &var);
     ImGui::SameLine();
-    ImGui::Text(field.name.data());
+    ImGui::Text(GetFieldName(field).data());
   } else if constexpr (std::is_arithmetic_v<Value>) {
     auto value = std::to_string(var);
     ImGui::Button(value.c_str());
     ImGui::SameLine();
-    ImGui::Text(field.name.data());
+    ImGui::Text(GetFieldName(field).data());
   } else if constexpr (std::is_same_v<Value, std::string>) {
     ImGui::Button(var.c_str());
     ImGui::SameLine();
-    ImGui::Text(field.name.data());
+    ImGui::Text(GetFieldName(field).data());
   } else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
     if (auto name = ctx.world->entityMngr.Get<Name>(var))
       ImGui::BulletText(name->value.c_str());
@@ -153,7 +167,7 @@ void InspectVar(Field field, const Value& var,
       ImGui::Button("nullptr");
 
     ImGui::SameLine();
-    ImGui::Text(field.name.data());
+    ImGui::Text(GetFieldName(field).data());
   } else if constexpr (ArrayTraits<Value>::isArray) {
     if constexpr (ValNTraits<Value>::isValN) {
       static Value copiedVar;
@@ -167,98 +181,105 @@ void InspectVar(Field field, const Value& var,
                                               ImGuiColorEditFlags_AlphaPreview;
 
         if constexpr (N == 3)
-          ImGui::ColorEdit3(field.name.data(), data, flags);
+          ImGui::ColorEdit3(GetFieldName(field).data(), data, flags);
         else  // N == 4
-          ImGui::ColorEdit4(field.name.data(), data, flags);
+          ImGui::ColorEdit4(GetFieldName(field).data(), data, flags);
       } else {
         using ElemType = ArrayTraits_ValueType<Value>;
         if constexpr (std::is_same_v<ElemType, uint8_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U8, data, N, 1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U8, data,
+                             N, 1.f);
         else if constexpr (std::is_same_v<ElemType, uint16_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U16, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U16,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, uint32_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U32, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U32,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, uint64_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U64, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U64,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int8_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S8, data, N, 1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S8, data,
+                             N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int16_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S16, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S16,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int32_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S32, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S32,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int64_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S64, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S64,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, float>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_Float, data, N,
-                             0.001f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_Float,
+                             data, N, 0.001f);
         else if constexpr (std::is_same_v<ElemType, double>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_Double, data, N,
-                             0.001f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_Double,
+                             data, N, 0.001f);
       }
     } else {
-      if (ImGui::TreeNode(field.name.data())) {
-        ImGui::PushID(field.name.data());
+      if (ImGui::TreeNode(GetFieldName(field).data())) {
+        ImGui::PushID(GetFieldName(field).data());
         for (size_t i = 0; i < ArrayTraits<Value>::size; i++) {
           auto str = std::to_string(i);
-          InspectVar(MySRefl::Field{std::string_view{str}, (void*)0},
-                     ArrayTraits_Get(var, i), ctx);
+          InspectVar(
+              MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}},
+              ArrayTraits_Get(var, i), ctx);
         }
         ImGui::PopID();
         ImGui::TreePop();
       }
     }
   } else if constexpr (TupleTraits<Value>::isTuple) {
-    if (ImGui::TreeNode(field.name.data())) {
-      ImGui::PushID(field.name.data());
+    if (ImGui::TreeNode(GetFieldName(field).data())) {
+      ImGui::PushID(GetFieldName(field).data());
       MySTL::tuple_for_each(var, [ctx, idx = 0](auto& ele) mutable {
         auto str = std::to_string(idx++);
-        InspectVar(MySRefl::Field{std::string_view{str}, (void*)0}, ele, ctx);
+        InspectVar(MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}},
+                   ele, ctx);
       });
       ImGui::PopID();
       ImGui::TreePop();
     }
   } else if constexpr (MapTraits<Value>::isMap) {
-    if (ImGui::TreeNode(field.name.data())) {
-      ImGui::PushID(field.name.data());
+    if (ImGui::TreeNode(GetFieldName(field).data())) {
+      ImGui::PushID(GetFieldName(field).data());
       auto iter_begin = MapTraits_Begin(var);
       auto iter_end = MapTraits_End(var);
       for (auto iter = iter_begin; iter != iter_end; ++iter) {
         auto& [key, mapped] = *iter;
         if constexpr (std::is_same_v<std::decay_t<decltype(key)>, std::string>)
-          InspectVar(MySRefl::Field{std::string_view{key}, (void*)0}, mapped,
-                     ctx);
+          InspectVar(
+              MySRefl::Field{TSTR(FieldValueAsName), std::string_view{key}},
+              mapped, ctx);
         else {
           auto name = std::to_string(key);
-          InspectVar(MySRefl::Field{std::string_view{name}, (void*)0}, mapped,
-                     ctx);
+          InspectVar(
+              MySRefl::Field{TSTR(FieldValueAsName), std::string_view{name}},
+              mapped, ctx);
         }
       }
       ImGui::PopID();
       ImGui::TreePop();
     }
   } else if constexpr (OrderContainerTraits<Value>::isOrderContainer) {
-    if (ImGui::TreeNode(field.name.data())) {
-      ImGui::PushID(field.name.data());
+    if (ImGui::TreeNode(GetFieldName(field).data())) {
+      ImGui::PushID(GetFieldName(field).data());
       auto iter_begin = OrderContainerTraits_Begin(var);
       auto iter_end = OrderContainerTraits_End(var);
       size_t idx = 0;
       for (auto iter = iter_begin; iter != iter_end; ++iter) {
         auto name = std::to_string(idx++);
-        InspectVar(MySRefl::Field{std::string_view{name}, (void*)0}, *iter,
-                   ctx);
+        InspectVar(
+            MySRefl::Field{TSTR(FieldValueAsName), std::string_view{name}},
+            *iter, ctx);
       }
       ImGui::PopID();
       ImGui::TreePop();
     }
   } else {
     assert(false);
-    // InspectUserType(field, &var, ctx);
+    //InspectUserType(field, &var, ctx);
   }
 }
 
@@ -308,29 +329,30 @@ void InspectVar(Field field, Value& var,
                 InspectorRegistry::InspectContext ctx) {
   //static_assert(!std::is_const_v<Value>);
   if constexpr (std::is_same_v<Value, bool>)
-    ImGui::Checkbox(field.name.data(), &var);
+    ImGui::Checkbox(GetFieldName(field).data(), &var);
   else if constexpr (std::is_same_v<Value, uint8_t>)
-    ImGui::DragScalar(field.name.data(), ImGuiDataType_U8, &var, 1.f);
+    ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_U8, &var, 1.f);
   else if constexpr (std::is_same_v<Value, uint16_t>)
-    ImGui::DragScalar(field.name.data(), ImGuiDataType_U16, &var, 1.f);
+    ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_U16, &var, 1.f);
   else if constexpr (std::is_same_v<Value, uint32_t>)
-    ImGui::DragScalar(field.name.data(), ImGuiDataType_U32, &var, 1.f);
+    ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_U32, &var, 1.f);
   else if constexpr (std::is_same_v<Value, uint64_t>)
-    ImGui::DragScalar(field.name.data(), ImGuiDataType_U64, &var, 1.f);
+    ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_U64, &var, 1.f);
   else if constexpr (std::is_same_v<Value, int8_t>)
-    ImGui::DragScalar(field.name.data(), ImGuiDataType_S8, &var, 1.f);
+    ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_S8, &var, 1.f);
   else if constexpr (std::is_same_v<Value, int16_t>)
-    ImGui::DragScalar(field.name.data(), ImGuiDataType_S16, &var, 1.f);
+    ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_S16, &var, 1.f);
   else if constexpr (std::is_same_v<Value, int32_t>)
-    ImGui::DragScalar(field.name.data(), ImGuiDataType_S32, &var, 1.f);
+    ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_S32, &var, 1.f);
   else if constexpr (std::is_same_v<Value, int64_t>)
-    ImGui::DragScalar(field.name.data(), ImGuiDataType_S64, &var, 1.f);
+    ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_S64, &var, 1.f);
   else if constexpr (std::is_same_v<Value, float>)
-    ImGui::DragFloat(field.name.data(), &var, 0.001f);
+    ImGui::DragFloat(GetFieldName(field).data(), &var, 0.001f);
   else if constexpr (std::is_same_v<Value, double>)
-    ImGui::DragScalar(field.name.data(), ImGuiDataType_Double, &var, 0.001f);
+    ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_Double, &var,
+                      0.001f);
   else if constexpr (std::is_same_v<Value, std::string>)
-    ImGui::InputText(field.name.data(), &var);
+    ImGui::InputText(GetFieldName(field).data(), &var);
   else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
     ImGui::Text("(*)", var.Idx());
     ImGui::SameLine();
@@ -354,7 +376,7 @@ void InspectVar(Field field, Value& var,
       ImGui::EndDragDropTarget();
     }
     ImGui::SameLine();
-    ImGui::Text(field.name.data());
+    ImGui::Text(GetFieldName(field).data());
   } else if constexpr (std::is_enum_v<Value>) {
     if constexpr (HasDefinition<MySRefl::TypeInfo<Value>>::value) {
       std::string_view cur;
@@ -366,10 +388,10 @@ void InspectVar(Field field, Value& var,
         return false;
       });
 
-      if (ImGui::BeginCombo(field.name.data(), cur.data())) {
+      if (ImGui::BeginCombo(GetFieldName(field).data(), cur.data())) {
         MySRefl::TypeInfo<Value>::fields.ForEach([&](auto field) {
           bool isSelected = field.value == var;
-          if (ImGui::Selectable(field.name.data(), isSelected))
+          if (ImGui::Selectable(GetFieldName(field).data(), isSelected))
             var = field.value;
 
           if (isSelected)
@@ -410,7 +432,7 @@ void InspectVar(Field field, Value& var,
     }
 
     ImGui::SameLine();
-    ImGui::Text(field.name.data());
+    ImGui::Text(GetFieldName(field).data());
   } else if constexpr (ArrayTraits<Value>::isArray) {
     if constexpr (ValNTraits<Value>::isValN) {
       auto data = ArrayTraits_Data(var);
@@ -422,58 +444,62 @@ void InspectVar(Field field, Value& var,
                                               ImGuiColorEditFlags_AlphaPreview;
 
         if constexpr (N == 3)
-          ImGui::ColorEdit3(field.name.data(), data, flags);
+          ImGui::ColorEdit3(GetFieldName(field).data(), data, flags);
         else  // N == 4
-          ImGui::ColorEdit4(field.name.data(), data, flags);
+          ImGui::ColorEdit4(GetFieldName(field).data(), data, flags);
       } else {
         using ElemType = ArrayTraits_ValueType<Value>;
         if constexpr (std::is_same_v<ElemType, uint8_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U8, data, N, 1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U8, data,
+                             N, 1.f);
         else if constexpr (std::is_same_v<ElemType, uint16_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U16, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U16,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, uint32_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U32, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U32,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, uint64_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U64, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U64,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int8_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S8, data, N, 1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S8, data,
+                             N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int16_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S16, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S16,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int32_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S32, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S32,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int64_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S64, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S64,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, float>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_Float, data, N,
-                             0.001f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_Float,
+                             data, N, 0.001f);
         else if constexpr (std::is_same_v<ElemType, double>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_Double, data, N,
-                             0.001f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_Double,
+                             data, N, 0.001f);
       }
     } else {
-      if (ImGui::TreeNode(field.name.data())) {
-        ImGui::PushID(field.name.data());
+      if (ImGui::TreeNode(GetFieldName(field).data())) {
+        ImGui::PushID(GetFieldName(field).data());
         for (size_t i = 0; i < ArrayTraits<Value>::size; i++) {
           auto str = std::to_string(i);
-          InspectVar(MySRefl::Field{std::string_view{str}, (void*)0},
-                     ArrayTraits_Get(var, i), ctx);
+          InspectVar(
+              MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}},
+              ArrayTraits_Get(var, i), ctx);
         }
         ImGui::PopID();
         ImGui::TreePop();
       }
     }
   } else if constexpr (TupleTraits<Value>::isTuple) {
-    if (ImGui::TreeNode(field.name.data())) {
-      ImGui::PushID(field.name.data());
+    if (ImGui::TreeNode(GetFieldName(field).data())) {
+      ImGui::PushID(GetFieldName(field).data());
       MySTL::tuple_for_each(var, [ctx, idx = 0](auto& ele) mutable {
         auto str = std::to_string(idx++);
-        InspectVar(MySRefl::Field{std::string_view{str}, (void*)0}, ele, ctx);
+        InspectVar(MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}},
+                   ele, ctx);
       });
       ImGui::PopID();
       ImGui::TreePop();
@@ -482,27 +508,29 @@ void InspectVar(Field field, Value& var,
     InspectVariant(field, var,
                    std::make_index_sequence<std::variant_size_v<Value>>{}, ctx);
   else if constexpr (MapTraits<Value>::isMap) {
-    if (ImGui::TreeNode(field.name.data())) {
-      ImGui::PushID(field.name.data());
+    if (ImGui::TreeNode(GetFieldName(field).data())) {
+      ImGui::PushID(GetFieldName(field).data());
       auto iter_begin = MapTraits_Begin(var);
       auto iter_end = MapTraits_End(var);
       for (auto iter = iter_begin; iter != iter_end; ++iter) {
         auto& [key, mapped] = *iter;
         if constexpr (std::is_same_v<std::decay_t<decltype(key)>, std::string>)
-          InspectVar(MySRefl::Field{std::string_view{key}, (void*)0}, mapped,
-                     ctx);
+          InspectVar(
+              MySRefl::Field{TSTR(FieldValueAsName), std::string_view{key}},
+              mapped, ctx);
         else {
           auto name = std::to_string(key);
-          InspectVar(MySRefl::Field{std::string_view{name}, (void*)0}, mapped,
-                     ctx);
+          InspectVar(
+              MySRefl::Field{TSTR(FieldValueAsName), std::string_view{name}},
+              mapped, ctx);
         }
       }
       ImGui::PopID();
       ImGui::TreePop();
     }
   } else if constexpr (OrderContainerTraits<Value>::isOrderContainer) {
-    if (ImGui::TreeNode(field.name.data())) {
-      ImGui::PushID(field.name.data());
+    if (ImGui::TreeNode(GetFieldName(field).data())) {
+      ImGui::PushID(GetFieldName(field).data());
 
       if constexpr (OrderContainerTraits<Value>::isResizable) {
         size_t origSize = OrderContainerTraits_Size(var);
@@ -518,8 +546,9 @@ void InspectVar(Field field, Value& var,
       size_t idx = 0;
       for (auto iter = iter_begin; iter != iter_end; ++iter) {
         auto name = std::to_string(idx++);
-        InspectVar(MySRefl::Field{std::string_view{name}, (void*)0}, *iter,
-                   ctx);
+        InspectVar(
+            MySRefl::Field{TSTR(FieldValueAsName), std::string_view{name}},
+            *iter, ctx);
       }
       ImGui::PopID();
       ImGui::TreePop();
@@ -540,29 +569,38 @@ bool InspectVar1(Field field, Value& var,
                 ArrayTraits<Value>::isArray && ValNTraits<Value>::isValN) {
     Value orig = var;
     if constexpr (std::is_same_v<Value, bool>)
-      ImGui::Checkbox(field.name.data(), &var);
+      ImGui::Checkbox(GetFieldName(field).data(), &var);
     else if constexpr (std::is_same_v<Value, uint8_t>)
-      ImGui::DragScalar(field.name.data(), ImGuiDataType_U8, &var, 1.f);
+      ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_U8, &var,
+                        1.f);
     else if constexpr (std::is_same_v<Value, uint16_t>)
-      ImGui::DragScalar(field.name.data(), ImGuiDataType_U16, &var, 1.f);
+      ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_U16, &var,
+                        1.f);
     else if constexpr (std::is_same_v<Value, uint32_t>)
-      ImGui::DragScalar(field.name.data(), ImGuiDataType_U32, &var, 1.f);
+      ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_U32, &var,
+                        1.f);
     else if constexpr (std::is_same_v<Value, uint64_t>)
-      ImGui::DragScalar(field.name.data(), ImGuiDataType_U64, &var, 1.f);
+      ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_U64, &var,
+                        1.f);
     else if constexpr (std::is_same_v<Value, int8_t>)
-      ImGui::DragScalar(field.name.data(), ImGuiDataType_S8, &var, 1.f);
+      ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_S8, &var,
+                        1.f);
     else if constexpr (std::is_same_v<Value, int16_t>)
-      ImGui::DragScalar(field.name.data(), ImGuiDataType_S16, &var, 1.f);
+      ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_S16, &var,
+                        1.f);
     else if constexpr (std::is_same_v<Value, int32_t>)
-      ImGui::DragScalar(field.name.data(), ImGuiDataType_S32, &var, 1.f);
+      ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_S32, &var,
+                        1.f);
     else if constexpr (std::is_same_v<Value, int64_t>)
-      ImGui::DragScalar(field.name.data(), ImGuiDataType_S64, &var, 1.f);
+      ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_S64, &var,
+                        1.f);
     else if constexpr (std::is_same_v<Value, float>)
-      ImGui::DragFloat(field.name.data(), &var, 0.001f);
+      ImGui::DragFloat(GetFieldName(field).data(), &var, 0.001f);
     else if constexpr (std::is_same_v<Value, double>)
-      ImGui::DragScalar(field.name.data(), ImGuiDataType_Double, &var, 0.001f);
+      ImGui::DragScalar(GetFieldName(field).data(), ImGuiDataType_Double, &var,
+                        0.001f);
     else if constexpr (std::is_same_v<Value, std::string>)
-      ImGui::InputText(field.name.data(), &var);
+      ImGui::InputText(GetFieldName(field).data(), &var);
     else if constexpr (std::is_same_v<Value, MyECS::Entity>) {
       ImGui::Text("(*)", var.Idx());
       ImGui::SameLine();
@@ -586,7 +624,7 @@ bool InspectVar1(Field field, Value& var,
         ImGui::EndDragDropTarget();
       }
       ImGui::SameLine();
-      ImGui::Text(field.name.data());
+      ImGui::Text(GetFieldName(field).data());
     } else if constexpr (std::is_enum_v<Value>) {
       if constexpr (HasDefinition<MySRefl::TypeInfo<Value>>::value) {
         std::string_view cur;
@@ -598,10 +636,10 @@ bool InspectVar1(Field field, Value& var,
           return false;
         });
 
-        if (ImGui::BeginCombo(field.name.data(), cur.data())) {
+        if (ImGui::BeginCombo(GetFieldName(field).data(), cur.data())) {
           MySRefl::TypeInfo<Value>::fields.ForEach([&](auto field) {
             bool isSelected = field.value == var;
-            if (ImGui::Selectable(field.name.data(), isSelected))
+            if (ImGui::Selectable(GetFieldName(field).data(), isSelected))
               var = field.value;
 
             if (isSelected)
@@ -643,7 +681,7 @@ bool InspectVar1(Field field, Value& var,
       }
 
       ImGui::SameLine();
-      ImGui::Text(field.name.data());
+      ImGui::Text(GetFieldName(field).data());
     } else if constexpr (ArrayTraits<Value>::isArray &&
                          ValNTraits<Value>::isValN) {
       auto data = ArrayTraits_Data(var);
@@ -655,39 +693,41 @@ bool InspectVar1(Field field, Value& var,
                                               ImGuiColorEditFlags_AlphaPreview;
 
         if constexpr (N == 3)
-          ImGui::ColorEdit3(field.name.data(), data, flags);
+          ImGui::ColorEdit3(GetFieldName(field).data(), data, flags);
         else  // N == 4
-          ImGui::ColorEdit4(field.name.data(), data, flags);
+          ImGui::ColorEdit4(GetFieldName(field).data(), data, flags);
       } else {
         using ElemType = ArrayTraits_ValueType<Value>;
         if constexpr (std::is_same_v<ElemType, uint8_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U8, data, N, 1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U8, data,
+                             N, 1.f);
         else if constexpr (std::is_same_v<ElemType, uint16_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U16, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U16,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, uint32_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U32, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U32,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, uint64_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_U64, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_U64,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int8_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S8, data, N, 1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S8, data,
+                             N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int16_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S16, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S16,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int32_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S32, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S32,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, int64_t>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_S64, data, N,
-                             1.f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_S64,
+                             data, N, 1.f);
         else if constexpr (std::is_same_v<ElemType, float>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_Float, data, N,
-                             0.001f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_Float,
+                             data, N, 0.001f);
         else if constexpr (std::is_same_v<ElemType, double>)
-          ImGui::DragScalarN(field.name.data(), ImGuiDataType_Double, data, N,
-                             0.001f);
+          ImGui::DragScalarN(GetFieldName(field).data(), ImGuiDataType_Double,
+                             data, N, 0.001f);
       }
     } else
       static_assert(false);
@@ -698,44 +738,48 @@ bool InspectVar1(Field field, Value& var,
     bool changed = false;
     if constexpr (ArrayTraits<Value>::isArray) {
       static_assert(!ValNTraits<Value>::isValN);
-      if (ImGui::TreeNode(field.name.data())) {
-        ImGui::PushID(field.name.data());
+      if (ImGui::TreeNode(GetFieldName(field).data())) {
+        ImGui::PushID(GetFieldName(field).data());
         for (size_t i = 0; i < ArrayTraits<Value>::size; i++) {
           auto str = std::to_string(i);
-          if (InspectVar1(MySRefl::Field{std::string_view{str}, (void*)0},
-                          ArrayTraits_Get(var, i), ctx))
+          if (InspectVar1(
+                  MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}},
+                  ArrayTraits_Get(var, i), ctx))
             changed = true;
         }
         ImGui::PopID();
         ImGui::TreePop();
       }
     } else if constexpr (TupleTraits<Value>::isTuple) {
-      if (ImGui::TreeNode(field.name.data())) {
-        ImGui::PushID(field.name.data());
+      if (ImGui::TreeNode(GetFieldName(field).data())) {
+        ImGui::PushID(GetFieldName(field).data());
         MySTL::tuple_for_each(var, [ctx, idx = 0](auto& ele) mutable {
           auto str = std::to_string(idx++);
-          if (InspectVar1(MySRefl::Field{std::string_view{str}, (void*)0}, ele,
-                          ctx))
+          if (InspectVar1(
+                  MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}},
+                  ele, ctx))
             changed = true;
         });
         ImGui::PopID();
         ImGui::TreePop();
       }
     } else if constexpr (MapTraits<Value>::isMap) {
-      if (ImGui::TreeNode(field.name.data())) {
-        ImGui::PushID(field.name.data());
+      if (ImGui::TreeNode(GetFieldName(field).data())) {
+        ImGui::PushID(GetFieldName(field).data());
         auto iter_begin = MapTraits_Begin(var);
         auto iter_end = MapTraits_End(var);
         for (auto iter = iter_begin; iter != iter_end; ++iter) {
           auto& [key, mapped] = *iter;
           if constexpr (std::is_same_v<std::decay_t<decltype(key)>,
                                        std::string>) {
-            if (InspectVar1(MySRefl::Field{std::string_view{key}, (void*)0},
+            if (InspectVar1(MySRefl::Field{TSTR(FieldValueAsName),
+                                          std::string_view{key}},
                             mapped, ctx))
               changed = true;
           } else {
             auto name = std::to_string(key);
-            if (InspectVar1(MySRefl::Field{std::string_view{name}, (void*)0},
+            if (InspectVar1(MySRefl::Field{TSTR(FieldValueAsName),
+                                          std::string_view{name}},
                             mapped, ctx))
               changed = true;
           }
@@ -744,8 +788,8 @@ bool InspectVar1(Field field, Value& var,
         ImGui::TreePop();
       }
     } else if constexpr (OrderContainerTraits<Value>::isOrderContainer) {
-      if (ImGui::TreeNode(field.name.data())) {
-        ImGui::PushID(field.name.data());
+      if (ImGui::TreeNode(GetFieldName(field).data())) {
+        ImGui::PushID(GetFieldName(field).data());
 
         if constexpr (OrderContainerTraits<Value>::isResizable) {
           size_t origSize = OrderContainerTraits_Size(var);
@@ -763,8 +807,9 @@ bool InspectVar1(Field field, Value& var,
         size_t idx = 0;
         for (auto iter = iter_begin; iter != iter_end; ++iter) {
           auto name = std::to_string(idx++);
-          if (InspectVar1(MySRefl::Field{std::string_view{name}, (void*)0},
-                          *iter, ctx))
+          if (InspectVar1(
+                  MySRefl::Field{TSTR(FieldValueAsName), std::string_view{name}},
+                  *iter, ctx))
             changed = true;
         }
         ImGui::PopID();

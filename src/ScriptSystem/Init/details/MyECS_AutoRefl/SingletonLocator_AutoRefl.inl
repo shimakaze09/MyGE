@@ -6,15 +6,18 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::SingletonLocator>
-    : My::MySRefl::TypeInfoBase<My::MyECS::SingletonLocator> {
+    : TypeInfoBase<My::MyECS::SingletonLocator> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[29] = "My::MyECS::SingletonLocator";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::SingletonLocator(
-                const My::MyECS::CmptAccessType *, size_t)>()},
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::SingletonLocator()>()},
-      Field{"SingletonTypes", &My::MyECS::SingletonLocator::SingletonTypes},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(std::set<MyECS::CmptAccessType>)>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(Span<const MyECS::CmptAccessType>)>()},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR("SingletonTypes"), &Type::SingletonTypes},
+      Field{TSTR("HasWriteSingletonType"), &Type::HasWriteSingletonType},
   };
 };

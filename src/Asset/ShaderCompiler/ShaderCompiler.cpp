@@ -14,11 +14,11 @@ using namespace My::MyGE;
 struct ShaderCompiler::Impl {
   class ShaderCompilerInstance : private details::ShaderBaseVisitor {
    public:
-    std::tuple<bool, Shader> Compile(std::string_view ushader) {
+    std::tuple<bool, Shader> Compile(std::string_view myshader) {
       success = true;
       curPass = nullptr;
 
-      antlr4::ANTLRInputStream input(ushader.data());
+      antlr4::ANTLRInputStream input(myshader.data());
       details::ShaderLexer lexer(&input);
       antlr4::CommonTokenStream tokens(&lexer);
       details::ShaderParser parser(&tokens);
@@ -91,21 +91,24 @@ struct ShaderCompiler::Impl {
       // root parameters
       std::vector<RootParameter> rootParams =
           visitRoot_signature(ctx->root_signature());
-      if (!success || rootParams.empty()) return ERROR;
+      if (!success || rootParams.empty())
+        return ERROR;
       shader.rootParameters = std::move(rootParams);
 
       // properties
       if (ctx->property_block()) {
         std::map<std::string, ShaderProperty, std::less<>> properties =
             visitProperty_block(ctx->property_block());
-        if (!success) return ERROR;
+        if (!success)
+          return ERROR;
         shader.properties = std::move(properties);
       }
 
       // passes
       for (auto passCtx : ctx->pass()) {
         ShaderPass pass = visitPass(passCtx);
-        if (!success) return ERROR;
+        if (!success)
+          return ERROR;
         shader.passes.push_back(std::move(pass));
       }
 
@@ -170,7 +173,8 @@ struct ShaderCompiler::Impl {
       for (auto propertyCtx : ctx->property()) {
         std::pair<std::string, ShaderProperty> property =
             visitProperty(propertyCtx);
-        if (!success) return ERROR;
+        if (!success)
+          return ERROR;
         rst.insert(property);
       }
       return rst;
@@ -187,7 +191,8 @@ struct ShaderCompiler::Impl {
     virtual antlrcpp::Any visitVal_int(
         details::ShaderParser::Val_intContext* ctx) override {
       int rst = std::stoi(ctx->IntegerLiteral()->getText(), nullptr, 0);
-      if (ctx->Sign() && ctx->Sign()->getText() == "-") rst = -rst;
+      if (ctx->Sign() && ctx->Sign()->getText() == "-")
+        rst = -rst;
       return rst;
     }
 
@@ -199,14 +204,16 @@ struct ShaderCompiler::Impl {
     virtual antlrcpp::Any visitVal_float(
         details::ShaderParser::Val_floatContext* ctx) override {
       float rst = std::stof(ctx->IntegerLiteral()->getText());
-      if (ctx->Sign() && ctx->Sign()->getText() == "-") rst = -rst;
+      if (ctx->Sign() && ctx->Sign()->getText() == "-")
+        rst = -rst;
       return rst;
     }
 
     virtual antlrcpp::Any visitVal_double(
         details::ShaderParser::Val_doubleContext* ctx) override {
       double rst = std::stod(ctx->IntegerLiteral()->getText());
-      if (ctx->Sign() && ctx->Sign()->getText() == "-") rst = -rst;
+      if (ctx->Sign() && ctx->Sign()->getText() == "-")
+        rst = -rst;
       return rst;
     }
 
@@ -413,7 +420,8 @@ struct ShaderCompiler::Impl {
     virtual antlrcpp::Any visitProperty_2D(
         details::ShaderParser::Property_2DContext* ctx) override {
       std::shared_ptr<const Texture2D> tex2d = ctx->val_tex2d()->accept(this);
-      if (!success) return std::pair{std::string{}, (const Texture2D*)nullptr};
+      if (!success)
+        return std::pair{std::string{}, (const Texture2D*)nullptr};
       auto name = ctx->property_name()->getText();
       return std::pair{name, ShaderProperty{tex2d}};
     }
@@ -730,10 +738,14 @@ struct ShaderCompiler::Impl {
       if (auto integerCtx = ctx->color_mask_value()->IntegerLiteral())
         mask = 0b1111 & static_cast<uint8_t>(std::stoull(mask_s, nullptr, 0));
       else {
-        if (mask_s.find('R') != std::string::npos) mask |= 0b1;
-        if (mask_s.find('G') != std::string::npos) mask |= 0b10;
-        if (mask_s.find('B') != std::string::npos) mask |= 0b100;
-        if (mask_s.find('A') != std::string::npos) mask |= 0b1000;
+        if (mask_s.find('R') != std::string::npos)
+          mask |= 0b1;
+        if (mask_s.find('G') != std::string::npos)
+          mask |= 0b10;
+        if (mask_s.find('B') != std::string::npos)
+          mask |= 0b100;
+        if (mask_s.find('A') != std::string::npos)
+          mask |= 0b1000;
       }
       curPass->renderState.colorMask[index] = mask;
 
@@ -864,10 +876,12 @@ struct ShaderCompiler::Impl {
 
 ShaderCompiler::ShaderCompiler() : pImpl{new Impl} {}
 
-ShaderCompiler::~ShaderCompiler() { delete pImpl; }
+ShaderCompiler::~ShaderCompiler() {
+  delete pImpl;
+}
 
-std::tuple<bool, Shader> ShaderCompiler::Compile(std::string_view ushader) {
+std::tuple<bool, Shader> ShaderCompiler::Compile(std::string_view myshader) {
   Shader shader;
   Impl::ShaderCompilerInstance compiler;
-  return compiler.Compile(ushader);
+  return compiler.Compile(myshader);
 }

@@ -10,13 +10,12 @@ INIT_PROJECT()
 
 SET(MySRefl_Build_AutoRefl TRUE CACHE BOOL "use auto refl" FORCE)
 
-ADD_DEP(MyRapidJSON 0.0.2)
-ADD_DEP(MySTL 0.1.2)
-ADD_DEP(MyDP 0.7.2)
-ADD_DEP(MyGM 0.6.12)
-ADD_DEP(MyLuaPP 0.1.8)
-ADD_DEP(MyECS 0.13.2)
-ADD_DEP(MyDX12 0.0.10)
+ADD_DEP(MyRapidJSON 0.0.3)
+ADD_DEP(MyDP 0.7.3)
+ADD_DEP(MyGM 0.6.13)
+ADD_DEP(MyLuaPP 0.2.0)
+ADD_DEP(MyECS 0.14.4)
+ADD_DEP(MyDX12 0.0.11)
 
 DOWNLOAD_ZIP(
         https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/crossguid/crossguid_19032025.zip

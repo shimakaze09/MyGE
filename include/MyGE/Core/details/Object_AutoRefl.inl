@@ -6,11 +6,14 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::Object>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Object> {
+    : TypeInfoBase<My::MyGE::Object> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[21] = "My::MyGE::Object";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyGE::Object()>()},
-      Field{"GetInstanceID", &My::MyGE::Object::GetInstanceID},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR(MyMeta::destructor), WrapDestructor<Type>()},
+      Field{TSTR("GetInstanceID"), &Type::GetInstanceID},
   };
 };

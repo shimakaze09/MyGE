@@ -6,14 +6,25 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::Schedule>
-    : My::MySRefl::TypeInfoBase<My::MyECS::Schedule> {
+    : TypeInfoBase<My::MyECS::Schedule> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[21] = "My::MyECS::Schedule";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"Order", &My::MyECS::Schedule::Order},
-      Field{"LockFilter", &My::MyECS::Schedule::LockFilter},
-      Field{"InsertNone", &My::MyECS::Schedule::InsertNone},
-      Field{"EraseNone", &My::MyECS::Schedule::EraseNone},
-      Field{"RegisterCommand", &My::MyECS::Schedule::RegisterCommand},
+      Field{TSTR("RegisterCommand"), &Type::RegisterCommand,
+            AttrList{
+                Attr{TSTR(MyMeta::default_functions),
+                     std::tuple{[](Type* __this,
+                                   std::function<void(MyECS::World*)> command) {
+                       return __this->RegisterCommand(
+                           std::forward<std::function<void(MyECS::World*)>>(
+                               command));
+                     }}},
+            }},
+      Field{TSTR("Order"), &Type::Order},
+      Field{TSTR("LockFilter"), &Type::LockFilter},
+      Field{TSTR("InsertNone"), &Type::InsertNone},
+      Field{TSTR("EraseNone"), &Type::EraseNone},
   };
 };

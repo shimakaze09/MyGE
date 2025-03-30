@@ -6,17 +6,20 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::ChunkView>
-    : My::MySRefl::TypeInfoBase<My::MyECS::ChunkView> {
+    : TypeInfoBase<My::MyECS::ChunkView> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[22] = "My::MyECS::ChunkView";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::ChunkView(
-                                   My::MyECS::Archetype*, size_t)>()},
-      Field{"Contains", &My::MyECS::ChunkView::Contains},
-      Field{"GetCmptArray",
-            static_cast<void* (My::MyECS::ChunkView::*)(My::MyECS::CmptType)
-                            const>(&My::MyECS::ChunkView::GetCmptArray)},
-      Field{"GetEntityArray", &My::MyECS::ChunkView::GetEntityArray},
-      Field{"EntityNum", &My::MyECS::ChunkView::EntityNum},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(MyECS::Archetype*, size_t)>()},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR("Contains"), &Type::Contains},
+      Field{TSTR("EntityNum"), &Type::EntityNum},
+      Field{TSTR("GetCmptArray"),
+            static_cast<void* (Type::*)(MyECS::CmptType) const>(
+                &Type::GetCmptArray)},
+      Field{TSTR("GetEntityArray"), &Type::GetEntityArray},
   };
 };

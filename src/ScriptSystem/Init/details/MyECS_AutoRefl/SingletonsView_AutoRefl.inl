@@ -6,16 +6,15 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::SingletonsView>
-    : My::MySRefl::TypeInfoBase<My::MyECS::SingletonsView> {
+    : TypeInfoBase<My::MyECS::SingletonsView> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[27] = "My::MyECS::SingletonsView";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::SingletonsView(
-                const My::MyECS::CmptAccessPtr *, size_t)>()},
-      Field{"GetSingleton", &My::MyECS::SingletonsView::GetSingleton},
-      Field{"Singletons", &My::MyECS::SingletonsView::Singletons},
-      Field{"NumberOfSingletons",
-            &My::MyECS::SingletonsView::NumberOfSingletons},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(Span<const MyECS::CmptAccessPtr>)>()},
+      Field{TSTR("GetSingleton"), &Type::GetSingleton},
+      Field{TSTR("Singletons"), &Type::Singletons},
   };
 };

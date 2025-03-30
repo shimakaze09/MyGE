@@ -337,11 +337,14 @@ void WorldApp::UpdateCamera() {
 }
 
 void WorldApp::BuildWorld() {
-  world.systemMngr.Register<
+  auto systemIDs = world.systemMngr.systemTraits.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       RotateSystem>();
+
+  for (auto ID : systemIDs)
+    world.systemMngr.Activate(ID);
 
   {  // skybox
     auto [e, skybox] = world.entityMngr.Create<My::MyGE::Skybox>();

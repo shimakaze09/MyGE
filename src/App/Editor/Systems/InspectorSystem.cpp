@@ -71,8 +71,7 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
                     ImGuiCol_ButtonActive,
                     (ImVec4)ImColor::HSV(ID / float(N), 0.8f, 0.8f));
                 if (ImGui::Button(name.c_str()))
-                  hierarchy->world->entityMngr.Attach(inspector->entity, &type,
-                                                      1);
+                  hierarchy->world->entityMngr.Attach(inspector->entity, type);
                 ImGui::PopStyleColor(3);
                 ImGui::PopID();
               }
@@ -113,7 +112,7 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
                   if (ImGui::Button(name.data())) {
                     const auto cmptType = cmpt.Type();
                     hierarchy->world->entityMngr.Detach(inspector->entity,
-                                                        &cmptType, 1);
+                                                        cmptType);
                   }
                   ImGui::PopStyleColor(3);
                   ImGui::PopID();
@@ -134,7 +133,7 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
                   if (ImGui::Button(name.c_str())) {
                     const auto cmptType = cmpt.Type();
                     hierarchy->world->entityMngr.Detach(inspector->entity,
-                                                        &cmptType, 1);
+                                                        cmptType);
                   }
                   ImGui::PopStyleColor(3);
                   ImGui::PopID();

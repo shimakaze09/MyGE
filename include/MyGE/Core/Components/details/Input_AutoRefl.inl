@@ -5,32 +5,34 @@
 #include <MySRefl/MySRefl.h>
 
 template<>
-struct My::MySRefl::TypeInfo<My::MyGE::Input>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Input>
+struct My::MySRefl::TypeInfo<My::MyGE::Input> :
+    TypeInfoBase<My::MyGE::Input>
 {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+    static constexpr char name[16] = "My::MyGE::Input";
+#endif
     static constexpr AttrList attrs = {};
-
     static constexpr FieldList fields = {
-        Field{"DisplaySize", &My::MyGE::Input::DisplaySize},
-        Field{"MousePos", &My::MyGE::Input::MousePos},
-        Field{"MouseDown", &My::MyGE::Input::MouseDown},
-        Field{"MouseWheel", &My::MyGE::Input::MouseWheel},
-        Field{"MouseWheelH", &My::MyGE::Input::MouseWheelH},
-        Field{"KeyCtrl", &My::MyGE::Input::KeyCtrl},
-        Field{"KeyShift", &My::MyGE::Input::KeyShift},
-        Field{"KeyAlt", &My::MyGE::Input::KeyAlt},
-        Field{"KeySuper", &My::MyGE::Input::KeySuper},
-        Field{"KeysDown", &My::MyGE::Input::KeysDown},
-        Field{"MouseInDisplay", &My::MyGE::Input::MouseInDisplay},
-        Field{"MouseInDisplayPre", &My::MyGE::Input::MouseInDisplayPre},
-        Field{"MouseClicked", &My::MyGE::Input::MouseClicked},
-        Field{"MousePosPrev", &My::MyGE::Input::MousePosPrev},
-        Field{"MouseDelta", &My::MyGE::Input::MouseDelta},
-        Field{"MouseClickedPos", &My::MyGE::Input::MouseClickedPos},
-        Field{"MouseDoubleClicked", &My::MyGE::Input::MouseDoubleClicked},
-        Field{"MouseReleased", &My::MyGE::Input::MouseReleased},
-        Field{"MouseDownDuration", &My::MyGE::Input::MouseDownDuration},
-        Field{"KeysDownDuration", &My::MyGE::Input::KeysDownDuration},
+        Field {TSTR("DisplaySize"), &Type::DisplaySize},
+        Field {TSTR("MousePos"), &Type::MousePos},
+        Field {TSTR("MouseDown"), &Type::MouseDown},
+        Field {TSTR("MouseWheel"), &Type::MouseWheel},
+        Field {TSTR("MouseWheelH"), &Type::MouseWheelH},
+        Field {TSTR("KeyCtrl"), &Type::KeyCtrl},
+        Field {TSTR("KeyShift"), &Type::KeyShift},
+        Field {TSTR("KeyAlt"), &Type::KeyAlt},
+        Field {TSTR("KeySuper"), &Type::KeySuper},
+        Field {TSTR("KeysDown"), &Type::KeysDown},
+        Field {TSTR("MouseInDisplay"), &Type::MouseInDisplay},
+        Field {TSTR("MouseInDisplayPre"), &Type::MouseInDisplayPre},
+        Field {TSTR("MouseClicked"), &Type::MouseClicked},
+        Field {TSTR("MousePosPrev"), &Type::MousePosPrev},
+        Field {TSTR("MouseDelta"), &Type::MouseDelta},
+        Field {TSTR("MouseClickedPos"), &Type::MouseClickedPos},
+        Field {TSTR("MouseDoubleClicked"), &Type::MouseDoubleClicked},
+        Field {TSTR("MouseReleased"), &Type::MouseReleased},
+        Field {TSTR("MouseDownDuration"), &Type::MouseDownDuration},
+        Field {TSTR("KeysDownDuration"), &Type::KeysDownDuration},
     };
 };
 

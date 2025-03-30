@@ -21,4 +21,5 @@ struct Shader : Object {
 };
 }  // namespace My::MyGE
 
+#include "../Core/details/Object_AutoRefl.inl"
 #include "details/Shader_AutoRefl.inl"

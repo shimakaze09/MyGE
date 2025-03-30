@@ -60,7 +60,8 @@ struct AnimateMeshSystem {
       if (time->elapsedTime < 10.f)
         return;
 
-      w->systemMngr.Deactivate(w->systemMngr.GetIndex<AnimateMeshSystem>());
+      w->systemMngr.Deactivate(w->systemMngr.systemTraits.GetID(
+          My::MyECS::SystemTraits::StaticNameof<AnimateMeshSystem>()));
     });
   }
 };
@@ -457,13 +458,13 @@ void MyDX12App::UpdateCamera() {
 }
 
 void MyDX12App::BuildWorld() {
-  auto indices = world.systemMngr.Register<
+  auto systemIDs = world.systemMngr.systemTraits.Register<
       My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem, AnimateMeshSystem>();
-  for (auto idx : indices)
-    world.systemMngr.Activate(idx);
+  for (auto ID : systemIDs)
+    world.systemMngr.Activate(ID);
 
   {  // skybox
     auto [e, skybox] = world.entityMngr.Create<My::MyGE::Skybox>();

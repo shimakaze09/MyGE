@@ -5,16 +5,39 @@
 #include <MySRefl/MySRefl.h>
 
 template <>
-struct My::MySRefl::TypeInfo<My::MyGE::Shader>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Shader,
-                                Base<My::MyGE::Object>> {
+struct My::MySRefl::TypeInfo<My::MyGE::ShaderPass::Queue>
+    : TypeInfoBase<My::MyGE::ShaderPass::Queue> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[32] = "My::MyGE::ShaderPass::Queue";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"hlslFile", &My::MyGE::Shader::hlslFile},
-      Field{"name", &My::MyGE::Shader::name},
-      Field{"rootParameters", &My::MyGE::Shader::rootParameters},
-      Field{"properties", &My::MyGE::Shader::properties},
-      Field{"passes", &My::MyGE::Shader::passes},
+      Field{TSTR("Background"), Type::Background},
+      Field{TSTR("Geometry"), Type::Geometry},
+      Field{TSTR("AlphaTest"), Type::AlphaTest},
+      Field{TSTR("Transparent"), Type::Transparent},
+      Field{TSTR("Overlay"), Type::Overlay},
+  };
+};
+
+template <>
+struct My::MySRefl::TypeInfo<My::MyGE::ShaderPass>
+    : TypeInfoBase<My::MyGE::ShaderPass> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[25] = "My::MyGE::ShaderPass";
+#endif
+  static constexpr AttrList attrs = {};
+  static constexpr FieldList fields = {
+      Field{TSTR("vertexName"), &Type::vertexName},
+      Field{TSTR("fragmentName"), &Type::fragmentName},
+      Field{TSTR("renderState"), &Type::renderState},
+      Field{TSTR("tags"), &Type::tags},
+      Field{TSTR("queue"), &Type::queue,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> size_t {
+                       return {2000};
+                     }},
+            }},
   };
 };

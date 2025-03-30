@@ -6,23 +6,43 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::Camera>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Camera> {
+    : TypeInfoBase<My::MyGE::Camera> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[21] = "My::MyGE::Camera";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"aspect", &My::MyGE::Camera::aspect},
-      Field{"fov", &My::MyGE::Camera::fov,
+      Field{TSTR("aspect"), &Type::aspect,
             AttrList{
-                Attr{"interval", std::pair{1.f, 179.f}},
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {16.f / 9.f};
+                     }},
             }},
-      Field{"clippingPlaneMin", &My::MyGE::Camera::clippingPlaneMin,
+      Field{TSTR("fov"), &Type::fov,
             AttrList{
-                Attr{"min", 0.1f},
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {60.f};
+                     }},
+                Attr{TSTR("interval"), std::pair{1.f, 179.f}},
             }},
-      Field{"clippingPlaneMax", &My::MyGE::Camera::clippingPlaneMax,
+      Field{TSTR("clippingPlaneMin"), &Type::clippingPlaneMin,
             AttrList{
-                Attr{"min", 0.1f},
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {0.3f};
+                     }},
+                Attr{TSTR("min"), 0.1f},
             }},
-      Field{"prjectionMatrix", &My::MyGE::Camera::prjectionMatrix},
+      Field{TSTR("clippingPlaneMax"), &Type::clippingPlaneMax,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> float {
+                       return {1000.f};
+                     }},
+                Attr{TSTR("min"), 0.1f},
+            }},
+      Field{TSTR("prjectionMatrix"), &Type::prjectionMatrix},
   };
 };

@@ -5,13 +5,17 @@
 #include <MySRefl/MySRefl.h>
 
 template<>
-struct My::MySRefl::TypeInfo<My::MyGE::WorldToLocal>
-    : My::MySRefl::TypeInfoBase<My::MyGE::WorldToLocal>
+struct My::MySRefl::TypeInfo<My::MyGE::WorldToLocal> :
+    TypeInfoBase<My::MyGE::WorldToLocal>
 {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+    static constexpr char name[23] = "My::MyGE::WorldToLocal";
+#endif
     static constexpr AttrList attrs = {};
-
     static constexpr FieldList fields = {
-        Field{"value", &My::MyGE::WorldToLocal::value},
+        Field {TSTR("value"), &Type::value, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->transformf{ return {transformf::eye()}; }},
+        }},
     };
 };
 

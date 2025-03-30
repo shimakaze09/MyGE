@@ -10,11 +10,13 @@ struct Type {
 };
 
 template <>
-struct My::MySRefl::TypeInfo<Type> : My::MySRefl::TypeInfoBase<Type> {
+struct My::MySRefl::TypeInfo<Type> : TypeInfoBase<Type> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[5] = "Type";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"data", &Type::data},
+      Field{TSTR("data"), &Type::data},
   };
 };
 

@@ -6,10 +6,12 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::LuaScriptQueue>
-    : My::MySRefl::TypeInfoBase<My::MyGE::LuaScriptQueue> {
+    : TypeInfoBase<My::MyGE::LuaScriptQueue> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[29] = "My::MyGE::LuaScriptQueue";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"value", &My::MyGE::LuaScriptQueue::value},
+      Field{TSTR("value"), &Type::value},
   };
 };

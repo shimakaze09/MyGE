@@ -6,33 +6,32 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGraphviz::Registry>
-    : My::MySRefl::TypeInfoBase<My::MyGraphviz::Registry> {
+    : TypeInfoBase<My::MyGraphviz::Registry> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[26] = "My::MyGraphviz::Registry";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyGraphviz::Registry()>()},
-      Field{"GetNodes", &My::MyGraphviz::Registry::GetNodes},
-      Field{"GetEdges", &My::MyGraphviz::Registry::GetEdges},
-      Field{"GetNodeAttrs", &My::MyGraphviz::Registry::GetNodeAttrs},
-      Field{"GetEdgeAttrs", &My::MyGraphviz::Registry::GetEdgeAttrs},
-      Field{"IsRegisteredNode", &My::MyGraphviz::Registry::IsRegisteredNode},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR("GetNodes"), &Type::GetNodes},
+      Field{TSTR("GetEdges"), &Type::GetEdges},
+      Field{TSTR("GetNodeAttrs"), &Type::GetNodeAttrs},
+      Field{TSTR("GetEdgeAttrs"), &Type::GetEdgeAttrs},
+      Field{TSTR("IsRegisteredNode"), &Type::IsRegisteredNode},
+      Field{TSTR("IsRegisteredEdge"),
+            static_cast<bool (Type::*)(size_t, size_t) const>(
+                &Type::IsRegisteredEdge)},
       Field{
-          "IsRegisteredEdge",
-          static_cast<bool (My::MyGraphviz::Registry::*)(size_t, size_t) const>(
-              &My::MyGraphviz::Registry::IsRegisteredEdge)},
-      Field{"IsRegisteredEdge",
-            static_cast<bool (My::MyGraphviz::Registry::*)(
-                std::string_view, std::string_view) const>(
-                &My::MyGraphviz::Registry::IsRegisteredEdge)},
-      Field{"GetNodeIndex", &My::MyGraphviz::Registry::GetNodeIndex},
-      Field{"GetEdgeIndex", &My::MyGraphviz::Registry::GetEdgeIndex},
-      Field{"RegisterNode", &My::MyGraphviz::Registry::RegisterNode},
-      Field{"RegisterEdge", &My::MyGraphviz::Registry::RegisterEdge},
-      Field{"RegisterNodeAttr", &My::MyGraphviz::Registry::RegisterNodeAttr},
-      Field{"RegisterEdgeAttr", &My::MyGraphviz::Registry::RegisterEdgeAttr},
-      Field{"DeregisterNodeAttr",
-            &My::MyGraphviz::Registry::DeregisterNodeAttr},
-      Field{"DeregisterEdgeAttr",
-            &My::MyGraphviz::Registry::DeregisterEdgeAttr},
+          TSTR("IsRegisteredEdge"),
+          static_cast<bool (Type::*)(std::string_view, std::string_view) const>(
+              &Type::IsRegisteredEdge)},
+      Field{TSTR("GetNodeIndex"), &Type::GetNodeIndex},
+      Field{TSTR("GetEdgeIndex"), &Type::GetEdgeIndex},
+      Field{TSTR("RegisterNode"), &Type::RegisterNode},
+      Field{TSTR("RegisterEdge"), &Type::RegisterEdge},
+      Field{TSTR("RegisterNodeAttr"), &Type::RegisterNodeAttr},
+      Field{TSTR("RegisterEdgeAttr"), &Type::RegisterEdgeAttr},
+      Field{TSTR("DeregisterNodeAttr"), &Type::DeregisterNodeAttr},
+      Field{TSTR("DeregisterEdgeAttr"), &Type::DeregisterEdgeAttr},
   };
 };

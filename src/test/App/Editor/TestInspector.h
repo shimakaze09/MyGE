@@ -55,48 +55,83 @@ struct TestInspector {
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::TestEnum>
-    : My::MySRefl::TypeInfoBase<My::MyGE::TestEnum> {
+    : TypeInfoBase<My::MyGE::TestEnum> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[23] = "My::MyGE::TestEnum";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"A", My::MyGE::TestEnum::A},
-      Field{"B", My::MyGE::TestEnum::B},
-      Field{"C", My::MyGE::TestEnum::C},
+      Field{TSTR("A"), Type::A},
+      Field{TSTR("B"), Type::B},
+      Field{TSTR("C"), Type::C},
   };
 };
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
-    : My::MySRefl::TypeInfoBase<My::MyGE::TestInspector> {
+    : TypeInfoBase<My::MyGE::TestInspector> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[28] = "My::MyGE::TestInspector";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"v_bool", &My::MyGE::TestInspector::v_bool},
-      Field{"v_uint8", &My::MyGE::TestInspector::v_uint8},
-      Field{"v_uint16", &My::MyGE::TestInspector::v_uint16},
-      Field{"v_uint32", &My::MyGE::TestInspector::v_uint32},
-      Field{"v_uint64", &My::MyGE::TestInspector::v_uint64},
-      Field{"v_int8", &My::MyGE::TestInspector::v_int8},
-      Field{"v_int16", &My::MyGE::TestInspector::v_int16},
-      Field{"v_int32", &My::MyGE::TestInspector::v_int32},
-      Field{"v_int64", &My::MyGE::TestInspector::v_int64},
-      Field{"v_float", &My::MyGE::TestInspector::v_float},
-      Field{"v_double", &My::MyGE::TestInspector::v_double},
-      Field{"v_string", &My::MyGE::TestInspector::v_string},
-      Field{"v_entity", &My::MyGE::TestInspector::v_entity},
-      Field{"v_array", &My::MyGE::TestInspector::v_array},
-      Field{"v_array2", &My::MyGE::TestInspector::v_array2},
-      Field{"v_bbox", &My::MyGE::TestInspector::v_bbox},
-      Field{"v_vec", &My::MyGE::TestInspector::v_vec},
-      Field{"v_rgb", &My::MyGE::TestInspector::v_rgb},
-      Field{"v_rgba", &My::MyGE::TestInspector::v_rgba},
-      Field{"v_vector", &My::MyGE::TestInspector::v_vector},
-      Field{"v_deque", &My::MyGE::TestInspector::v_deque},
-      Field{"v_list", &My::MyGE::TestInspector::v_list},
-      Field{"v_forward_list", &My::MyGE::TestInspector::v_forward_list},
-      Field{"v_map", &My::MyGE::TestInspector::v_map},
-      Field{"v_tuple", &My::MyGE::TestInspector::v_tuple},
-      Field{"v_pair", &My::MyGE::TestInspector::v_pair},
-      Field{"v_variant", &My::MyGE::TestInspector::v_variant},
-      Field{"v_enum", &My::MyGE::TestInspector::v_enum}};
+      Field{TSTR("v_bool"), &Type::v_bool},
+      Field{TSTR("v_uint8"), &Type::v_uint8},
+      Field{TSTR("v_uint16"), &Type::v_uint16},
+      Field{TSTR("v_uint32"), &Type::v_uint32},
+      Field{TSTR("v_uint64"), &Type::v_uint64},
+      Field{TSTR("v_int8"), &Type::v_int8},
+      Field{TSTR("v_int16"), &Type::v_int16},
+      Field{TSTR("v_int32"), &Type::v_int32},
+      Field{TSTR("v_int64"), &Type::v_int64},
+      Field{TSTR("v_float"), &Type::v_float},
+      Field{TSTR("v_double"), &Type::v_double},
+      Field{TSTR("v_string"), &Type::v_string},
+      Field{TSTR("v_entity"), &Type::v_entity,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> MyECS::Entity {
+                       return {MyECS::Entity::Invalid()};
+                     }},
+            }},
+      Field{TSTR("v_array"), &Type::v_array},
+      Field{TSTR("v_array2"), &Type::v_array2},
+      Field{TSTR("v_bbox"), &Type::v_bbox},
+      Field{TSTR("v_vec"), &Type::v_vec},
+      Field{TSTR("v_rgb"), &Type::v_rgb},
+      Field{TSTR("v_rgba"), &Type::v_rgba},
+      Field{TSTR("v_vector"), &Type::v_vector,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> std::vector<std::string> {
+                       return {"abc", "edf"};
+                     }},
+            }},
+      Field{TSTR("v_deque"), &Type::v_deque},
+      Field{TSTR("v_forward_list"), &Type::v_forward_list},
+      Field{TSTR("v_list"), &Type::v_list},
+      Field{TSTR("v_map"), &Type::v_map,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> std::map<std::string, std::array<int, 3>> {
+                       return {{"a", {1, 2, 3}}, {"b", {4, 5, 6}}};
+                     }},
+            }},
+      Field{TSTR("v_tuple"), &Type::v_tuple},
+      Field{TSTR("v_pair"), &Type::v_pair},
+      Field{TSTR("v_variant"), &Type::v_variant,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> std::variant<size_t, std::string> {
+                       return {std::string{"I'm varaint"}};
+                     }},
+            }},
+      Field{TSTR("v_enum"), &Type::v_enum,
+            AttrList{
+                Attr{TSTR(MyMeta::initializer),
+                     []() -> MyGE::TestEnum {
+                       return {MyGE::TestEnum::B};
+                     }},
+            }},
+  };
 };

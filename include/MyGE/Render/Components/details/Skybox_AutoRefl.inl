@@ -6,10 +6,12 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::Skybox>
-    : My::MySRefl::TypeInfoBase<My::MyGE::Skybox> {
+    : TypeInfoBase<My::MyGE::Skybox> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[21] = "My::MyGE::Skybox";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"material", &My::MyGE::Skybox::material},
+      Field{TSTR("material"), &Type::material},
   };
 };

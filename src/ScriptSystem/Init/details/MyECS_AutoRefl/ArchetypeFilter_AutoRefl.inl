@@ -6,16 +6,18 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::ArchetypeFilter>
-    : My::MySRefl::TypeInfoBase<My::MyECS::ArchetypeFilter> {
+    : TypeInfoBase<My::MyECS::ArchetypeFilter> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[28] = "My::MyECS::ArchetypeFilter";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{"all", &My::MyECS::ArchetypeFilter::all},
-      Field{"any", &My::MyECS::ArchetypeFilter::any},
-      Field{"none", &My::MyECS::ArchetypeFilter::none},
-      Field{"HashCode", &My::MyECS::ArchetypeFilter::HashCode},
-      Field{
-          "operator==",
-          &My::MyECS::ArchetypeFilter::operator== },
+      Field{TSTR("all"), &Type::all}, Field{TSTR("any"), &Type::any},
+      Field{TSTR("none"), &Type::none},
+      Field{TSTR("HashCode"), &Type::HashCode},
+      Field{TSTR("HaveWriteCmptType"), &Type::HaveWriteCmptType},
+      Field {
+        TSTR("operator=="),
+        &Type::operator== },
       };
 };

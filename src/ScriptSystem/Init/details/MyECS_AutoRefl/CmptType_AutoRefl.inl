@@ -6,84 +6,135 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::CmptType>
-    : My::MySRefl::TypeInfoBase<My::MyECS::CmptType> {
+    : TypeInfoBase<My::MyECS::CmptType> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[21] = "My::MyECS::CmptType";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::CmptType(size_t)>()},
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::CmptType(std::string_view)>()},
-      Field{"HashCode", &My::MyECS::CmptType::HashCode},
-      Field{"Invalid", &My::MyECS::CmptType::Invalid},
-      Field{"Valid", &My::MyECS::CmptType::Valid},
-      Field{"operator<", &My::MyECS::CmptType::operator<},
-            Field{"operator<=", &My::MyECS::CmptType::operator<= },
-                  Field{"operator>", &My::MyECS::CmptType::operator> },
-                        Field{"operator>=", &My::MyECS::CmptType::operator>= },
-                              Field{"operator==",
-                                    &My::MyECS::CmptType::operator== },
-                                    Field{
-                                        "operator!=",
-                                        &My::MyECS::CmptType::operator!= },
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type(size_t)>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(std::string_view)>()},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR("HashCode"), &Type::HashCode},
+      Field{TSTR("Invalid"), &Type::Invalid},
+      Field{TSTR("Valid"), &Type::Valid},
+      Field{TSTR("Is"),
+            static_cast<bool (Type::*)(std::string_view) const noexcept>(
+                &Type::Is)},
+      Field{TSTR("operator<"), &Type::operator<},
+            Field{TSTR("operator<="), &Type::operator<= },
+                  Field{TSTR("operator>"), &Type::operator> },
+                        Field{TSTR("operator>="), &Type::operator>= },
+                              Field{TSTR("operator=="), &Type::operator== },
+                                    Field {
+                                      TSTR("operator!="),
+                                      &Type::operator!= },
                               };
 };
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::CmptAccessType>
-    : My::MySRefl::TypeInfoBase<My::MyECS::CmptAccessType> {
+    : TypeInfoBase<My::MyECS::CmptAccessType> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[27] = "My::MyECS::CmptAccessType";
+#endif
   static constexpr AttrList attrs = {};
-
-  static constexpr FieldList fields = {
-      Field{Name::constructor, WrapConstructor<My::MyECS::CmptAccessType(
-                                   size_t, My::MyECS::AccessMode)>()},
-      Field{Name::constructor, WrapConstructor<My::MyECS::CmptAccessType(
-                                   std::string_view, My::MyECS::AccessMode)>()},
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::CmptAccessType(
-                My::MyECS::CmptType, My::MyECS::AccessMode)>()},
-      Field{Name::constructor,
-            WrapConstructor<My::MyECS::CmptAccessType(My::MyECS::CmptType)>()},
-      Field{Name::constructor, WrapConstructor<My::MyECS::CmptAccessType()>()},
-      Field{"HashCode", &My::MyECS::CmptAccessType::HashCode},
-      Field{"GetCmptType", &My::MyECS::CmptAccessType::GetCmptType},
-      Field{"GetAccessMode", &My::MyECS::CmptAccessType::GetAccessMode},
-      Field{"Invalid", &My::MyECS::CmptAccessType::Invalid},
-      Field{"Valid", &My::MyECS::CmptAccessType::Valid},
-      Field{"operator<", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                             const My::MyECS::CmptAccessType&) const noexcept>(
-                             &My::MyECS::CmptAccessType::operator<)},
-      Field{"operator<=", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                              const My::MyECS::CmptAccessType&) const noexcept>(
-                              &My::MyECS::CmptAccessType::operator<=)},
-      Field{"operator>", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                             const My::MyECS::CmptAccessType&) const noexcept>(
-                             &My::MyECS::CmptAccessType::operator>)},
-      Field{"operator>=", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                              const My::MyECS::CmptAccessType&) const noexcept>(
-                              &My::MyECS::CmptAccessType::operator>=)},
-      Field{"operator==", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                              const My::MyECS::CmptAccessType&) const noexcept>(
-                              &My::MyECS::CmptAccessType::operator==)},
-      Field{"operator!=", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                              const My::MyECS::CmptAccessType&) const noexcept>(
-                              &My::MyECS::CmptAccessType::operator!=)},
-      Field{"operator<", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                             const My::MyECS::CmptType&) const noexcept>(
-                             &My::MyECS::CmptAccessType::operator<)},
-      Field{"operator<=", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                              const My::MyECS::CmptType&) const noexcept>(
-                              &My::MyECS::CmptAccessType::operator<=)},
-      Field{"operator>", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                             const My::MyECS::CmptType&) const noexcept>(
-                             &My::MyECS::CmptAccessType::operator>)},
-      Field{"operator>=", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                              const My::MyECS::CmptType&) const noexcept>(
-                              &My::MyECS::CmptAccessType::operator>=)},
-      Field{"operator==", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                              const My::MyECS::CmptType&) const noexcept>(
-                              &My::MyECS::CmptAccessType::operator==)},
-      Field{"operator!=", static_cast<bool (My::MyECS::CmptAccessType::*)(
-                              const My::MyECS::CmptType&) const noexcept>(
-                              &My::MyECS::CmptAccessType::operator!=)},
-  };
+  static constexpr FieldList fields = {Field{
+                                           TSTR(MyMeta::constructor),
+                                           WrapConstructor<Type(
+                                               size_t, MyECS::AccessMode)>(),
+                                           AttrList{
+                                               Attr{TSTR(MyMeta::
+                                                             default_functions),
+                                                    std::tuple{WrapConstructor<
+                                                        Type(size_t)>()}},
+                                           }},
+                                       Field{
+                                           TSTR(MyMeta::constructor),
+                                           WrapConstructor<Type(
+                                               std::string_view,
+                                               MyECS::AccessMode)>(),
+                                           AttrList{
+                                               Attr{
+                                                   TSTR(MyMeta::default_functions), std::tuple{WrapConstructor<
+                                                                                        Type(std::string_view)>()}},
+                                           }},
+                                       Field{
+                                           TSTR(MyMeta::constructor),
+                                           WrapConstructor<Type(MyECS::CmptType,
+                                                                MyECS::
+                                                                    AccessMode)>(),
+                                           AttrList{
+                                               Attr{
+                                                   TSTR(MyMeta::default_functions), std::tuple{WrapConstructor<
+                                                                                        Type(MyECS::CmptType)>()}},
+                                           }},
+                                       Field{
+                                           TSTR(MyMeta::constructor),
+                                           WrapConstructor<Type()>()},
+                                       Field{TSTR("HashCode"), &Type::HashCode},
+                                       Field{TSTR("GetCmptType"),
+                                             &Type::GetCmptType},
+                                       Field{TSTR("GetAccessMode"),
+                                             &Type::GetAccessMode},
+                                       Field {
+                                         TSTR("operatorCmptType"),
+                                         &Type::operator MyECS::CmptType },
+                                         Field{TSTR("Invalid"), &Type::Invalid},
+                                         Field{TSTR("Valid"), &Type::Valid},
+                                         Field{
+                                             TSTR("operator<"),
+                                             static_cast<
+                                                 bool (
+                                                     Type::*)(const MyECS::CmptAccessType&) const noexcept>(&Type::operator<)},
+                                         Field{
+                                             TSTR("operator<="),
+                                             static_cast<bool (Type::*)(const MyECS::
+                                                                            CmptAccessType&) const noexcept>(&Type::operator<=)},
+                                         Field{
+                                             TSTR("operator>"),
+                                             static_cast<
+                                                 bool (
+                                                     Type::*)(const MyECS::CmptAccessType&) const noexcept>(&Type::operator>)},
+                                         Field{
+                                             TSTR("operator>="),
+                                             static_cast<bool (Type::*)(const MyECS::
+                                                                            CmptAccessType&) const noexcept>(&Type::operator>=)},
+                                         Field{
+                                             TSTR("operator=="),
+                                             static_cast<bool (Type::*)(const MyECS::
+                                                                            CmptAccessType&) const noexcept>(&Type::operator==)},
+                                         Field{
+                                             TSTR("operator!="),
+                                             static_cast<bool (Type::*)(const MyECS::
+                                                                            CmptAccessType&) const noexcept>(&Type::operator!=)},
+                                         Field{
+                                             TSTR("operator<"),
+                                             static_cast<
+                                                 bool (
+                                                     Type::*)(const MyECS::CmptType&) const noexcept>(&Type::operator<)},
+                                         Field{
+                                             TSTR("operator<="), static_cast<
+                                                                     bool (
+                                                                         Type::*)(const MyECS::CmptType&) const noexcept>(&Type::
+                                                                                                                          operator<=)},
+                                         Field{
+                                             TSTR("operator>"),
+                                             static_cast<
+                                                 bool (
+                                                     Type::*)(const MyECS::CmptType&) const noexcept>(&Type::operator>)},
+                                         Field{
+                                             TSTR("operator>="),
+                                             static_cast<bool (Type::*)(const MyECS::
+                                                                            CmptType&) const noexcept>(&Type::operator>=)},
+                                         Field{
+                                             TSTR("operator=="),
+                                             static_cast<bool (Type::*)(const MyECS::
+                                                                            CmptType&) const noexcept>(&Type::operator==)},
+                                         Field{
+                                             TSTR("operator!="),
+                                             static_cast<bool (Type::*)(const MyECS::
+                                                                            CmptType&) const noexcept>(&Type::operator!=)},
+                                       };
 };

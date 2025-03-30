@@ -6,50 +6,61 @@
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyECS::EntityMngr>
-    : My::MySRefl::TypeInfoBase<My::MyECS::EntityMngr> {
+    : TypeInfoBase<My::MyECS::EntityMngr> {
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+  static constexpr char name[23] = "My::MyECS::EntityMngr";
+#endif
   static constexpr AttrList attrs = {};
-
   static constexpr FieldList fields = {
-      Field{Name::constructor,
-            My::MySRefl::WrapConstructor<My::MyECS::EntityMngr()>()},
-      Field{Name::constructor,
-            My::MySRefl::WrapConstructor<My::MyECS::EntityMngr(
-                const My::MyECS::EntityMngr&)>()},
-      Field{"cmptTraits", &My::MyECS::EntityMngr::cmptTraits},
+      Field{TSTR(MyMeta::constructor), WrapConstructor<Type()>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(const MyECS::EntityMngr&)>()},
+      Field{TSTR(MyMeta::constructor),
+            WrapConstructor<Type(MyECS::EntityMngr&&)>()},
+      Field{TSTR(MyMeta::destructor), WrapDestructor<Type>()},
+      Field{TSTR("cmptTraits"), &Type::cmptTraits},
+      Field{TSTR("Create"),
+            static_cast<MyECS::Entity (Type::*)(Span<const MyECS::CmptType>)>(
+                &Type::Create)},
       Field{
-          "Create",
-          static_cast<My::MyECS::Entity (My::MyECS::EntityMngr::*)(
-              const My::MyECS::CmptType*, size_t)>(
-              &My::MyECS::EntityMngr::Create),
-      },
-      Field{"Instantiate", &My::MyECS::EntityMngr::Instantiate},
-      Field{
-          "Attach",
-          static_cast<void (My::MyECS::EntityMngr::*)(
-              My::MyECS::Entity, const My::MyECS::CmptType*, size_t)>(
-              &My::MyECS::EntityMngr::Attach),
-      },
-      Field{"Detach", &My::MyECS::EntityMngr::Detach},
-      Field{"Have", &My::MyECS::EntityMngr::Have},
-      Field{"Get", static_cast<My::MyECS::CmptPtr (My::MyECS::EntityMngr::*)(
-                       My::MyECS::Entity, My::MyECS::CmptType) const>(
-                       &My::MyECS::EntityMngr::Get)},
-      Field{"Components", &My::MyECS::EntityMngr::Components},
-      Field{"Exist", &My::MyECS::EntityMngr::Exist},
-      Field{"Destroy", &My::MyECS::EntityMngr::Destroy},
-      Field{"TotalEntityNum", &My::MyECS::EntityMngr::TotalEntityNum},
-      Field{"EntityNum", &My::MyECS::EntityMngr::EntityNum},
-      Field{"GetEntityFreeEntries",
-            &My::MyECS::EntityMngr::GetEntityFreeEntries},
-      Field{"GetEntityVersion", &My::MyECS::EntityMngr::GetEntityVersion},
-      Field{"LocateSingletons", &My::MyECS::EntityMngr::LocateSingletons},
-      Field{"IsSingleton", &My::MyECS::EntityMngr::IsSingleton},
-      Field{"GetSingletonEntity", &My::MyECS::EntityMngr::GetSingletonEntity},
-      Field{
-          "GetSingleton",
-          static_cast<My::MyECS::CmptPtr (My::MyECS::EntityMngr::*)(
-              My::MyECS::CmptType) const>(&My::MyECS::EntityMngr::GetSingleton),
-      },
-      Field{"Accept", &My::MyECS::EntityMngr::Accept},
+          TSTR("Create"),
+          static_cast<MyECS::Entity (Type::*)(MyECS::CmptType)>(&Type::Create)},
+      Field{TSTR("Instantiate"), &Type::Instantiate},
+      Field{TSTR("Attach"),
+            static_cast<void (Type::*)(
+                MyECS::Entity, Span<const MyECS::CmptType>)>(&Type::Attach)},
+      Field{TSTR("Attach"),
+            static_cast<void (Type::*)(MyECS::Entity, MyECS::CmptType)>(
+                &Type::Attach)},
+      Field{TSTR("Detach"),
+            static_cast<void (Type::*)(
+                MyECS::Entity, Span<const MyECS::CmptType>)>(&Type::Detach)},
+      Field{TSTR("Detach"),
+            static_cast<void (Type::*)(MyECS::Entity, MyECS::CmptType)>(
+                &Type::Detach)},
+      Field{TSTR("Have"),
+            static_cast<bool (Type::*)(MyECS::Entity, MyECS::CmptType) const>(
+                &Type::Have)},
+      Field{TSTR("Get"),
+            static_cast<MyECS::CmptPtr (Type::*)(MyECS::Entity, MyECS::CmptType)
+                            const>(&Type::Get)},
+      Field{TSTR("Components"), &Type::Components},
+      Field{TSTR("Exist"), &Type::Exist},
+      Field{TSTR("Destroy"), &Type::Destroy},
+      Field{TSTR("TotalEntityNum"), &Type::TotalEntityNum},
+      Field{TSTR("EntityNum"), &Type::EntityNum},
+      Field{TSTR("GetEntityFreeEntries"), &Type::GetEntityFreeEntries},
+      Field{TSTR("GetEntityVersion"), &Type::GetEntityVersion},
+      Field{TSTR("IsSingleton"), &Type::IsSingleton},
+      Field{TSTR("GetSingletonEntity"), &Type::GetSingletonEntity},
+      Field{TSTR("GetSingleton"),
+            static_cast<MyECS::CmptPtr (Type::*)(MyECS::CmptType) const>(
+                &Type::GetSingleton)},
+      Field{TSTR("GetCmptArray"),
+            static_cast<std::vector<MyECS::CmptPtr> (Type::*)(
+                const MyECS::ArchetypeFilter&, MyECS::CmptType) const>(
+                &Type::GetCmptArray)},
+      Field{TSTR("GetEntityArray"), &Type::GetEntityArray},
+      Field{TSTR("Accept"), &Type::Accept},
   };
 };
