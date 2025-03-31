@@ -67,16 +67,16 @@ struct Editor::Impl {
 
   void BuildWorld();
 
-  static void InitWorld(My::MyECS::World&);
+  static void InitWorld(My::MyGE::World&);
   static void InitInspectorRegistry();
   static void LoadTextures();
   static void BuildShaders();
 
-  std::unique_ptr<My::MyECS::World> runningGameWorld;
-  My::MyECS::World* curGameWorld;
-  My::MyECS::World gameWorld;
-  My::MyECS::World sceneWorld;
-  My::MyECS::World editorWorld;
+  std::unique_ptr<My::MyGE::World> runningGameWorld;
+  My::MyGE::World* curGameWorld;
+  My::MyGE::World gameWorld;
+  My::MyGE::World sceneWorld;
+  My::MyGE::World editorWorld;
 
   void OnGameResize();
   size_t gameWidth{0}, gameHeight{0};
@@ -223,7 +223,7 @@ World* Editor::GetEditorWorld() {
   return &pImpl->editorWorld;
 }
 
-MyECS::World* Editor::GetCurrentGameWorld() {
+MyGE::World* Editor::GetCurrentGameWorld() {
   return pImpl->curGameWorld;
 }
 
@@ -257,19 +257,16 @@ bool Editor::Impl::Init() {
   AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
   InitInspectorRegistry();
 
-  RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
   BuildShaders();
   PipelineBase::InitDesc initDesc;
-  initDesc.device = pEditor->uDevice.Get();
+  initDesc.device = pEditor->myDevice.Get();
   initDesc.rtFormat = gameRTFormat;
-  initDesc.cmdQueue = pEditor->uCmdQueue.Get();
+  initDesc.cmdQueue = pEditor->myCmdQueue.Get();
   initDesc.numFrame = DX12App::NumFrameResources;
-  gamePipeline = std::make_unique<StdPipeline>(
-      RsrcMngrDX12::Instance().GetUpload(), initDesc);
-  scenePipeline = std::make_unique<StdPipeline>(
-      RsrcMngrDX12::Instance().GetUpload(), initDesc);
-  RsrcMngrDX12::Instance().GetUpload().End(pEditor->myCmdQueue.Get());
+  gamePipeline = std::make_unique<StdPipeline>(initDesc);
+  scenePipeline = std::make_unique<StdPipeline>(initDesc);
+  RsrcMngrDX12::Instance().CommitUploadAndDelete(pEditor->myCmdQueue.Get());
 
   gameRT_SRV =
       My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
@@ -310,9 +307,9 @@ void Editor::Impl::OnGameResize() {
       D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(gameRT.ReleaseAndGetAddressOf())));
   pEditor->myDevice->CreateShaderResourceView(gameRT.Get(), nullptr,
-                                              gameRT_SRV.GetCpuHandle());
+                                             gameRT_SRV.GetCpuHandle());
   pEditor->myDevice->CreateRenderTargetView(gameRT.Get(), nullptr,
-                                            gameRT_RTV.GetCpuHandle());
+                                           gameRT_RTV.GetCpuHandle());
 
   assert(gamePipeline);
   D3D12_VIEWPORT viewport;
@@ -336,9 +333,9 @@ void Editor::Impl::OnSceneResize() {
       D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(sceneRT.ReleaseAndGetAddressOf())));
   pEditor->myDevice->CreateShaderResourceView(sceneRT.Get(), nullptr,
-                                              sceneRT_SRV.GetCpuHandle());
+                                             sceneRT_SRV.GetCpuHandle());
   pEditor->myDevice->CreateRenderTargetView(sceneRT.Get(), nullptr,
-                                            sceneRT_RTV.GetCpuHandle());
+                                           sceneRT_RTV.GetCpuHandle());
 
   assert(scenePipeline);
   D3D12_VIEWPORT viewport;
@@ -363,9 +360,6 @@ void Editor::Impl::Update() {
   ImGui_ImplWin32_NewFrame_Context(sceneImGuiCtx, scenePos, (float)sceneWidth,
                                    (float)sceneHeight);
   ImGui_ImplWin32_NewFrame_Shared();
-
-  auto& upload = RsrcMngrDX12::Instance().GetUpload();
-  upload.Begin();
 
   {  // editor
     ImGui::SetCurrentContext(editorImGuiCtx);
@@ -529,13 +523,13 @@ void Editor::Impl::Update() {
         gameWorld.Update();
         break;
       case Impl::GameState::Starting: {
-        runningGameWorld = std::make_unique<My::MyECS::World>(gameWorld);
+        runningGameWorld = std::make_unique<My::MyGE::World>(gameWorld);
         if (auto hierarchy = editorWorld.entityMngr.GetSingleton<Hierarchy>())
           hierarchy->world = runningGameWorld.get();
         curGameWorld = runningGameWorld.get();
         runningGameWorld->systemMngr.Activate(
             runningGameWorld->systemMngr.systemTraits.GetID(
-                MyECS::SystemTraits::StaticNameof<LuaScriptQueueSystem>()));
+                MyGE::SystemTraits::StaticNameof<LuaScriptQueueSystem>()));
         auto ctx = LuaCtxMngr::Instance().Register(runningGameWorld.get());
         sol::state_view lua{ctx->Main()};
         lua["world"] = runningGameWorld.get();
@@ -588,14 +582,13 @@ void Editor::Impl::Update() {
   ThrowIfFailed(pEditor->myGCmdList->Reset(cmdAlloc, nullptr));
   auto& deleteBatch = RsrcMngrDX12::Instance().GetDeleteBatch();
 
-  auto UpdateRenderResource = [&](const My::MyECS::World* w) {
+  auto UpdateRenderResource = [&](const My::MyGE::World* w) {
     w->RunEntityJob(
         [&](const MeshFilter* meshFilter, const MeshRenderer* meshRenderer) {
           if (!meshFilter->mesh || meshRenderer->materials.empty())
             return;
 
-          RsrcMngrDX12::Instance().RegisterMesh(upload, deleteBatch,
-                                                pEditor->myGCmdList.Get(),
+          RsrcMngrDX12::Instance().RegisterMesh(pEditor->myGCmdList.Get(),
                                                 *meshFilter->mesh);
 
           for (const auto& material : meshRenderer->materials) {
@@ -605,12 +598,10 @@ void Editor::Impl::Update() {
               if (std::holds_alternative<std::shared_ptr<const Texture2D>>(
                       property)) {
                 RsrcMngrDX12::Instance().RegisterTexture2D(
-                    RsrcMngrDX12::Instance().GetUpload(),
                     *std::get<std::shared_ptr<const Texture2D>>(property));
               } else if (std::holds_alternative<
                              std::shared_ptr<const TextureCube>>(property)) {
                 RsrcMngrDX12::Instance().RegisterTextureCube(
-                    RsrcMngrDX12::Instance().GetUpload(),
                     *std::get<std::shared_ptr<const TextureCube>>(property));
               }
             }
@@ -624,12 +615,10 @@ void Editor::Impl::Update() {
         if (std::holds_alternative<std::shared_ptr<const Texture2D>>(
                 property)) {
           RsrcMngrDX12::Instance().RegisterTexture2D(
-              RsrcMngrDX12::Instance().GetUpload(),
               *std::get<std::shared_ptr<const Texture2D>>(property));
         } else if (std::holds_alternative<std::shared_ptr<const TextureCube>>(
                        property)) {
           RsrcMngrDX12::Instance().RegisterTextureCube(
-              RsrcMngrDX12::Instance().GetUpload(),
               *std::get<std::shared_ptr<const TextureCube>>(property));
         }
       }
@@ -639,19 +628,15 @@ void Editor::Impl::Update() {
   UpdateRenderResource(&sceneWorld);
 
   // commit upload, delete ...
-  upload.End(pEditor->myCmdQueue.Get());
   pEditor->myGCmdList->Close();
   pEditor->myCmdQueue.Execute(pEditor->myGCmdList.Get());
-  deleteBatch.Commit(pEditor->myDevice.Get(), pEditor->myCmdQueue.Get());
+  RsrcMngrDX12::Instance().CommitUploadAndDelete(pEditor->myCmdQueue.Get());
 
   {
     std::vector<PipelineBase::CameraData> gameCameras;
-    My::MyECS::ArchetypeFilter camFilter{
-        {My::MyECS::CmptAccessType::Of<Camera>}};
+    My::MyGE::ArchetypeFilter camFilter{{My::MyGE::CmptAccessType::Of<Camera>}};
     curGameWorld->RunEntityJob(
-        [&](My::MyECS::Entity e) {
-          gameCameras.emplace_back(e, *curGameWorld);
-        },
+        [&](My::MyGE::Entity e) { gameCameras.emplace_back(e, *curGameWorld); },
         false, camFilter);
     assert(gameCameras.size() == 1);  // now only support 1 camera
     gamePipeline->BeginFrame({curGameWorld}, gameCameras.front());
@@ -659,10 +644,9 @@ void Editor::Impl::Update() {
 
   {
     std::vector<PipelineBase::CameraData> sceneCameras;
-    My::MyECS::ArchetypeFilter camFilter{
-        {My::MyECS::CmptAccessType::Of<Camera>}};
+    My::MyGE::ArchetypeFilter camFilter{{My::MyGE::CmptAccessType::Of<Camera>}};
     sceneWorld.RunEntityJob(
-        [&](My::MyECS::Entity e) { sceneCameras.emplace_back(e, sceneWorld); },
+        [&](My::MyGE::Entity e) { sceneCameras.emplace_back(e, sceneWorld); },
         false, camFilter);
     assert(sceneCameras.size() == 1);  // now only support 1 camera
     scenePipeline->BeginFrame({curGameWorld, &sceneWorld},
@@ -735,7 +719,7 @@ void Editor::Impl::Draw() {
         pEditor->CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT,
         D3D12_RESOURCE_STATE_RENDER_TARGET);
     pEditor->myGCmdList->ClearRenderTargetView(pEditor->CurrentBackBufferView(),
-                                               DirectX::Colors::Black, 0, NULL);
+                                              DirectX::Colors::Black, 0, NULL);
     const auto curBack = pEditor->CurrentBackBufferView();
     pEditor->myGCmdList->OMSetRenderTargets(1, &curBack, FALSE, NULL);
     pEditor->myGCmdList.SetDescriptorHeaps(
@@ -777,7 +761,7 @@ void Editor::Impl::InitInspectorRegistry() {
   InspectorRegistry::Instance().RegisterAsset(&InspectMaterial);
 }
 
-void Editor::Impl::InitWorld(My::MyECS::World& w) {
+void Editor::Impl::InitWorld(My::MyGE::World& w) {
   auto indices = w.systemMngr.systemTraits.Register<
       // transform
       LocalToParentSystem, RotationEulerSystem, TRSToLocalToParentSystem,
@@ -883,7 +867,6 @@ void Editor::Impl::LoadTextures() {
   for (const auto& guid : tex2dGUIDs) {
     const auto& path = AssetMngr::Instance().GUIDToAssetPath(guid);
     RsrcMngrDX12::Instance().RegisterTexture2D(
-        RsrcMngrDX12::Instance().GetUpload(),
         *AssetMngr::Instance().LoadAsset<Texture2D>(path));
   }
 
@@ -892,7 +875,6 @@ void Editor::Impl::LoadTextures() {
   for (const auto& guid : texcubeGUIDs) {
     const auto& path = AssetMngr::Instance().GUIDToAssetPath(guid);
     RsrcMngrDX12::Instance().RegisterTextureCube(
-        RsrcMngrDX12::Instance().GetUpload(),
         *AssetMngr::Instance().LoadAsset<TextureCube>(path));
   }
 }

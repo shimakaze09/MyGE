@@ -17,6 +17,12 @@ struct My::MySRefl::TypeInfo<My::MyECS::SystemTraits>
             WrapConstructor<Type(const MyECS::SystemTraits&)>()},
       Field{TSTR(MyMeta::constructor),
             WrapConstructor<Type(MyECS::SystemTraits&&)>()},
+      Field{TSTR("operator="),
+            static_cast<MyECS::SystemTraits& (Type::*)(MyECS::SystemTraits&)>(
+                &Type::operator=)},
+      Field{TSTR("operator="),
+            static_cast<MyECS::SystemTraits& (
+                Type::*)(MyECS::SystemTraits&&) noexcept>(&Type::operator=)},
       Field{TSTR("Register"),
             static_cast<size_t (Type::*)(std::string)>(&Type::Register)},
       Field{TSTR("RegisterOnCreate"), &Type::RegisterOnCreate},
@@ -24,9 +30,13 @@ struct My::MySRefl::TypeInfo<My::MyECS::SystemTraits>
       Field{TSTR("RegisterOnUpdate"), &Type::RegisterOnUpdate},
       Field{TSTR("RegisterOnDeactivate"), &Type::RegisterOnDeactivate},
       Field{TSTR("RegisterOnDestroy"), &Type::RegisterOnDestroy},
-      Field{TSTR("IsRegistered"), &Type::IsRegistered},
-      Field{TSTR("GetID"), &Type::GetID},
       Field{TSTR("Nameof"), &Type::Nameof},
+      Field{
+          TSTR("GetID"),
+          static_cast<size_t (Type::*)(std::string_view) const>(&Type::GetID)},
+      Field{TSTR("IsRegistered"),
+            static_cast<bool (Type::*)(size_t) const noexcept>(
+                &Type::IsRegistered)},
       Field{TSTR("GetNameIDMap"), &Type::GetNameIDMap},
   };
 };

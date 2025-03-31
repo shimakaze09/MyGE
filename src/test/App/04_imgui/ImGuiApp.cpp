@@ -326,7 +326,6 @@ bool ImGUIApp::Initialize() {
 
   BuildWorld();
 
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
   BuildShaders();
   BuildMaterials();
@@ -336,9 +335,9 @@ bool ImGUIApp::Initialize() {
   initDesc.rtFormat = mBackBufferFormat;
   initDesc.cmdQueue = myCmdQueue.raw.Get();
   initDesc.numFrame = gNumFrameResources;
-  pipeline = std::make_unique<My::MyGE::StdPipeline>(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), initDesc);
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.raw.Get());
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
+  My::MyGE::RsrcMngrDX12::Instance().CommitUploadAndDelete(
+      myCmdQueue.raw.Get());
 
   // Do the initial resize code.
   OnResize();
@@ -363,9 +362,6 @@ void ImGUIApp::Update() {
   ImGui_ImplWin32_NewFrame_Context(gameImGuiCtx, {0, 0}, (float)mClientWidth,
                                    (float)mClientHeight);
   ImGui_ImplWin32_NewFrame_Shared();
-
-  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
-  upload.Begin();
 
   ImGui::SetCurrentContext(gameImGuiCtx);
   ImGui::NewFrame();
@@ -440,8 +436,8 @@ void ImGUIApp::Update() {
         if (!meshFilter->mesh || meshRenderer->materials.empty())
           return;
 
-        My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-            upload, deleteBatch, myGCmdList.Get(), *meshFilter->mesh);
+        My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
+                                                        *meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
           if (!material)
@@ -450,14 +446,12 @@ void ImGUIApp::Update() {
             if (std::holds_alternative<
                     std::shared_ptr<const My::MyGE::Texture2D>>(property)) {
               My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-                  My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
                   *std::get<std::shared_ptr<const My::MyGE::Texture2D>>(
                       property));
             } else if (std::holds_alternative<
                            std::shared_ptr<const My::MyGE::TextureCube>>(
                            property)) {
               My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-                  My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
                   *std::get<std::shared_ptr<const My::MyGE::TextureCube>>(
                       property));
             }
@@ -472,22 +466,20 @@ void ImGUIApp::Update() {
       if (std::holds_alternative<std::shared_ptr<const My::MyGE::Texture2D>>(
               property)) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-            My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
             *std::get<std::shared_ptr<const My::MyGE::Texture2D>>(property));
       } else if (std::holds_alternative<
                      std::shared_ptr<const My::MyGE::TextureCube>>(property)) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-            My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
             *std::get<std::shared_ptr<const My::MyGE::TextureCube>>(property));
       }
     }
   }
 
   // commit upload, delete ...
-  upload.End(myCmdQueue.raw.Get());
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.raw.Get());
-  deleteBatch.Commit(myDevice.raw.Get(), myCmdQueue.raw.Get());
+  My::MyGE::RsrcMngrDX12::Instance().CommitUploadAndDelete(
+      myCmdQueue.raw.Get());
 
   std::vector<My::MyGE::PipelineBase::CameraData> gameCameras;
   My::MyECS::ArchetypeFilter camFilter{
@@ -645,7 +637,6 @@ void ImGUIApp::LoadTextures() {
   for (const auto& guid : tex2dGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
         *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
   }
 
@@ -654,7 +645,6 @@ void ImGUIApp::LoadTextures() {
   for (const auto& guid : texcubeGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
         *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(
             path));
   }

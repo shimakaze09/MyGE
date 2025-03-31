@@ -4,20 +4,18 @@
 
 #include <MySRefl/MySRefl.h>
 
-template <>
-struct My::MySRefl::TypeInfo<My::MyGE::Rotation>
-    : TypeInfoBase<My::MyGE::Rotation> {
+template<>
+struct My::MySRefl::TypeInfo<My::MyGE::Rotation> :
+    TypeInfoBase<My::MyGE::Rotation>
+{
 #ifdef MY_MYSREFL_NOT_USE_NAMEOF
-  static constexpr char name[23] = "My::MyGE::Rotation";
+    static constexpr char name[19] = "My::MyGE::Rotation";
 #endif
-  static constexpr AttrList attrs = {};
-  static constexpr FieldList fields = {
-      Field{TSTR("value"), &Type::value,
-            AttrList{
-                Attr{TSTR(MyMeta::initializer),
-                     []() -> quatf {
-                       return {quatf::identity()};
-                     }},
-            }},
-  };
+    static constexpr AttrList attrs = {};
+    static constexpr FieldList fields = {
+        Field {TSTR("value"), &Type::value, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->quatf{ return {quatf::identity()}; }},
+        }},
+    };
 };
+

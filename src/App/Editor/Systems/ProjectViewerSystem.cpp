@@ -197,8 +197,7 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
           id = imageID.ptr;
         } else if (ext == ".tex2d") {
           auto tex2d = AssetMngr::Instance().LoadAsset<Texture2D>(path);
-          My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-              My::MyGE::RsrcMngrDX12::Instance().GetUpload(), *tex2d);
+          My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(*tex2d);
           id = RsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*tex2d).ptr;
         } else if (ext == ".mat")
           id = materialID.ptr;

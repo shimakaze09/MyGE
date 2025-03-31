@@ -15,7 +15,7 @@ ADD_DEP(MyDP 0.7.3)
 ADD_DEP(MyGM 0.6.13)
 ADD_DEP(MyLuaPP 0.2.0)
 ADD_DEP(MyECS 0.14.4)
-ADD_DEP(MyDX12 0.0.11)
+ADD_DEP(MyDX12 0.0.12)
 
 DOWNLOAD_ZIP(
         https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/crossguid/crossguid_19032025.zip

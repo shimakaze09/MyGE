@@ -29,7 +29,7 @@ Static resources are placed in the default heap.
 For dynamic resources, if they only need to be read once, they're placed only in the upload heap. If they need to be
 read multiple times, they need to be copied to the default heap.
 
-For shader per pass, per material, and per object constant buffers, they only need to be placed in the upload heap.
+For shader resources like per pass, per material, and per object constant buffers, they only need to be placed in the upload heap (as they are recalculated every frame).
 
 For meshes, since they're likely to be used multiple times (shadow pass + geometry pass), they're copied to the upload
 heap by default.

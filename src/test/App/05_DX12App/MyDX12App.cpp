@@ -199,7 +199,6 @@ bool MyDX12App::Init() {
 
   BuildWorld();
 
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().Begin();
   LoadTextures();
   BuildShaders();
   BuildMaterials();
@@ -211,7 +210,7 @@ bool MyDX12App::Init() {
   initDesc.numFrame = NumFrameResources;
   pipeline = std::make_unique<My::MyGE::StdPipeline>(
       My::MyGE::RsrcMngrDX12::Instance().GetUpload(), initDesc);
-  My::MyGE::RsrcMngrDX12::Instance().GetUpload().End(myCmdQueue.Get());
+  My::MyGE::RsrcMngrDX12::Instance().CommitUploadAndDelete(myCmdQueue.Get());
 
   // Do the initial resize code.
   OnResize();
@@ -311,8 +310,8 @@ void MyDX12App::Update() {
         if (!meshFilter->mesh || meshRenderer->materials.empty())
           return;
 
-        My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(
-            upload, deleteBatch, myGCmdList.Get(), *meshFilter->mesh);
+        My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
+                                                        *meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
           if (!material)
@@ -321,14 +320,12 @@ void MyDX12App::Update() {
             if (std::holds_alternative<
                     std::shared_ptr<const My::MyGE::Texture2D>>(property)) {
               My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-                  My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
                   *std::get<std::shared_ptr<const My::MyGE::Texture2D>>(
                       property));
             } else if (std::holds_alternative<
                            std::shared_ptr<const My::MyGE::TextureCube>>(
                            property)) {
               My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-                  My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
                   *std::get<std::shared_ptr<const My::MyGE::TextureCube>>(
                       property));
             }
@@ -343,12 +340,10 @@ void MyDX12App::Update() {
       if (std::holds_alternative<std::shared_ptr<const My::MyGE::Texture2D>>(
               property)) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-            My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
             *std::get<std::shared_ptr<const My::MyGE::Texture2D>>(property));
       } else if (std::holds_alternative<
                      std::shared_ptr<const My::MyGE::TextureCube>>(property)) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-            My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
             *std::get<std::shared_ptr<const My::MyGE::TextureCube>>(property));
       }
     }
@@ -507,7 +502,6 @@ void MyDX12App::LoadTextures() {
   for (const auto& guid : tex2dGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
         *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
   }
 
@@ -516,7 +510,6 @@ void MyDX12App::LoadTextures() {
   for (const auto& guid : texcubeGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-        My::MyGE::RsrcMngrDX12::Instance().GetUpload(),
         *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(
             path));
   }
