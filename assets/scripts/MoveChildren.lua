@@ -1,8 +1,8 @@
 MoveChildrenSystem_OnUpdate = function(schedule)
     local MoveChildren = function(w, singletons, e, idx, cmpts)
-        local type0 = My.MyECS.CmptAccessType.new("My::MyGE::Translation", AccessMode.WRITE)
+        local type0 = My.MyECS.CmptAccessType.new("My::MyGE::Translation", My.MyECS.AccessMode.WRITE)
 
-        local type1 = My.MyECS.CmptAccessType.new("My::MyGE::WorldTime", AccessMode.LATEST)
+        local type1 = My.MyECS.CmptAccessType.new("My::MyGE::WorldTime", My.MyECS.AccessMode.LATEST)
 
         local cmptPtr = cmpts:GetCmpt(type0)
         local singletonPtr = singletons:GetSingleton(type1)

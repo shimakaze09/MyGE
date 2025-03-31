@@ -3,11 +3,13 @@
 #include <MyGE/App/Editor/Components/Hierarchy.h>
 #include <MyGE/App/Editor/Components/Inspector.h>
 #include <MyGE/App/Editor/Components/ProjectViewer.h>
+#include <MyGE/App/Editor/Components/SystemController.h>
 
 #include <MyGE/App/Editor/Systems/HierarchySystem.h>
 #include <MyGE/App/Editor/Systems/InspectorSystem.h>
 #include <MyGE/App/Editor/Systems/LoggerSystem.h>
 #include <MyGE/App/Editor/Systems/ProjectViewerSystem.h>
+#include <MyGE/App/Editor/Systems/SystemControllerSystem.h>
 
 #include <MyGE/App/Editor/InspectorRegistry.h>
 
@@ -39,7 +41,7 @@
 #include <_deps/imgui/imgui_impl_win32.h>
 
 #include <MyGE/Core/StringsSink.h>
-#include <MyGE/spdlog.h>
+#include <spdlog/spdlog.h>
 
 #include <MyGE/ScriptSystem/LuaContext.h>
 #include <MyGE/ScriptSystem/LuaCtxMngr.h>
@@ -67,16 +69,16 @@ struct Editor::Impl {
 
   void BuildWorld();
 
-  static void InitWorld(My::MyGE::World&);
+  static void InitWorld(My::MyECS::World&);
   static void InitInspectorRegistry();
   static void LoadTextures();
   static void BuildShaders();
 
-  std::unique_ptr<My::MyGE::World> runningGameWorld;
-  My::MyGE::World* curGameWorld;
-  My::MyGE::World gameWorld;
-  My::MyGE::World sceneWorld;
-  My::MyGE::World editorWorld;
+  std::unique_ptr<My::MyECS::World> runningGameWorld;
+  My::MyECS::World* curGameWorld;
+  My::MyECS::World gameWorld;
+  My::MyECS::World sceneWorld;
+  My::MyECS::World editorWorld;
 
   void OnGameResize();
   size_t gameWidth{0}, gameHeight{0};
@@ -223,7 +225,7 @@ World* Editor::GetEditorWorld() {
   return &pImpl->editorWorld;
 }
 
-MyGE::World* Editor::GetCurrentGameWorld() {
+MyECS::World* Editor::GetCurrentGameWorld() {
   return pImpl->curGameWorld;
 }
 
@@ -523,13 +525,15 @@ void Editor::Impl::Update() {
         gameWorld.Update();
         break;
       case Impl::GameState::Starting: {
-        runningGameWorld = std::make_unique<My::MyGE::World>(gameWorld);
+        runningGameWorld = std::make_unique<My::MyECS::World>(gameWorld);
         if (auto hierarchy = editorWorld.entityMngr.GetSingleton<Hierarchy>())
           hierarchy->world = runningGameWorld.get();
+        if (auto ctrl = editorWorld.entityMngr.GetSingleton<SystemController>())
+          ctrl->world = runningGameWorld.get();
         curGameWorld = runningGameWorld.get();
         runningGameWorld->systemMngr.Activate(
             runningGameWorld->systemMngr.systemTraits.GetID(
-                MyGE::SystemTraits::StaticNameof<LuaScriptQueueSystem>()));
+                MyECS::SystemTraits::StaticNameof<LuaScriptQueueSystem>()));
         auto ctx = LuaCtxMngr::Instance().Register(runningGameWorld.get());
         sol::state_view lua{ctx->Main()};
         lua["world"] = runningGameWorld.get();
@@ -549,6 +553,8 @@ void Editor::Impl::Update() {
         runningGameWorld.reset();
         if (auto hierarchy = editorWorld.entityMngr.GetSingleton<Hierarchy>())
           hierarchy->world = &gameWorld;
+        if (auto ctrl = editorWorld.entityMngr.GetSingleton<SystemController>())
+          ctrl->world = &gameWorld;
         { LuaCtxMngr::Instance().Unregister(w); }
         curGameWorld = &gameWorld;
         gameState = Impl::GameState::NotStart;
@@ -634,9 +640,12 @@ void Editor::Impl::Update() {
 
   {
     std::vector<PipelineBase::CameraData> gameCameras;
-    My::MyGE::ArchetypeFilter camFilter{{My::MyGE::CmptAccessType::Of<Camera>}};
+    My::MyECS::ArchetypeFilter camFilter{
+        {My::MyECS::CmptAccessType::Of<Camera>}};
     curGameWorld->RunEntityJob(
-        [&](My::MyGE::Entity e) { gameCameras.emplace_back(e, *curGameWorld); },
+        [&](My::MyECS::Entity e) {
+          gameCameras.emplace_back(e, *curGameWorld);
+        },
         false, camFilter);
     assert(gameCameras.size() == 1);  // now only support 1 camera
     gamePipeline->BeginFrame({curGameWorld}, gameCameras.front());
@@ -644,9 +653,10 @@ void Editor::Impl::Update() {
 
   {
     std::vector<PipelineBase::CameraData> sceneCameras;
-    My::MyGE::ArchetypeFilter camFilter{{My::MyGE::CmptAccessType::Of<Camera>}};
+    My::MyECS::ArchetypeFilter camFilter{
+        {My::MyECS::CmptAccessType::Of<Camera>}};
     sceneWorld.RunEntityJob(
-        [&](My::MyGE::Entity e) { sceneCameras.emplace_back(e, sceneWorld); },
+        [&](My::MyECS::Entity e) { sceneCameras.emplace_back(e, sceneWorld); },
         false, camFilter);
     assert(sceneCameras.size() == 1);  // now only support 1 camera
     scenePipeline->BeginFrame({curGameWorld, &sceneWorld},
@@ -761,7 +771,7 @@ void Editor::Impl::InitInspectorRegistry() {
   InspectorRegistry::Instance().RegisterAsset(&InspectMaterial);
 }
 
-void Editor::Impl::InitWorld(My::MyGE::World& w) {
+void Editor::Impl::InitWorld(My::MyECS::World& w) {
   auto indices = w.systemMngr.systemTraits.Register<
       // transform
       LocalToParentSystem, RotationEulerSystem, TRSToLocalToParentSystem,
@@ -771,7 +781,8 @@ void Editor::Impl::InitWorld(My::MyGE::World& w) {
       WorldTimeSystem, CameraSystem, InputSystem, RoamerSystem,
 
       // editor
-      HierarchySystem, InspectorSystem, ProjectViewerSystem>();
+      HierarchySystem, InspectorSystem, ProjectViewerSystem,
+      SystemControllerSystem>();
   for (auto idx : indices)
     w.systemMngr.Activate(idx);
   w.systemMngr.systemTraits.Register<LuaScriptQueueSystem>();
@@ -789,7 +800,7 @@ void Editor::Impl::InitWorld(My::MyGE::World& w) {
       LuaScriptQueue,
 
       // editor
-      Hierarchy, Inspector, ProjectViewer>();
+      Hierarchy, Inspector, ProjectViewer, SystemController>();
 }
 
 void Editor::Impl::BuildWorld() {
@@ -853,11 +864,14 @@ void Editor::Impl::BuildWorld() {
       auto [e, hierarchy] = editorWorld.entityMngr.Create<Hierarchy>();
       hierarchy->world = &gameWorld;
     }
+    {  // system controller
+      auto [e, systemCtrl] = editorWorld.entityMngr.Create<SystemController>();
+      systemCtrl->world = &gameWorld;
+    }
     editorWorld.entityMngr.Create<Inspector>();
     editorWorld.entityMngr.Create<ProjectViewer>();
-    auto [logSys] =
-        editorWorld.systemMngr.systemTraits.Register<LoggerSystem>();
-    editorWorld.systemMngr.Activate(logSys);
+    editorWorld.systemMngr
+        .RegisterAndActivate<LoggerSystem, SystemControllerSystem>();
   }
 }
 

@@ -28,7 +28,7 @@ const My::MyECS::SystemFunc* LuaECSAgency::RegisterEntityJob(
   auto sysfunc = s->RegisterChunkJob(
       [bytes = std::move(bytes), cmptLocator = std::move(cmptLocator)](
           MyECS::World* w, MyECS::SingletonsView singletonsView,
-          MyECS::ChunkView chunk) {
+          MyECS::ChunkView chunk, size_t idx) {
         if (chunk.EntityNum() == 0)
           return;
 
@@ -57,7 +57,11 @@ const My::MyECS::SystemFunc* LuaECSAgency::RegisterEntityJob(
           size_t i = 0;
           do {
             MyECS::CmptsView view{Span{cmptPtrs.data(), cmptPtrs.size()}};
-            f.call(w, singletonsView, arrayEntity[i], i, view);
+            auto rst = f.call(w, singletonsView, arrayEntity[i], idx + i, view);
+            if (!rst.valid()) {
+              sol::error err = rst;
+              spdlog::error(err.what());
+            }
             for (size_t j = 0; j < cmpts.size(); j++) {
               cmpts[j] = (reinterpret_cast<uint8_t*>(cmpts[j]) + sizes[j]);
               cmptPtrs[j] = {types[j], cmpts[j]};
@@ -85,7 +89,11 @@ const My::MyECS::SystemFunc* LuaECSAgency::RegisterChunkJob(
         {
           sol::state_view lua(L);
           sol::function f = lua.load(bytes.as_string_view());
-          f.call(w, singletonsView, entityBeginIndexInQuery, chunk);
+          auto rst = f.call(w, singletonsView, entityBeginIndexInQuery, chunk);
+          if (!rst.valid()) {
+            sol::error err = rst;
+            spdlog::error(err.what());
+          }
         }
         luaCtx->Recycle(L);
       },
@@ -106,7 +114,11 @@ const My::MyECS::SystemFunc* LuaECSAgency::RegisterJob(
         {
           sol::state_view lua(L);
           sol::function f = lua.load(bytes.as_string_view());
-          f.call(w, singletonsView);
+          auto rst = f.call(w, singletonsView);
+          if (!rst.valid()) {
+            sol::error err = rst;
+            spdlog::error(err.what());
+          }
         }
         luaCtx->Recycle(L);
       },
