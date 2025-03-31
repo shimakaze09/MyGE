@@ -221,7 +221,7 @@ void DynamicMeshApp::Update() {
   // update mesh
 
   world.RunEntityJob(
-      [&](const My::MyGE::MeshFilter* meshFilter,
+      [&](My::MyGE::MeshFilter* meshFilter,
           const My::MyGE::MeshRenderer* meshRenderer) {
         if (!meshFilter->mesh || meshRenderer->materials.empty())
           return;

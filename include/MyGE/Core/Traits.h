@@ -3,6 +3,7 @@
 #include <MyGM/MyGM.h>
 #include <MySRefl/MySRefl.h>
 #include <MyTemplate/Func.h>
+#include <MySTL/memory.h>
 
 #include <array>
 #include <deque>

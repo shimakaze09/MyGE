@@ -1,11 +1,12 @@
 #pragma once
 
 #include "../Material.h"
+#include <MySTL/memory.h>
 
 namespace My::MyGE {
 // singleton
 struct Skybox {
-  std::shared_ptr<Material> material;
+  MySTL::shared_object<Material> material;
 };
 }  // namespace My::MyGE
 

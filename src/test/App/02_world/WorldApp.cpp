@@ -146,7 +146,7 @@ bool WorldApp::Initialize() {
 
   // update mesh
   world.RunEntityJob(
-      [&](const My::MyGE::MeshFilter* meshFilter) {
+      [&](My::MyGE::MeshFilter* meshFilter) {
         My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
                                                         *meshFilter->mesh);
       },
@@ -201,7 +201,7 @@ void WorldApp::Update() {
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
 
   world.RunEntityJob(
-      [&](const My::MyGE::MeshFilter* meshFilter,
+      [&](My::MyGE::MeshFilter* meshFilter,
           const My::MyGE::MeshRenderer* meshRenderer) {
         if (!meshFilter->mesh || meshRenderer->materials.empty())
           return;

@@ -4,45 +4,31 @@
 
 #include <MySRefl/MySRefl.h>
 
-template <>
-struct My::MySRefl::TypeInfo<My::MyGE::Camera>
-    : TypeInfoBase<My::MyGE::Camera> {
+template<>
+struct My::MySRefl::TypeInfo<My::MyGE::Camera> :
+    TypeInfoBase<My::MyGE::Camera>
+{
 #ifdef MY_MYSREFL_NOT_USE_NAMEOF
-  static constexpr char name[21] = "My::MyGE::Camera";
+    static constexpr char name[17] = "My::MyGE::Camera";
 #endif
-  static constexpr AttrList attrs = {};
-  static constexpr FieldList fields = {
-      Field{TSTR("aspect"), &Type::aspect,
-            AttrList{
-                Attr{TSTR(MyMeta::initializer),
-                     []() -> float {
-                       return {16.f / 9.f};
-                     }},
-            }},
-      Field{TSTR("fov"), &Type::fov,
-            AttrList{
-                Attr{TSTR(MyMeta::initializer),
-                     []() -> float {
-                       return {60.f};
-                     }},
-                Attr{TSTR("interval"), std::pair{1.f, 179.f}},
-            }},
-      Field{TSTR("clippingPlaneMin"), &Type::clippingPlaneMin,
-            AttrList{
-                Attr{TSTR(MyMeta::initializer),
-                     []() -> float {
-                       return {0.3f};
-                     }},
-                Attr{TSTR("min"), 0.1f},
-            }},
-      Field{TSTR("clippingPlaneMax"), &Type::clippingPlaneMax,
-            AttrList{
-                Attr{TSTR(MyMeta::initializer),
-                     []() -> float {
-                       return {1000.f};
-                     }},
-                Attr{TSTR("min"), 0.1f},
-            }},
-      Field{TSTR("prjectionMatrix"), &Type::prjectionMatrix},
-  };
+    static constexpr AttrList attrs = {};
+    static constexpr FieldList fields = {
+        Field {TSTR("aspect"), &Type::aspect, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->float{ return {16.f / 9.f}; }},
+        }},
+        Field {TSTR("fov"), &Type::fov, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->float{ return {60.f}; }},
+            Attr {TSTR("interval"), std::pair{1.f,179.f}},
+        }},
+        Field {TSTR("clippingPlaneMin"), &Type::clippingPlaneMin, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->float{ return {0.3f}; }},
+            Attr {TSTR("min"), 0.1f},
+        }},
+        Field {TSTR("clippingPlaneMax"), &Type::clippingPlaneMax, AttrList {
+            Attr {TSTR(MyMeta::initializer), []()->float{ return {1000.f}; }},
+            Attr {TSTR("min"), 0.1f},
+        }},
+        Field {TSTR("prjectionMatrix"), &Type::prjectionMatrix},
+    };
 };
+

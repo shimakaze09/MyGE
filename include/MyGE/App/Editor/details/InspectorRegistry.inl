@@ -235,8 +235,9 @@ void InspectVar(Field field, const Value& var,
       ImGui::PushID(GetFieldName(field).data());
       MySTL::tuple_for_each(var, [ctx, idx = 0](auto& ele) mutable {
         auto str = std::to_string(idx++);
-        InspectVar(MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}},
-                   ele, ctx);
+        InspectVar(
+            MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}}, ele,
+            ctx);
       });
       ImGui::PopID();
       ImGui::TreePop();
@@ -402,7 +403,8 @@ void InspectVar(Field field, Value& var,
     } else {
       InspectVar(field, static_cast<std::underlying_type_t<Value>&>(var), ctx);
     }
-  } else if constexpr (is_instance_of_v<Value, std::shared_ptr>) {
+  } else if constexpr (is_instance_of_v<Value, std::shared_ptr> ||
+                       is_instance_of_v<Value, MySTL::shared_object>) {
     using Element = typename Value::element_type;
     static_assert(std::is_base_of_v<Object, Element>);
     ImGui::Text("(*)");
@@ -498,8 +500,9 @@ void InspectVar(Field field, Value& var,
       ImGui::PushID(GetFieldName(field).data());
       MySTL::tuple_for_each(var, [ctx, idx = 0](auto& ele) mutable {
         auto str = std::to_string(idx++);
-        InspectVar(MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}},
-                   ele, ctx);
+        InspectVar(
+            MySRefl::Field{TSTR(FieldValueAsName), std::string_view{str}}, ele,
+            ctx);
       });
       ImGui::PopID();
       ImGui::TreePop();
@@ -650,7 +653,8 @@ bool InspectVar1(Field field, Value& var,
       } else
         InspectVar(field, static_cast<std::underlying_type_t<Value>&>(var),
                    ctx);
-    } else if constexpr (is_instance_of_v<Value, std::shared_ptr>) {
+    } else if constexpr (is_instance_of_v<Value, std::shared_ptr> ||
+                         is_instance_of_v<Value, MySTL::shared_object>) {
       using Element = typename Value::element_type;
       static_assert(std::is_base_of_v<Object, Element>);
       ImGui::Text("(*)");
@@ -773,13 +777,13 @@ bool InspectVar1(Field field, Value& var,
           if constexpr (std::is_same_v<std::decay_t<decltype(key)>,
                                        std::string>) {
             if (InspectVar1(MySRefl::Field{TSTR(FieldValueAsName),
-                                          std::string_view{key}},
+                                           std::string_view{key}},
                             mapped, ctx))
               changed = true;
           } else {
             auto name = std::to_string(key);
             if (InspectVar1(MySRefl::Field{TSTR(FieldValueAsName),
-                                          std::string_view{name}},
+                                           std::string_view{name}},
                             mapped, ctx))
               changed = true;
           }
@@ -807,9 +811,9 @@ bool InspectVar1(Field field, Value& var,
         size_t idx = 0;
         for (auto iter = iter_begin; iter != iter_end; ++iter) {
           auto name = std::to_string(idx++);
-          if (InspectVar1(
-                  MySRefl::Field{TSTR(FieldValueAsName), std::string_view{name}},
-                  *iter, ctx))
+          if (InspectVar1(MySRefl::Field{TSTR(FieldValueAsName),
+                                         std::string_view{name}},
+                          *iter, ctx))
             changed = true;
         }
         ImGui::PopID();

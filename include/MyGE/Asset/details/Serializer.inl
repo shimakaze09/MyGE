@@ -85,7 +85,8 @@ void WriteVar(const Value& var, Serializer::SerializeContext& ctx) {
       assert("not support" && false);
       ctx.writer.Null();
     }
-  } else if constexpr (is_instance_of_v<Value, std::shared_ptr>) {
+  } else if constexpr (is_instance_of_v<Value, std::shared_ptr> ||
+                       is_instance_of_v<Value, MySTL::shared_object>) {
     using Element = typename Value::element_type;
     if (var == nullptr)
       ctx.writer.Null();
@@ -237,7 +238,7 @@ void ReadVar(Value& var, const rapidjson::Value& jsonValueField,
     else {
       assert("not support" && false);
     }
-  } else if constexpr (is_instance_of_v<Value, std::shared_ptr>) {
+  }else if constexpr (is_instance_of_v<Value, std::shared_ptr> || is_instance_of_v<Value, MySTL::shared_object>) {
     if (jsonValueField.IsNull())
       var = nullptr;
     else if (jsonValueField.IsString()) {

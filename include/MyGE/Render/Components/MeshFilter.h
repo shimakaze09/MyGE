@@ -1,10 +1,11 @@
 #pragma once
 
 #include "../Mesh.h"
+#include <MySTL/memory.h>
 
 namespace My::MyGE {
 struct MeshFilter {
-  std::shared_ptr<Mesh> mesh;
+  MySTL::shared_object<Mesh> mesh;
 };
 }  // namespace My::MyGE
 

@@ -7,12 +7,26 @@ class Object {
  public:
   Object() noexcept : id{curID++} {}
 
-  virtual ~Object() noexcept {}
+  Object(const Object&) noexcept : id{curID++} {}
+
+  Object(Object&& rhs) noexcept : id{rhs.id} {
+    rhs.id = static_cast<size_t>(-1);
+  }
+
+  Object& operator=(const Object&) noexcept { return *this; }
+
+  Object& operator=(Object&& rhs) noexcept {
+    id = rhs.id;
+    rhs.id = static_cast<size_t>(-1);
+    return *this;
+  }
+
+  virtual ~Object() noexcept = default;
 
   size_t GetInstanceID() const noexcept { return id; }
 
  private:
-  const size_t id;
+  size_t id;
   inline static std::atomic<size_t> curID{0};
 };
 }  // namespace My::MyGE

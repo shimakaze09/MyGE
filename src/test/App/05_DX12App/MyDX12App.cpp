@@ -208,8 +208,7 @@ bool MyDX12App::Init() {
   initDesc.rtFormat = GetBackBufferFormat();
   initDesc.cmdQueue = myCmdQueue.Get();
   initDesc.numFrame = NumFrameResources;
-  pipeline = std::make_unique<My::MyGE::StdPipeline>(
-      My::MyGE::RsrcMngrDX12::Instance().GetUpload(), initDesc);
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
   My::MyGE::RsrcMngrDX12::Instance().CommitUploadAndDelete(myCmdQueue.Get());
 
   // Do the initial resize code.
@@ -305,7 +304,7 @@ void MyDX12App::Update() {
   // update mesh
 
   world.RunEntityJob(
-      [&](const My::MyGE::MeshFilter* meshFilter,
+      [&](My::MyGE::MeshFilter* meshFilter,
           const My::MyGE::MeshRenderer* meshRenderer) {
         if (!meshFilter->mesh || meshRenderer->materials.empty())
           return;

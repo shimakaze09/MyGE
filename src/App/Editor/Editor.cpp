@@ -307,9 +307,9 @@ void Editor::Impl::OnGameResize() {
       D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(gameRT.ReleaseAndGetAddressOf())));
   pEditor->myDevice->CreateShaderResourceView(gameRT.Get(), nullptr,
-                                             gameRT_SRV.GetCpuHandle());
+                                              gameRT_SRV.GetCpuHandle());
   pEditor->myDevice->CreateRenderTargetView(gameRT.Get(), nullptr,
-                                           gameRT_RTV.GetCpuHandle());
+                                            gameRT_RTV.GetCpuHandle());
 
   assert(gamePipeline);
   D3D12_VIEWPORT viewport;
@@ -333,9 +333,9 @@ void Editor::Impl::OnSceneResize() {
       D3D12_RESOURCE_STATE_PRESENT, &rtType.clearValue,
       IID_PPV_ARGS(sceneRT.ReleaseAndGetAddressOf())));
   pEditor->myDevice->CreateShaderResourceView(sceneRT.Get(), nullptr,
-                                             sceneRT_SRV.GetCpuHandle());
+                                              sceneRT_SRV.GetCpuHandle());
   pEditor->myDevice->CreateRenderTargetView(sceneRT.Get(), nullptr,
-                                           sceneRT_RTV.GetCpuHandle());
+                                            sceneRT_RTV.GetCpuHandle());
 
   assert(scenePipeline);
   D3D12_VIEWPORT viewport;
@@ -582,9 +582,9 @@ void Editor::Impl::Update() {
   ThrowIfFailed(pEditor->myGCmdList->Reset(cmdAlloc, nullptr));
   auto& deleteBatch = RsrcMngrDX12::Instance().GetDeleteBatch();
 
-  auto UpdateRenderResource = [&](const My::MyGE::World* w) {
+  auto UpdateRenderResource = [&](My::MyECS::World* w) {
     w->RunEntityJob(
-        [&](const MeshFilter* meshFilter, const MeshRenderer* meshRenderer) {
+        [&](MeshFilter* meshFilter, const MeshRenderer* meshRenderer) {
           if (!meshFilter->mesh || meshRenderer->materials.empty())
             return;
 
@@ -719,7 +719,7 @@ void Editor::Impl::Draw() {
         pEditor->CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT,
         D3D12_RESOURCE_STATE_RENDER_TARGET);
     pEditor->myGCmdList->ClearRenderTargetView(pEditor->CurrentBackBufferView(),
-                                              DirectX::Colors::Black, 0, NULL);
+                                               DirectX::Colors::Black, 0, NULL);
     const auto curBack = pEditor->CurrentBackBufferView();
     pEditor->myGCmdList->OMSetRenderTargets(1, &curBack, FALSE, NULL);
     pEditor->myGCmdList.SetDescriptorHeaps(

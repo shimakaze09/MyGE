@@ -4,14 +4,16 @@
 
 #include <MySRefl/MySRefl.h>
 
-template <>
-struct My::MySRefl::TypeInfo<My::MyGE::MeshFilter>
-    : TypeInfoBase<My::MyGE::MeshFilter> {
+template<>
+struct My::MySRefl::TypeInfo<My::MyGE::MeshFilter> :
+    TypeInfoBase<My::MyGE::MeshFilter>
+{
 #ifdef MY_MYSREFL_NOT_USE_NAMEOF
-  static constexpr char name[25] = "My::MyGE::MeshFilter";
+    static constexpr char name[21] = "My::MyGE::MeshFilter";
 #endif
-  static constexpr AttrList attrs = {};
-  static constexpr FieldList fields = {
-      Field{TSTR("mesh"), &Type::mesh},
-  };
+    static constexpr AttrList attrs = {};
+    static constexpr FieldList fields = {
+        Field {TSTR("mesh"), &Type::mesh},
+    };
 };
+
