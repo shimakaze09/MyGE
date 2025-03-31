@@ -1,3 +1,10 @@
+DOWNLOAD_ZIP_PRO(
+        https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/myshader/MyShaderCompiler_deps_31032025.zip
+        MyShaderCompiler_deps_31032025.zip
+        ${CMAKE_CURRENT_SOURCE_DIR}/MyShaderCompiler/_deps
+        SHA256 1cdc80c4d2fbdcb249f1c30d198782ce9d14e93792775a90441262a09e837a3c
+)
+
 # deps
 SET(libs "")
 SET(defines "")
