@@ -1,5 +1,6 @@
 #pragma once
 
+#include <MyDP/Basic/Dirty.h>
 #include <MyGM/MyGM.h>
 
 #include <vector>
@@ -8,6 +9,9 @@
 #include "SubMeshDescriptor.h"
 
 namespace My::MyGE {
+// Non-editable mesh is space-saving (release CPU vertex buffer and GPU upload buffer).
+// If you want to change any data of the mesh, you should call SetToEditable() firstly.
+// After editing, you can call SetToNonEditable() to release buffers.
 class Mesh : public Object {
  public:
   Mesh(bool isEditable = true) : isEditable{isEditable} {}
@@ -30,6 +34,12 @@ class Mesh : public Object {
     return submeshes;
   }
 
+  bool IsEditable() const noexcept { return isEditable; }
+
+  void SetToEditable() noexcept { isEditable = true; }
+
+  void SetToNonEditable() noexcept { isEditable = false; }
+
   // must editable
   void SetPositions(std::vector<pointf3> positions) noexcept;
   void SetUV(std::vector<pointf2> uv) noexcept;
@@ -44,38 +54,30 @@ class Mesh : public Object {
 
   // must editable
   void GenNormals();
-  void GenUV();
+  void GenUV();  // naive uv
   void GenTangents();
 
-  void SetToEditable() noexcept { isEditable = true; }
+  // non-empty and every attribute have same num
+  bool IsVertexValid() const noexcept;
 
-  void SetToNonEditable() noexcept { isEditable = false; }
+ private:
+  // call by the RsrcMngrDX12, need to update GPU buffer in the meantime
+  friend class RsrcMngrDX12;
 
-  bool IsDirty() const noexcept { return dirty; }
+  bool IsDirty() const noexcept { return vertexBuffer.IsDirty(); }
 
-  bool IsEditable() const noexcept { return isEditable; }
-
-  const void* GetVertexBufferData() const noexcept {
-    return vertexBuffer.data();
-  }
+  const void* GetVertexBufferData() { return vertexBuffer.Get(*this).data(); }
 
   size_t GetVertexBufferVertexCount() const noexcept {
     return positions.size();
   }
 
-  size_t GetVertexBufferVertexStride() const noexcept {
-    return vertexBuffer.size() / positions.size();
+  size_t GetVertexBufferVertexStride() {
+    return vertexBuffer.Get(*this).size() / positions.size();
   }
 
-  // asset(IsDirty())
-  // call by the engine, need to update GPU buffer
-  // [[ normal user should't use this API ]]
-  void UpdateVertexBuffer();
+  void ClearVertexBuffer();
 
-  // non-empty and every attributes have same num
-  bool IsVertexValid() const noexcept;
-
- private:
   std::vector<pointf3> positions;
   std::vector<pointf2> uv;
   std::vector<normalf> normals;
@@ -84,10 +86,12 @@ class Mesh : public Object {
   std::vector<uint32_t> indices;
   std::vector<SubMeshDescriptor> submeshes;
 
+  static void UpdateVertexBuffer(std::vector<uint8_t>& vb, const Mesh&);
+
   // pos, uv, normal, tangent, color
-  std::vector<uint8_t> vertexBuffer;
+  AutoDirty<std::vector<uint8_t>, const Mesh&> vertexBuffer = {
+      &Mesh::UpdateVertexBuffer};
 
   bool isEditable;
-  bool dirty{false};
 };
 }  // namespace My::MyGE

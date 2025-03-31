@@ -152,22 +152,27 @@ void InspectVar(Field field, const Value& var,
       ImGui::BulletText(name->value.c_str());
     else
       ImGui::BulletText("Entity (%d)", var.Idx());
-  } else if constexpr (std::is_pointer_v<Value>) {
-    ImGui::Text("(*)");
-    ImGui::SameLine();
-    // button
-    if (var) {
-      const auto& path = AssetMngr::Instance().GetAssetPath(var);
-      if (!path.empty()) {
-        auto name = path.stem().string();
-        ImGui::Button(name.c_str());
+  } else if constexpr (is_instance_of_v<Value, std::shared_ptr> ||
+                       is_instance_of_v<Value, MySTL::shared_object>) {
+    using Element = typename Value::element_type;
+    if constexpr (std::is_base_of_v<Object, Element>) {
+      ImGui::Text("(*)");
+      ImGui::SameLine();
+      // button
+      if (var) {
+        const auto& path = AssetMngr::Instance().GetAssetPath(*var);
+        if (!path.empty()) {
+          auto name = path.stem().string();
+          ImGui::Button(name.c_str());
+        } else
+          ImGui::Button("UNKNOW");
       } else
-        ImGui::Button("UNKNOW");
-    } else
-      ImGui::Button("nullptr");
-
-    ImGui::SameLine();
-    ImGui::Text(GetFieldName(field).data());
+        ImGui::Button("nullptr");
+      ImGui::SameLine();
+      ImGui::Text(GetFieldName(field).data());
+    } else {
+      InspectVar(field, *var, ctx);
+    }
   } else if constexpr (ArrayTraits<Value>::isArray) {
     if constexpr (ValNTraits<Value>::isValN) {
       static Value copiedVar;
@@ -279,8 +284,8 @@ void InspectVar(Field field, const Value& var,
       ImGui::TreePop();
     }
   } else {
-    assert(false);
-    //InspectUserType(field, &var, ctx);
+    // assert(false);
+    // InspectUserType(field, &var, ctx);
   }
 }
 
@@ -406,35 +411,38 @@ void InspectVar(Field field, Value& var,
   } else if constexpr (is_instance_of_v<Value, std::shared_ptr> ||
                        is_instance_of_v<Value, MySTL::shared_object>) {
     using Element = typename Value::element_type;
-    static_assert(std::is_base_of_v<Object, Element>);
-    ImGui::Text("(*)");
-    ImGui::SameLine();
-    // button
-    if (var) {
-      const auto& path = AssetMngr::Instance().GetAssetPath(*var);
-      if (!path.empty()) {
-        auto name = path.stem().string();
-        ImGui::Button(name.c_str());
+    if constexpr (std::is_base_of_v<Object, Element>) {
+      ImGui::Text("(*)");
+      ImGui::SameLine();
+      // button
+      if (var) {
+        const auto& path = AssetMngr::Instance().GetAssetPath(*var);
+        if (!path.empty()) {
+          auto name = path.stem().string();
+          ImGui::Button(name.c_str());
+        } else
+          ImGui::Button("UNKNOW");
       } else
-        ImGui::Button("UNKNOW");
-    } else
-      ImGui::Button("nullptr");
+        ImGui::Button("nullptr");
 
-    if (ImGui::BeginDragDropTarget()) {
-      if (const ImGuiPayload* payload =
-              ImGui::AcceptDragDropPayload(PlayloadType::GUID)) {
-        IM_ASSERT(payload->DataSize == sizeof(xg::Guid));
-        const auto& payload_guid = *(const xg::Guid*)payload->Data;
-        const auto& path = AssetMngr::Instance().GUIDToAssetPath(payload_guid);
-        assert(!path.empty());
-        if (auto asset = AssetMngr::Instance().LoadAsset<Element>(path))
-          var = asset;
+      if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* payload =
+                ImGui::AcceptDragDropPayload(PlayloadType::GUID)) {
+          IM_ASSERT(payload->DataSize == sizeof(xg::Guid));
+          const auto& payload_guid = *(const xg::Guid*)payload->Data;
+          const auto& path =
+              AssetMngr::Instance().GUIDToAssetPath(payload_guid);
+          assert(!path.empty());
+          if (auto asset = AssetMngr::Instance().LoadAsset<Element>(path))
+            var = asset;
+        }
+        ImGui::EndDragDropTarget();
       }
-      ImGui::EndDragDropTarget();
+      ImGui::SameLine();
+      ImGui::Text(GetFieldName(field).data());
+    } else {
+      InspectVar(field, *var, ctx);
     }
-
-    ImGui::SameLine();
-    ImGui::Text(GetFieldName(field).data());
   } else if constexpr (ArrayTraits<Value>::isArray) {
     if constexpr (ValNTraits<Value>::isValN) {
       auto data = ArrayTraits_Data(var);

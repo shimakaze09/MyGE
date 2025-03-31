@@ -5,42 +5,42 @@ using namespace My::MyGE;
 void Mesh::SetPositions(std::vector<pointf3> positions) noexcept {
   if (!IsEditable())
     return;
-  dirty = true;
+  vertexBuffer.SetDirty();
   this->positions = std::move(positions);
 }
 
 void Mesh::SetColors(std::vector<rgbf> colors) noexcept {
   if (!IsEditable())
     return;
-  dirty = true;
+  vertexBuffer.SetDirty();
   this->colors = std::move(colors);
 }
 
 void Mesh::SetNormals(std::vector<normalf> normals) noexcept {
   if (!IsEditable())
     return;
-  dirty = true;
+  vertexBuffer.SetDirty();
   this->normals = std::move(normals);
 }
 
 void Mesh::SetTangents(std::vector<vecf3> tangents) noexcept {
   if (!IsEditable())
     return;
-  dirty = true;
+  vertexBuffer.SetDirty();
   this->tangents = std::move(tangents);
 }
 
 void Mesh::SetUV(std::vector<pointf2> uv) noexcept {
   if (!IsEditable())
     return;
-  dirty = true;
+  vertexBuffer.SetDirty();
   this->uv = std::move(uv);
 }
 
 void Mesh::SetIndices(std::vector<uint32_t> indices) noexcept {
   if (!IsEditable())
     return;
-  dirty = true;
+  vertexBuffer.SetDirty();
   this->indices = std::move(indices);
 }
 
@@ -61,7 +61,7 @@ void Mesh::SetSubMeshCount(size_t num) {
 void Mesh::SetSubMesh(size_t index, SubMeshDescriptor desc) noexcept {
   if (!IsEditable() || index >= submeshes.size())
     return;
-  dirty = true;
+  vertexBuffer.SetDirty();
   desc.firstVertex = indices[desc.indexStart] + desc.baseVertex;
   desc.bounds = {positions[desc.firstVertex], positions[desc.firstVertex]};
   for (size_t i = 0; i < desc.indexCount; i++) {
@@ -110,6 +110,8 @@ void Mesh::GenUV() {
   if (!IsEditable())
     return;
 
+  vertexBuffer.SetDirty();
+
   uv.resize(positions.size());
   pointf3 center = pointf3::combine(positions, 1.f / positions.size());
   for (size_t i = 0; i < positions.size(); i++) {
@@ -124,6 +126,8 @@ void Mesh::GenUV() {
 void Mesh::GenTangents() {
   if (!IsEditable())
     return;
+
+  vertexBuffer.SetDirty();
 
   if (normals.empty())
     GenNormals();
@@ -207,55 +211,62 @@ bool Mesh::IsVertexValid() const noexcept {
     return false;
 }
 
-void Mesh::UpdateVertexBuffer() {
-  if (!IsDirty() || !IsVertexValid())
+void Mesh::ClearVertexBuffer() {
+  if (!IsEditable() && !IsDirty()) {
+    vertexBuffer.DirectGet().clear();
+    vertexBuffer.ForceSetNonDirty();
+  }
+}
+
+void Mesh::UpdateVertexBuffer(std::vector<uint8_t>& vertexBuffer,
+                              const Mesh& mesh) {
+  if (!mesh.IsVertexValid())
     return;
 
-  size_t num = GetVertexBufferVertexCount();
+  size_t num = mesh.GetVertexBufferVertexCount();
 
   size_t stride = 0;
   stride += sizeof(decltype(positions)::value_type);
-  if (!uv.empty())
+  if (!mesh.uv.empty())
     stride += sizeof(decltype(uv)::value_type);
-  if (!normals.empty())
+  if (!mesh.normals.empty())
     stride += sizeof(decltype(normals)::value_type);
-  if (!tangents.empty())
+  if (!mesh.tangents.empty())
     stride += sizeof(decltype(tangents)::value_type);
-  if (!colors.empty())
+  if (!mesh.colors.empty())
     stride += sizeof(decltype(colors)::value_type);
 
-  vertexBuffer.resize(stride * positions.size());
+  vertexBuffer.resize(stride * mesh.positions.size());
 
   size_t offset = 0;
   uint8_t* data = vertexBuffer.data();
   for (size_t i = 0; i < num; i++) {
-    memcpy(data + offset, positions[i].data(),
+    memcpy(data + offset, mesh.positions[i].data(),
            sizeof(decltype(positions)::value_type));
-    offset += sizeof(decltype(positions)::value_type);
+    offset += sizeof(decltype(mesh.positions)::value_type);
 
-    if (!uv.empty()) {
-      memcpy(data + offset, uv[i].data(), sizeof(decltype(uv)::value_type));
-      offset += sizeof(decltype(uv)::value_type);
+    if (!mesh.uv.empty()) {
+      memcpy(data + offset, mesh.uv[i].data(),
+             sizeof(decltype(uv)::value_type));
+      offset += sizeof(decltype(mesh.uv)::value_type);
     }
 
-    if (!normals.empty()) {
-      memcpy(data + offset, normals[i].data(),
+    if (!mesh.normals.empty()) {
+      memcpy(data + offset, mesh.normals[i].data(),
              sizeof(decltype(normals)::value_type));
-      offset += sizeof(decltype(normals)::value_type);
+      offset += sizeof(decltype(mesh.normals)::value_type);
     }
 
-    if (!tangents.empty()) {
-      memcpy(data + offset, tangents[i].data(),
+    if (!mesh.tangents.empty()) {
+      memcpy(data + offset, mesh.tangents[i].data(),
              sizeof(decltype(tangents)::value_type));
-      offset += sizeof(decltype(tangents)::value_type);
+      offset += sizeof(decltype(mesh.tangents)::value_type);
     }
 
-    if (!colors.empty()) {
-      memcpy(data + offset, colors[i].data(),
+    if (!mesh.colors.empty()) {
+      memcpy(data + offset, mesh.colors[i].data(),
              sizeof(decltype(colors)::value_type));
-      offset += sizeof(decltype(colors)::value_type);
+      offset += sizeof(decltype(mesh.colors)::value_type);
     }
   }
-
-  dirty = false;
 }

@@ -423,9 +423,6 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
     ID3D12GraphicsCommandList* cmdList, Mesh& mesh) {
   auto target = pImpl->meshMap.find(mesh.GetInstanceID());
   if (target == pImpl->meshMap.end()) {
-    if (mesh.IsDirty())
-      mesh.UpdateVertexBuffer();
-
     if (mesh.IsEditable()) {
       auto [iter, success] = pImpl->meshMap.try_emplace(
           mesh.GetInstanceID(), pImpl->device, cmdList,
@@ -441,6 +438,7 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
           (UINT)mesh.GetVertexBufferVertexStride(), mesh.GetIndices().data(),
           (UINT)mesh.GetIndices().size(), DXGI_FORMAT_R32_UINT);
       assert(success);
+      mesh.ClearVertexBuffer();
       return iter->second;
     }
   } else {
@@ -449,7 +447,6 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
       if (mesh.IsEditable()) {
         meshGpuBuffer.ConvertToDynamic(pImpl->device);
         if (mesh.IsDirty()) {
-          mesh.UpdateVertexBuffer();
           meshGpuBuffer.Update(
               pImpl->device, cmdList, mesh.GetVertexBufferData(),
               (UINT)mesh.GetVertexBufferVertexCount(),
@@ -459,7 +456,6 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
         }
       } else {  // non-editable
         if (mesh.IsDirty()) {
-          mesh.UpdateVertexBuffer();
           meshGpuBuffer.ConvertToDynamic(pImpl->device);
           meshGpuBuffer.Update(
               pImpl->device, cmdList, mesh.GetVertexBufferData(),
@@ -469,11 +465,11 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
               DXGI_FORMAT_R32_UINT);
           meshGpuBuffer.ConvertToStatic(pImpl->deleteBatch);
         }
+        mesh.ClearVertexBuffer();
       }
     } else {  // dynamic
       if (mesh.IsEditable()) {
         if (mesh.IsDirty()) {
-          mesh.UpdateVertexBuffer();
           meshGpuBuffer.Update(
               pImpl->device, cmdList, mesh.GetVertexBufferData(),
               (UINT)mesh.GetVertexBufferVertexCount(),
@@ -490,6 +486,7 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
               mesh.GetIndices().data(), (UINT)mesh.GetIndices().size(),
               DXGI_FORMAT_R32_UINT);
         }
+        mesh.ClearVertexBuffer();
         meshGpuBuffer.ConvertToStatic(pImpl->deleteBatch);
       }
     }
