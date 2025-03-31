@@ -130,11 +130,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
       return 0;
 
     int rst = theApp.Run();
-    My::MyGE::RsrcMngrDX12::Instance().Clear();
     return rst;
   } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
-    My::MyGE::RsrcMngrDX12::Instance().Clear();
     return 0;
   }
 }
@@ -142,6 +140,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 DynamicMeshApp::DynamicMeshApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 DynamicMeshApp::~DynamicMeshApp() {
+  My::MyGE::RsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
   if (!myDevice.IsNull())
     FlushCommandQueue();
 }
@@ -216,7 +215,6 @@ void DynamicMeshApp::Update() {
   cmdAlloc->Reset();
 
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
-  auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
 
   // update mesh
 

@@ -6,7 +6,6 @@ using Microsoft::WRL::ComPtr;
 class TestApp : public My::MyGE::DX12App {
  public:
   TestApp(HINSTANCE hInstance);
-  ~TestApp();
 
   virtual bool Init() override;
 
@@ -52,11 +51,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 }
 
 TestApp::TestApp(HINSTANCE hInstance) : DX12App(hInstance) {}
-
-TestApp::~TestApp() {
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
-}
 
 bool TestApp::Init() {
   if (!InitMainWindow())

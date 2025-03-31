@@ -46,6 +46,7 @@ struct RsrcMngrDX12::Impl {
   bool isInit{false};
   ID3D12Device* device{nullptr};
   DirectX::ResourceUploadBatch* upload{nullptr};
+  bool hasUpload = false;
   MyDX12::ResourceDeleteBatch deleteBatch;
 
   unordered_map<size_t, Texture2DGPUData> texture2DMap;
@@ -127,8 +128,11 @@ RsrcMngrDX12& RsrcMngrDX12::Init(ID3D12Device* device) {
   return *this;
 }
 
-void RsrcMngrDX12::Clear() {
+void RsrcMngrDX12::Clear(ID3D12CommandQueue* cmdQueue) {
   assert(pImpl->isInit);
+
+  pImpl->upload->End(cmdQueue);
+  pImpl->deleteBatch.Commit(pImpl->device, cmdQueue);
 
   for (auto& [name, tex] : pImpl->texture2DMap) {
     MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
@@ -168,17 +172,12 @@ void RsrcMngrDX12::Clear() {
 }
 
 void RsrcMngrDX12::CommitUploadAndDelete(ID3D12CommandQueue* cmdQueue) {
-  pImpl->upload->End(cmdQueue);
+  if (pImpl->hasUpload) {
+    pImpl->upload->End(cmdQueue);
+    pImpl->upload->Begin();
+  }
+
   pImpl->deleteBatch.Commit(pImpl->device, cmdQueue);
-  pImpl->upload->Begin();
-}
-
-DirectX::ResourceUploadBatch& RsrcMngrDX12::GetUpload() const {
-  return *pImpl->upload;
-}
-
-MyDX12::ResourceDeleteBatch& RsrcMngrDX12::GetDeleteBatch() const {
-  return pImpl->deleteBatch;
 }
 
 //RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(
@@ -246,6 +245,7 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTexture2D(const Texture2D& tex2D) {
   data.SlicePitch = tex2D.image->height *
                     data.RowPitch;  // this field is useless for texture 2d
 
+  pImpl->hasUpload = true;
   DirectX::CreateTextureFromMemory(
       pImpl->device, *pImpl->upload, tex2D.image->width.get(),
       tex2D.image->height.get(), channelMap[tex2D.image->channel - 1], data,
@@ -308,6 +308,7 @@ RsrcMngrDX12& RsrcMngrDX12::RegisterTextureCube(const TextureCube& texcube) {
         datas[i].RowPitch;  // this field is useless for texture 2d
   }
 
+  pImpl->hasUpload = true;
   MyDX12::Util::CreateTexture2DArrayFromMemory(pImpl->device, *pImpl->upload, w,
                                                h, 6, channelMap[c - 1],
                                                datas.data(), &tex.resource);
@@ -432,6 +433,7 @@ MyDX12::MeshGPUBuffer& RsrcMngrDX12::RegisterMesh(
       assert(success);
       return iter->second;
     } else {
+      pImpl->hasUpload = true;
       auto [iter, success] = pImpl->meshMap.try_emplace(
           mesh.GetInstanceID(), pImpl->device, *pImpl->upload,
           mesh.GetVertexBufferData(), (UINT)mesh.GetVertexBufferVertexCount(),

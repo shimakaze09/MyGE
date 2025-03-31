@@ -188,9 +188,6 @@ Editor::Editor(HINSTANCE hInstance)
     : DX12App(hInstance), pImpl{new Impl{this}} {}
 
 Editor::~Editor() {
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
-
   ImGUIMngr::Instance().Clear();
 
   delete pImpl;
@@ -586,7 +583,6 @@ void Editor::Impl::Update() {
   cmdAlloc->Reset();
 
   ThrowIfFailed(pEditor->myGCmdList->Reset(cmdAlloc, nullptr));
-  auto& deleteBatch = RsrcMngrDX12::Instance().GetDeleteBatch();
 
   auto UpdateRenderResource = [&](My::MyECS::World* w) {
     w->RunEntityJob(

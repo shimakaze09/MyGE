@@ -293,7 +293,6 @@ void GameStarter::Update() {
   cmdAlloc->Reset();
 
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
-  auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
 
   world.RunEntityJob(
       [&](My::MyGE::MeshFilter* meshFilter,

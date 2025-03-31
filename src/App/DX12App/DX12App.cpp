@@ -16,13 +16,14 @@ DX12App::DX12App(HINSTANCE hInstance) : mhAppInst(hInstance) {
 }
 
 DX12App::~DX12App() {
+  My::MyGE::RsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
+
   if (!myDevice.IsNull())
     FlushCommandQueue();
   if (!swapchainRTVCpuDH.IsNull())
     My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         std::move(swapchainRTVCpuDH));
 
-  My::MyGE::RsrcMngrDX12::Instance().Clear();
   My::MyDX12::DescriptorHeapMngr::Instance().Clear();
 
   mApp = nullptr;

@@ -18,6 +18,10 @@
 #include <MyGE/Core/Scene.h>
 #include <MyGE/Core/Systems/Systems.h>
 
+#ifndef NDEBUG
+#include <dxgidebug.h>
+#endif
+
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 
@@ -90,25 +94,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 #if defined(DEBUG) | defined(_DEBUG)
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
+  int rst;
 
   try {
     WorldApp theApp(hInstance);
     if (!theApp.Initialize())
       return 0;
 
-    int rst = theApp.Run();
-    My::MyGE::RsrcMngrDX12::Instance().Clear();
-    return rst;
+    rst = theApp.Run();
   } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
-    My::MyGE::RsrcMngrDX12::Instance().Clear();
-    return 0;
+    rst = 1;
   }
+
+#ifndef NDEBUG
+  Microsoft::WRL::ComPtr<IDXGIDebug> debug;
+  DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug));
+  if (debug)
+    debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
+#endif
+
+  return 1;
 }
 
 WorldApp::WorldApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 WorldApp::~WorldApp() {
+  My::MyGE::RsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
   if (!myDevice.IsNull())
     FlushCommandQueue();
 }
@@ -162,6 +174,7 @@ bool WorldApp::Initialize() {
   // commit upload, delete ...
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.raw.Get());
+
   My::MyGE::RsrcMngrDX12::Instance().CommitUploadAndDelete(
       myCmdQueue.raw.Get());
 
@@ -183,9 +196,6 @@ void WorldApp::OnResize() {
 }
 
 void WorldApp::Update() {
-  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
-  upload.Begin();
-
   UpdateCamera();
 
   world.Update();

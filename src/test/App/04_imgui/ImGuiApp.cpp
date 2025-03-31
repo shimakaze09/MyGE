@@ -279,11 +279,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
       return 0;
 
     int rst = theApp.Run();
-    My::MyGE::RsrcMngrDX12::Instance().Clear();
     return rst;
   } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
-    My::MyGE::RsrcMngrDX12::Instance().Clear();
     return 0;
   }
 }
@@ -291,10 +289,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 ImGUIApp::ImGUIApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 ImGUIApp::~ImGUIApp() {
+  My::MyGE::RsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
+  My::MyGE::ImGUIMngr::Instance().Clear();
   if (!myDevice.IsNull())
     FlushCommandQueue();
-
-  My::MyGE::ImGUIMngr::Instance().Clear();
 }
 
 bool ImGUIApp::Initialize() {
@@ -426,7 +424,6 @@ void ImGUIApp::Update() {
   cmdAlloc->Reset();
 
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
-  auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
 
   // update mesh
 

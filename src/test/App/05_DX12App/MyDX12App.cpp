@@ -178,9 +178,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 MyDX12App::MyDX12App(HINSTANCE hInstance) : DX12App(hInstance) {}
 
 MyDX12App::~MyDX12App() {
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
-
   My::MyGE::ImGUIMngr::Instance().Clear();
 }
 
@@ -234,9 +231,6 @@ void MyDX12App::Update() {
   ImGui_ImplWin32_NewFrame_Context(gameImGuiCtx, {0, 0}, (float)mClientWidth,
                                    (float)mClientHeight);
   ImGui_ImplWin32_NewFrame_Shared();
-
-  auto& upload = My::MyGE::RsrcMngrDX12::Instance().GetUpload();
-  upload.Begin();
 
   ImGui::SetCurrentContext(gameImGuiCtx);
   ImGui::NewFrame();
@@ -299,7 +293,6 @@ void MyDX12App::Update() {
   cmdAlloc->Reset();
 
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
-  auto& deleteBatch = My::MyGE::RsrcMngrDX12::Instance().GetDeleteBatch();
 
   // update mesh
 
@@ -349,10 +342,9 @@ void MyDX12App::Update() {
   }
 
   // commit upload, delete ...
-  upload.End(myCmdQueue.Get());
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.Get());
-  deleteBatch.Commit(myDevice.Get(), myCmdQueue.Get());
+  My::MyGE::RsrcMngrDX12::Instance().CommitUploadAndDelete(myCmdQueue.Get());
 
   std::vector<My::MyGE::PipelineBase::CameraData> gameCameras;
   My::MyECS::ArchetypeFilter camFilter{

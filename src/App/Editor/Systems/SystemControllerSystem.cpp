@@ -99,6 +99,7 @@ void SystemControllerSystem::OnUpdate(Schedule& schedule) {
       {
         size_t switchID = static_cast<size_t>(-1);
         static ImGuiTextFilter filter;
+        filter.Draw();
         for (const auto& ID :
              systemController->world->systemMngr.GetAliveSystemIDs()) {
           auto name =
