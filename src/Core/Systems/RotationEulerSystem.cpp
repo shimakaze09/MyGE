@@ -1,9 +1,8 @@
-#include <MyGE/Core/Systems/RotationEulerSystem.h>
-
 #include <MyGE/Core/Components/Rotation.h>
 #include <MyGE/Core/Components/RotationEuler.h>
+#include <MyGE/Core/Systems/RotationEulerSystem.h>
 
-using namespace My::MyGE;
+using namespace Smkz::MyGE;
 
 void RotationEulerSystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.RegisterEntityJob(

@@ -1,11 +1,9 @@
 #pragma once
 
-#include <MyGM/quat.h>
+#include <MyGM/quat.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Rotation {
   quatf value{quatf::identity()};
 };
-}  // namespace My::MyGE
-
-#include "details/Rotation_AutoRefl.inl"
+}  // namespace Smkz::MyGE

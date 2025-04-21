@@ -1,19 +1,20 @@
 #pragma once
 
 #include <MyDX12/MyDX12.h>
-#include <MyECS/Entity.h>
 
+#include <MyECS/Entity.hpp>
 #include <map>
+#include <memory>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
-namespace My::MyECS {
+namespace Smkz::MyECS {
 class World;
 }
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Material;
 struct Shader;
 class ShaderCBMngrDX12;
@@ -27,11 +28,9 @@ class PipelineBase {
     ID3D12CommandQueue* cmdQueue;
     DXGI_FORMAT rtFormat;
   };
-
   struct CameraData {
     CameraData(MyECS::Entity entity, const MyECS::World& world)
         : entity{entity}, world{world} {}
-
     MyECS::Entity entity;
     const MyECS::World& world;
   };
@@ -66,7 +65,6 @@ class PipelineBase {
     std::map<size_t, size_t> offsetMap;  // register index -> local offset
     std::unordered_map<size_t, size_t> indexMap;  // material ID -> index
   };
-
   static ShaderCBDesc UpdateShaderCBs(
       ShaderCBMngrDX12& shaderCBMngr, const Shader& shader,
       const std::unordered_set<const Material*>& materials,
@@ -90,12 +88,10 @@ class PipelineBase {
     D3D12_VIEWPORT screenViewport;
     D3D12_RECT scissorRect;
   };
-
   const InitDesc initDesc;
-
   const ResizeData& GetResizeData() const { return resizeData; }
 
  private:
   ResizeData resizeData;
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

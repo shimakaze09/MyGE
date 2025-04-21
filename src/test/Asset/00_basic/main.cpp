@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-using namespace My::MyGE;
+using namespace Smkz::MyGE;
 
 int main() {
   // Enable run-time memory check for debug builds.

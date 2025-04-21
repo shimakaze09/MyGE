@@ -4,13 +4,12 @@
 #include <WindowsX.h>
 #include <dxgi1_4.h>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 class DX12App {
  public:
   static DX12App* GetApp() noexcept { return mApp; }
 
   HINSTANCE AppInst() const { return mhAppInst; }
-
   HWND MainWnd() const { return mhMainWnd; }
 
   virtual bool Init() = 0;
@@ -31,8 +30,7 @@ class DX12App {
   virtual void Draw() = 0;
   virtual void OnResize();
 
-  virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam,
-                          LPARAM lParam) = 0;
+  virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
  protected:
   bool InitMainWindow();
@@ -43,7 +41,6 @@ class DX12App {
   }
 
   D3D12_VIEWPORT GetScreenViewport() const noexcept;
-
   D3D12_RECT GetScissorRect() const noexcept {
     return {0, 0, mClientWidth, mClientHeight};
   }
@@ -65,19 +62,15 @@ class DX12App {
   ID3D12Resource* CurrentBackBuffer() const noexcept {
     return mSwapChainBuffer[curBackBuffer].Get();
   }
-
   D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView() const noexcept {
     return swapchainRTVCpuDH.GetCpuHandle(curBackBuffer);
   }
-
   DXGI_FORMAT GetBackBufferFormat() const noexcept { return mBackBufferFormat; }
 
   static constexpr char FR_CommandAllocator[] = "__CommandAllocator";
-
   MyDX12::FrameResourceMngr* GetFrameResourceMngr() const noexcept {
     return frameRsrcMngr.get();
   }
-
   ID3D12CommandAllocator* GetCurFrameCommandAllocator() noexcept;
 
  protected:
@@ -89,11 +82,11 @@ class DX12App {
 
   // Derived class should set these in derived constructor to customize starting
   // values.
-  std::wstring mMainWndCaption = L"My D3D App";
+  std::wstring mMainWndCaption = L"Smkz D3D App";
 
-  My::MyDX12::Device myDevice;
-  My::MyDX12::CmdQueue myCmdQueue;
-  My::MyDX12::GCmdList myGCmdList;
+  Smkz::MyDX12::Device myDevice;
+  Smkz::MyDX12::CmdQueue myCmdQueue;
+  Smkz::MyDX12::GCmdList myGCmdList;
 
   // for init, resize, run in "main frame"
   Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mainCmdAlloc;
@@ -136,4 +129,4 @@ class DX12App {
 
   static LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM);
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

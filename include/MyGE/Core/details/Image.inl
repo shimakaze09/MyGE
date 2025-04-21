@@ -1,6 +1,6 @@
 #pragma once
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 template <typename T, typename>
 T& Image::At(size_t x, size_t y) {
   assert(T::N == channel);
@@ -24,4 +24,4 @@ void Image::SetAll(const T& color) {
     }
   }
 }
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

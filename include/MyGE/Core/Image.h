@@ -1,21 +1,12 @@
 #pragma once
 
-#include <MyDP/Basic/Read.h>
-#include <MyGM/point.h>
-#include <MyGM/rgba.h>
-
-#include "Object.h"
-
+#include <MyGM/point.hpp>
+#include <MyGM/rgba.hpp>
 #include <string>
 
-namespace My::MyGE {
-class Image : public Object {
+namespace Smkz::MyGE {
+class Image {
  public:
-  Read<Image, float*> data{nullptr};
-  Read<Image, size_t> width{static_cast<size_t>(0)};
-  Read<Image, size_t> height{static_cast<size_t>(0)};
-  Read<Image, size_t> channel{static_cast<size_t>(0)};
-
   Image() = default;
   ~Image();
   Image(const std::string& path, bool flip = false);
@@ -57,7 +48,19 @@ class Image : public Object {
 
   const rgbaf SampleNearest(const pointf2& uv) const;
   const rgbaf SampleLinear(const pointf2& uv) const;
+
+  float* GetData() noexcept { return data; }
+  const float* GetData() const noexcept { return data; }
+  size_t GetWidth() const noexcept { return width; }
+  size_t GetHeight() const noexcept { return height; }
+  size_t GetChannel() const noexcept { return channel; }
+
+ private:
+  float* data{nullptr};
+  size_t width{static_cast<size_t>(0)};
+  size_t height{static_cast<size_t>(0)};
+  size_t channel{static_cast<size_t>(0)};
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE
 
 #include "details/Image.inl"

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <MyECS/World.h>
+#include <MyECS/MyECS.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct WorldTimeSystem {
   static constexpr char SystemFuncName[] = "WorldTimeSystem";
 
   static void OnUpdate(MyECS::Schedule& schedule);
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

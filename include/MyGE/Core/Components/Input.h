@@ -1,9 +1,9 @@
 #pragma once
 
-#include <MyGM/point.h>
-#include <MyGM/val.h>
+#include <MyGM/point.hpp>
+#include <MyGM/val.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Input {
   // ============================
   //           [Basic]
@@ -80,6 +80,4 @@ struct Input {
   // Duration the keyboard key has been down (0.0f == just pressed)
   float KeysDownDuration[512];
 };
-}  // namespace My::MyGE
-
-#include "details/Input_AutoRefl.inl"
+}  // namespace Smkz::MyGE

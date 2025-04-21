@@ -5,8 +5,8 @@
 #include <MyGE/Core/Components/WorldTime.h>
 #include <MyGE/Core/Systems/RoamerSystem.h>
 
-using namespace My::MyGE;
-using namespace My::MyECS;
+using namespace Smkz::MyGE;
+using namespace Smkz::MyECS;
 
 void RoamerSystem::OnUpdate(Schedule& schedule) {
   schedule.RegisterEntityJob(

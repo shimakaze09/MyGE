@@ -3,7 +3,7 @@
 #include <variant>
 #include <vector>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 enum class RootDescriptorType {
   SRV,
   UAV,
@@ -34,8 +34,8 @@ struct RootConstants {
 };
 
 struct RootDescriptor {
-  RootDescriptorType DescriptorType;  // ignore sampler
-  unsigned int ShaderRegister;
+  RootDescriptorType DescriptorType{};  // ignore sampler
+  unsigned int ShaderRegister{0};
   unsigned int RegisterSpace{0};
 
   void Init(RootDescriptorType DescriptorType, unsigned int ShaderRegister,
@@ -48,6 +48,4 @@ struct RootDescriptor {
 
 using RootParameter =
     std::variant<RootDescriptorTable, RootConstants, RootDescriptor>;
-}  // namespace My::MyGE
-
-#include "details/RootParameter_AutoRefl.inl"
+}  // namespace Smkz::MyGE

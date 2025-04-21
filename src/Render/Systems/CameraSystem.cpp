@@ -1,8 +1,8 @@
 #include <MyGE/Render/Components/Camera.h>
 #include <MyGE/Render/Systems/CameraSystem.h>
 
-using namespace My::MyGE;
-using namespace My::MyECS;
+using namespace Smkz::MyGE;
+using namespace Smkz::MyECS;
 
 void CameraSystem::OnUpdate(Schedule& schedule) {
   schedule.RegisterEntityJob(

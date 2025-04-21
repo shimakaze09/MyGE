@@ -1,9 +1,7 @@
 #pragma once
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Scale {
   float value{1.f};
 };
-}  // namespace My::MyGE
-
-#include "details/Scale_AutoRefl.inl"
+}  // namespace Smkz::MyGE

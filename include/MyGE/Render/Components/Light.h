@@ -1,8 +1,8 @@
 #pragma once
 
-#include <MyGM/rgb.h>
+#include <MyGM/rgb.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Light {
   enum class Type { Directional, Point, Spot, Rect, Disk };
 
@@ -15,6 +15,4 @@ struct Light {
   float innerSpotAngle{21.802f};
   float outerSpotAngle{30.f};
 };
-}  // namespace My::MyGE
-
-#include "details/Light_AutoRefl.inl"
+}  // namespace Smkz::MyGE

@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Shader;
 
 class ShaderMngr {
@@ -16,12 +16,10 @@ class ShaderMngr {
 
   void Register(std::shared_ptr<Shader>);
   std::shared_ptr<Shader> Get(std::string_view name) const;
-
   const std::map<std::string, std::weak_ptr<Shader>, std::less<>> GetShaderMap()
       const noexcept {
     return shaderMap;
   }
-
   // clear expired weak_ptr
   void Refresh();
 
@@ -29,4 +27,4 @@ class ShaderMngr {
   ShaderMngr() = default;
   std::map<std::string, std::weak_ptr<Shader>, std::less<>> shaderMap;
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

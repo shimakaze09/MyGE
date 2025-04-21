@@ -1,11 +1,9 @@
 #pragma once
- 
-#include <MyGM/scale.h>
- 
-namespace My::MyGE {
+
+#include <MyGM/scale.hpp>
+
+namespace Smkz::MyGE {
 struct NonUniformScale {
-  scalef3 value{ 1.f };
+  scalef3 value{1.f};
 };
-}
- 
-#include "details/NonUniformScale_AutoRefl.inl"
+}  // namespace Smkz::MyGE

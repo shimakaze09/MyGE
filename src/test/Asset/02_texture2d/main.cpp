@@ -4,8 +4,8 @@
 
 #include <iostream>
 
-using namespace My::MyGE;
-using namespace My;
+using namespace Smkz::MyGE;
+using namespace Smkz;
 
 int main() {
   // Enable run-time memory check for debug builds.

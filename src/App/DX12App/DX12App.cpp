@@ -1,11 +1,9 @@
 #include <MyGE/App/DX12App/DX12App.h>
-
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
-
 #include <MyGE/Core/GameTimer.h>
+#include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
 
 using Microsoft::WRL::ComPtr;
-using namespace My::MyGE;
+using namespace Smkz::MyGE;
 using namespace DirectX;
 using namespace std;
 
@@ -16,15 +14,14 @@ DX12App::DX12App(HINSTANCE hInstance) : mhAppInst(hInstance) {
 }
 
 DX12App::~DX12App() {
-  My::MyGE::RsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
+  Smkz::MyGE::GPURsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
 
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
   if (!swapchainRTVCpuDH.IsNull())
-    My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
+    Smkz::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         std::move(swapchainRTVCpuDH));
 
-  My::MyDX12::DescriptorHeapMngr::Instance().Clear();
+  Smkz::MyDX12::DescriptorHeapMngr::Instance().Clear();
 
   mApp = nullptr;
 }
@@ -67,7 +64,6 @@ LRESULT DX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
           mMaximized = true;
           OnResize();
         } else if (wParam == SIZE_RESTORED) {
-
           // Restoring from minimized state?
           if (mMinimized) {
             mAppPaused = false;
@@ -89,7 +85,8 @@ LRESULT DX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             // the resize bars.  So instead, we reset after the user is
             // done resizing the window and releases the resize bars, which
             // sends a WM_EXITSIZEMOVE message.
-          } else  // API call such as SetWindowPos or mSwapChain->SetFullscreenState.
+          } else  // API call such as SetWindowPos or
+                  // mSwapChain->SetFullscreenState.
           {
             OnResize();
           }
@@ -118,8 +115,9 @@ LRESULT DX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       PostQuitMessage(0);
       return 0;
 
-      // The WM_MENUCHAR message is sent when a menu is active and the user presses
-      // a key that does not correspond to any mnemonic or accelerator key.
+      // The WM_MENUCHAR message is sent when a menu is active and the user
+      // presses a key that does not correspond to any mnemonic or accelerator
+      // key.
     case WM_MENUCHAR:
       // Don't beep when we alt-enter.
       return MAKELRESULT(0, MNC_CLOSE);
@@ -150,7 +148,7 @@ LRESULT DX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 int DX12App::Run() {
   MSG msg = {0};
 
-  My::MyGE::GameTimer::Instance().Reset();
+  Smkz::MyGE::GameTimer::Instance().Reset();
 
   while (msg.message != WM_QUIT) {
     // If there are Window messages then process them.
@@ -158,7 +156,7 @@ int DX12App::Run() {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     } else {  // Otherwise, do animation/game stuff.
-      My::MyGE::GameTimer::Instance().Tick();
+      Smkz::MyGE::GameTimer::Instance().Tick();
 
       if (!mAppPaused) {
         CalculateFrameStats();
@@ -183,8 +181,7 @@ void DX12App::OnResize() {
   ThrowIfFailed(myGCmdList->Reset(mainCmdAlloc.Get(), nullptr));
 
   // Release the previous resources we will be recreating.
-  for (int i = 0; i < NumSwapChainBuffer; ++i)
-    mSwapChainBuffer[i].Reset();
+  for (int i = 0; i < NumSwapChainBuffer; ++i) mSwapChainBuffer[i].Reset();
 
   // Resize the swap chain.
   ThrowIfFailed(mSwapChain->ResizeBuffers(
@@ -247,8 +244,7 @@ bool DX12App::InitDirect3D() {
     ComPtr<ID3D12Debug> debugController;
     // ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)));
     D3D12GetDebugInterface(IID_PPV_ARGS(&debugController));
-    if (debugController)
-      debugController->EnableDebugLayer();
+    if (debugController) debugController->EnableDebugLayer();
   }
 #endif
 
@@ -273,11 +269,11 @@ bool DX12App::InitDirect3D() {
   ThrowIfFailed(myDevice->CreateFence(mCurrentFence, D3D12_FENCE_FLAG_NONE,
                                       IID_PPV_ARGS(&mFence)));
 
-  My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
-  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.Get(), 16384, 16384,
-                                                  16384, 16384, 16384);
+  Smkz::MyGE::GPURsrcMngrDX12::Instance().Init(myDevice.raw.Get());
+  Smkz::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.Get(), 16384,
+                                                    16384, 16384, 16384, 16384);
 
-  frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
+  frameRsrcMngr = std::make_unique<Smkz::MyDX12::FrameResourceMngr>(
       NumFrameResources, myDevice.Get());
   for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
     ComPtr<ID3D12CommandAllocator> allocator;
@@ -286,12 +282,12 @@ bool DX12App::InitDirect3D() {
     fr->RegisterResource(FR_CommandAllocator, allocator);
   }
 
-  //D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
-  //msQualityLevels.Format = mBackBufferFormat;
-  //msQualityLevels.SampleCount = 4;
-  //msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-  //msQualityLevels.NumQualityLevels = 0;
-  //ThrowIfFailed(myDevice->CheckFeatureSupport(
+  // D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
+  // msQualityLevels.Format = mBackBufferFormat;
+  // msQualityLevels.SampleCount = 4;
+  // msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+  // msQualityLevels.NumQualityLevels = 0;
+  // ThrowIfFailed(myDevice->CheckFeatureSupport(
   //	D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
   //	&msQualityLevels,
   //	sizeof(msQualityLevels)));
@@ -358,7 +354,7 @@ void DX12App::CreateSwapChain() {
 
 void DX12App::CreateSwapChainDH() {
   swapchainRTVCpuDH =
-      My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(
+      Smkz::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(
           NumSwapChainBuffer);
 }
 
@@ -377,9 +373,9 @@ void DX12App::FlushCommandQueue() {
   // Advance the fence value to mark commands up to this fence point.
   mCurrentFence++;
 
-  // Add an instruction to the command queue to set a new fence point.  Because we
-  // are on the GPU timeline, the new fence point won't be set until the GPU finishes
-  // processing all the commands prior to this Signal().
+  // Add an instruction to the command queue to set a new fence point.  Because
+  // we are on the GPU timeline, the new fence point won't be set until the GPU
+  // finishes processing all the commands prior to this Signal().
   ThrowIfFailed(myCmdQueue->Signal(mFence.Get(), mCurrentFence));
 
   // Wait until the GPU has completed commands up to this fence point.
@@ -417,7 +413,7 @@ void DX12App::CalculateFrameStats() {
   frameCnt++;
 
   // Compute averages over one second period.
-  if ((My::MyGE::GameTimer::Instance().TotalTime() - timeElapsed) >= 1.0f) {
+  if ((Smkz::MyGE::GameTimer::Instance().TotalTime() - timeElapsed) >= 1.0f) {
     float fps = (float)frameCnt;  // fps = frameCnt / 1
     float mspf = 1000.0f / fps;
 

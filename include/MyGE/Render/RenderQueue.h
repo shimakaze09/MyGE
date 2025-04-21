@@ -1,11 +1,10 @@
 #pragma once
 
-#include <MyECS/Entity.h>
-#include <MyGM/point.h>
-
+#include <MyECS/Entity.hpp>
+#include <MyGM/point.hpp>
 #include <vector>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 class Mesh;
 struct Material;
 
@@ -25,19 +24,16 @@ class RenderQueue {
  public:
   void Add(RenderObject object);
   void Sort(pointf3 cameraPos);
-
   const std::vector<RenderObject>& GetOpaques() const noexcept {
     return opaques;
   }
-
   const std::vector<RenderObject>& GetTransparents() const noexcept {
     return transparents;
   }
-
   void Clear();
 
  private:
   std::vector<RenderObject> opaques;
   std::vector<RenderObject> transparents;
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

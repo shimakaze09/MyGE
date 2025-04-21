@@ -1,12 +1,10 @@
 #pragma once
 
+#include "../../Core/SharedVar.h"
 #include "../Mesh.h"
-#include <MySTL/memory.h>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct MeshFilter {
-  MySTL::shared_object<Mesh> mesh;
+  SharedVar<Mesh> mesh;
 };
-}  // namespace My::MyGE
-
-#include "details/MeshFilter_AutoRefl.inl"
+}  // namespace Smkz::MyGE

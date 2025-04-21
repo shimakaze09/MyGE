@@ -1,6 +1,8 @@
 #pragma once
 
-namespace My::MyGE {
+#include <cstdint>
+
+namespace Smkz::MyGE {
 enum class FillMode { WIREFRAME = 2, SOLID = 3 };
 
 enum class CullMode { NONE = 1, FRONT = 2, BACK = 3 };
@@ -68,9 +70,9 @@ enum class StencilOp {
 
 struct StencilState {
   bool enable{false};
-  uint8_t ref{0};
-  uint8_t readMask{0xff};
-  uint8_t writeMask{0xff};
+  std::uint8_t ref{0};
+  std::uint8_t readMask{0xff};
+  std::uint8_t writeMask{0xff};
   StencilOp failOp{StencilOp::KEEP};
   StencilOp depthFailOp{StencilOp::KEEP};
   StencilOp passOp{StencilOp::KEEP};
@@ -89,8 +91,6 @@ struct RenderState {
 
   BlendState blendStates[8];
 
-  uint8_t colorMask[8] = {0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f};
+  std::uint8_t colorMask[8] = {0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f};
 };
-}  // namespace My::MyGE
-
-#include "details/RenderState_AutoRefl.inl"
+}  // namespace Smkz::MyGE

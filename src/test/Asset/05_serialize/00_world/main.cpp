@@ -1,12 +1,12 @@
-#include <MyECS/World.h>
 #include <MyGE/Asset/Serializer.h>
 #include <MyGE/Render/HLSLFile.h>
 
+#include <MyECS/MyECS.hpp>
 #include <iostream>
 
-using namespace My::MyGE;
-using namespace My::MyECS;
-using namespace My;
+using namespace Smkz::MyGE;
+using namespace Smkz::MyECS;
+using namespace Smkz;
 using namespace std;
 
 struct UserType0 {
@@ -62,8 +62,8 @@ struct A {
 };
 
 template <>
-struct My::MySRefl::TypeInfo<UserType1> : TypeInfoBase<UserType1> {
-#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+struct Smkz::USRefl::TypeInfo<UserType1> : TypeInfoBase<UserType1> {
+#ifdef UBPA_USREFL_NOT_USE_NAMEOF
   static constexpr char name[10] = "UserType1";
 #endif
   static constexpr AttrList attrs = {};
@@ -73,8 +73,8 @@ struct My::MySRefl::TypeInfo<UserType1> : TypeInfoBase<UserType1> {
 };
 
 template <>
-struct My::MySRefl::TypeInfo<A> : TypeInfoBase<A> {
-#ifdef MY_MYSREFL_NOT_USE_NAMEOF
+struct Smkz::USRefl::TypeInfo<A> : TypeInfoBase<A> {
+#ifdef UBPA_USREFL_NOT_USE_NAMEOF
   static constexpr char name[2] = "A";
 #endif
   static constexpr AttrList attrs = {};
@@ -94,10 +94,8 @@ struct My::MySRefl::TypeInfo<A> : TypeInfoBase<A> {
       Field{TSTR("v_string"), &Type::v_string},
       Field{TSTR("v_entity"), &Type::v_entity,
             AttrList{
-                Attr{TSTR(MyMeta::initializer),
-                     []() -> Entity {
-                       return {Entity::Invalid()};
-                     }},
+                Attr{TSTR(UMeta::initializer),
+                     []() -> Entity { return {Entity::Invalid()}; }},
             }},
       Field{TSTR("v_hlslFile"), &Type::v_hlslFile},
       Field{TSTR("v_array"), &Type::v_array},

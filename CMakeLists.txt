@@ -4,18 +4,18 @@ PROJECT(MyGE VERSION 0.0.5)
 MESSAGE(STATUS "Project: ${PROJECT_NAME} ${PROJECT_VERSION}")
 
 INCLUDE(cmake/InitMyCMake.cmake)
-INIT_MYCMAKE()
+INIT_MYCMAKE(VERSION 0.6.4)
 
 INIT_PROJECT()
 
 SET(MySRefl_Build_AutoRefl TRUE CACHE BOOL "use auto refl" FORCE)
 
-ADD_DEP(MyRapidJSON 0.0.3)
-ADD_DEP(MyDP 0.7.4)
-ADD_DEP(MyGM 0.6.13)
-ADD_DEP(MyLuaPP 0.2.0)
-ADD_DEP(MyECS 0.14.4)
-ADD_DEP(MyDX12 0.0.12)
+ADD_DEP(MyRapidJSON 0.0.4)
+ADD_DEP(MyVisitor 0.1.1)
+ADD_DEP(MyGM 0.7.2)
+ADD_DEP(MyECS 0.16.1)
+ADD_DEP(MyDX12 0.1.0)
+ADD_DEP(MyDRefl 0.10.3)
 
 DOWNLOAD_ZIP(
         https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/crossguid/crossguid_19032025.zip

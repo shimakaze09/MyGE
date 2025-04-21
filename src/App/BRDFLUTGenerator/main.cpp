@@ -1,11 +1,11 @@
 #include <MyGE/Core/Image.h>
-#include <MyGM/MyGM.h>
 
+#include <MyGM/MyGM.hpp>
 #include <iostream>
 #include <thread>
 
-using namespace My::MyGE;
-using namespace My;
+using namespace Smkz::MyGE;
+using namespace Smkz;
 using namespace std;
 
 float _RadicalInverse_VdC(unsigned bits) {
@@ -43,8 +43,7 @@ float GGX_G(float alpha, vecf3 L, vecf3 V, vecf3 N) {
   float cos_sthetai = L.dot(N);
   float cos_sthetao = V.dot(N);
 
-  if (cos_sthetai < 0 || cos_sthetao < 0)
-    return 0.f;
+  if (cos_sthetai < 0 || cos_sthetao < 0) return 0.f;
 
   float tan2_sthetai = 1.f / (cos_sthetai * cos_sthetai) - 1.f;
   float tan2_sthetao = 1.f / (cos_sthetao * cos_sthetao) - 1.f;
@@ -54,6 +53,7 @@ float GGX_G(float alpha, vecf3 L, vecf3 V, vecf3 N) {
 }
 
 valf2 IntegrateBRDF(float NdotV, float roughness) {
+  // ���ڸ���ͬ�ԣ�����ȡһ�� V ����
   vecf3 V;
   V[0] = sqrt(1.f - NdotV * NdotV);
   V[1] = 0.f;
@@ -110,11 +110,9 @@ int main() {
     }
   };
   std::vector<std::thread> workers;
-  for (size_t i = 0; i < N; i++)
-    workers.emplace_back(work, i);
+  for (size_t i = 0; i < N; i++) workers.emplace_back(work, i);
 
-  for (auto& worker : workers)
-    worker.join();
+  for (auto& worker : workers) worker.join();
 
   img.Save("BRDFLUT.png");
 

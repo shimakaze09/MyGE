@@ -1,8 +1,8 @@
 #pragma once
 
-#include <MyGM/transform.h>
+#include <MyGM/transform.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Camera {
   float aspect{16.f / 9.f};
   [[interval(std::pair{1.f, 179.f})]]
@@ -14,6 +14,4 @@ struct Camera {
 
   transformf prjectionMatrix;
 };
-}  // namespace My::MyGE
-
-#include "details/Camera_AutoRefl.inl"
+}  // namespace Smkz::MyGE

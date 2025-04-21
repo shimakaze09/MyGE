@@ -1,9 +1,9 @@
 #pragma once
 
-#include <MyECS/World.h>
-#include <MyGM/transform.h>
+#include <MyECS/MyECS.hpp>
+#include <MyGM/transform.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct LocalToParentSystem {
   static constexpr char SystemFuncName[] = "LocalToParentSystem";
 
@@ -12,4 +12,4 @@ struct LocalToParentSystem {
 
   static void OnUpdate(MyECS::Schedule& schedule);
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

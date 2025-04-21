@@ -2,8 +2,8 @@
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/Systems/WorldTimeSystem.h>
 
-using namespace My::MyGE;
-using namespace My::MyECS;
+using namespace Smkz::MyGE;
+using namespace Smkz::MyECS;
 
 void WorldTimeSystem::OnUpdate(Schedule& schedule) {
   schedule.RegisterJob(

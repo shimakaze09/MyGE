@@ -1,10 +1,10 @@
 #pragma once
 
-#include <MyGM/bbox.h>
+#include <MyGM/bbox.hpp>
 
 #include "MeshTopology.h"
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct SubMeshDescriptor {
   SubMeshDescriptor(size_t indexStart, size_t indexCount,
                     MeshTopology topology = MeshTopology::Triangles)
@@ -22,4 +22,4 @@ struct SubMeshDescriptor {
   size_t vertexCount{static_cast<size_t>(
       -1)};  // Number of vertices used by the index buffer of this sub-mesh.
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

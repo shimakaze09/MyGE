@@ -1,9 +1,10 @@
-#include "../common/d3dApp.h"
-
 #include <MyGE/Asset/AssetMngr.h>
-
+#include <MyGE/Core/Components/Components.h>
+#include <MyGE/Core/GameTimer.h>
+#include <MyGE/Core/Scene.h>
+#include <MyGE/Core/Systems/Systems.h>
 #include <MyGE/Render/Components/Components.h>
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+#include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
 #include <MyGE/Render/HLSLFile.h>
 #include <MyGE/Render/Mesh.h>
@@ -13,10 +14,7 @@
 #include <MyGE/Render/Texture2D.h>
 #include <MyGE/Render/TextureCube.h>
 
-#include <MyGE/Core/Components/Components.h>
-#include <MyGE/Core/GameTimer.h>
-#include <MyGE/Core/Scene.h>
-#include <MyGE/Core/Systems/Systems.h>
+#include "../common/d3dApp.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -25,18 +23,17 @@ const int gNumFrameResources = 3;
 
 struct AnimateMeshSystem {
   size_t cnt = 0;
-
-  static void OnUpdate(My::MyECS::Schedule& schedule) {
+  static void OnUpdate(Smkz::MyECS::Schedule& schedule) {
     schedule.RegisterEntityJob(
-        [](My::MyGE::MeshFilter* meshFilter,
-           My::MyECS::Latest<My::MyECS::Singleton<My::MyGE::WorldTime>> time) {
-          if (!meshFilter->mesh)
-            return;
+        [](Smkz::MyGE::MeshFilter* meshFilter,
+           Smkz::MyECS::Latest<Smkz::MyECS::Singleton<Smkz::MyGE::WorldTime>>
+               time) {
+          if (!meshFilter->mesh) return;
           if (time->elapsedTime < 5.f) {
             if (meshFilter->mesh->IsEditable()) {
               auto positions = meshFilter->mesh->GetPositions();
               for (auto& pos : positions)
-                pos[1] = 0.2f * (My::rand01<float>() - 0.5f);
+                pos[1] = 0.2f * (Smkz::rand01<float>() - 0.5f);
               meshFilter->mesh->SetPositions(positions);
             }
           } else if (5.f < time->elapsedTime && time->elapsedTime < 7.f)
@@ -45,31 +42,29 @@ struct AnimateMeshSystem {
             meshFilter->mesh->SetToEditable();
             auto positions = meshFilter->mesh->GetPositions();
             for (auto& pos : positions)
-              pos[1] = 0.2f * (My::rand01<float>() - 0.5f);
+              pos[1] = 0.2f * (Smkz::rand01<float>() - 0.5f);
             meshFilter->mesh->SetPositions(positions);
           } else
             meshFilter->mesh->SetToNonEditable();
         },
         "AnimateMesh");
     schedule.RegisterEntityJob(
-        [](My::MyGE::MeshFilter* meshFilter,
-           My::MyECS::Latest<My::MyECS::Singleton<My::MyGE::WorldTime>> time) {
-          if (!meshFilter->mesh)
-            return;
+        [](Smkz::MyGE::MeshFilter* meshFilter,
+           Smkz::MyECS::Latest<Smkz::MyECS::Singleton<Smkz::MyGE::WorldTime>>
+               time) {
+          if (!meshFilter->mesh) return;
           if (time->elapsedTime > 10.f) {
-            My::MyGE::RsrcMngrDX12::Instance().UnregisterMesh(
+            Smkz::MyGE::GPURsrcMngrDX12::Instance().UnregisterMesh(
                 *meshFilter->mesh);
             meshFilter->mesh = nullptr;
           }
         },
         "DeleteMesh");
-    schedule.RegisterCommand([](My::MyECS::World* w) {
-      auto time = w->entityMngr.GetSingleton<My::MyGE::WorldTime>();
-      if (!time)
-        return;
+    schedule.RegisterCommand([](Smkz::MyECS::World* w) {
+      auto time = w->entityMngr.GetSingleton<Smkz::MyGE::WorldTime>();
+      if (!time) return;
 
-      if (time->elapsedTime < 12.f)
-        return;
+      if (time->elapsedTime < 12.f) return;
 
       w->systemMngr.Deactivate<AnimateMeshSystem>();
     });
@@ -108,13 +103,13 @@ class DynamicMeshApp : public D3DApp {
 
   POINT mLastMousePos;
 
-  My::MyECS::World world;
-  My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
+  Smkz::MyECS::World world;
+  Smkz::MyECS::Entity cam{Smkz::MyECS::Entity::Invalid()};
 
-  std::unique_ptr<My::MyGE::PipelineBase> pipeline;
-  std::shared_ptr<My::MyGE::Mesh> dynamicMesh;
+  std::unique_ptr<Smkz::MyGE::PipelineBase> pipeline;
+  std::shared_ptr<Smkz::MyGE::Mesh> dynamicMesh;
 
-  std::unique_ptr<My::MyDX12::FrameResourceMngr> frameRsrcMngr;
+  std::unique_ptr<Smkz::MyDX12::FrameResourceMngr> frameRsrcMngr;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
@@ -126,12 +121,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     DynamicMeshApp theApp(hInstance);
-    if (!theApp.Initialize())
-      return 0;
+    if (!theApp.Initialize()) return 0;
 
     int rst = theApp.Run();
     return rst;
-  } catch (My::MyDX12::Util::Exception& e) {
+  } catch (Smkz::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     return 0;
   }
@@ -140,24 +134,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 DynamicMeshApp::DynamicMeshApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 DynamicMeshApp::~DynamicMeshApp() {
-  My::MyGE::RsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
+  Smkz::MyGE::GPURsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
+  if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
 bool DynamicMeshApp::Initialize() {
-  if (!InitMainWindow())
-    return false;
+  if (!InitMainWindow()) return false;
 
-  if (!InitDirect3D())
-    return false;
+  if (!InitDirect3D()) return false;
 
-  My::MyGE::RsrcMngrDX12::Instance().Init(myDevice.raw.Get());
+  Smkz::MyGE::GPURsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
-  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
-                                                  1024, 1024, 1024, 1024);
+  Smkz::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
+                                                    1024, 1024, 1024, 1024);
 
-  frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
+  frameRsrcMngr = std::make_unique<Smkz::MyDX12::FrameResourceMngr>(
       gNumFrameResources, myDevice.raw.Get());
   for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
@@ -166,7 +157,7 @@ bool DynamicMeshApp::Initialize() {
     fr->RegisterResource("CommandAllocator", allocator);
   }
 
-  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
+  Smkz::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
 
   BuildWorld();
 
@@ -174,13 +165,13 @@ bool DynamicMeshApp::Initialize() {
   BuildShaders();
   BuildMaterials();
 
-  My::MyGE::PipelineBase::InitDesc initDesc;
+  Smkz::MyGE::PipelineBase::InitDesc initDesc;
   initDesc.device = myDevice.raw.Get();
   initDesc.rtFormat = mBackBufferFormat;
   initDesc.cmdQueue = myCmdQueue.raw.Get();
   initDesc.numFrame = gNumFrameResources;
-  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
-  My::MyGE::RsrcMngrDX12::Instance().CommitUploadAndDelete(
+  pipeline = std::make_unique<Smkz::MyGE::StdPipeline>(initDesc);
+  Smkz::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
       myCmdQueue.raw.Get());
 
   // Do the initial resize code.
@@ -219,28 +210,26 @@ void DynamicMeshApp::Update() {
   // update mesh
 
   world.RunEntityJob(
-      [&](My::MyGE::MeshFilter* meshFilter,
-          const My::MyGE::MeshRenderer* meshRenderer) {
-        if (!meshFilter->mesh || meshRenderer->materials.empty())
-          return;
+      [&](Smkz::MyGE::MeshFilter* meshFilter,
+          const Smkz::MyGE::MeshRenderer* meshRenderer) {
+        if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
 
-        My::MyGE::RsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
-                                                        *meshFilter->mesh);
+        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
+                                                             *meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
-          if (!material)
-            continue;
+          if (!material) continue;
           for (const auto& [name, property] : material->properties) {
             if (std::holds_alternative<
-                    std::shared_ptr<const My::MyGE::Texture2D>>(property)) {
-              My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-                  *std::get<std::shared_ptr<const My::MyGE::Texture2D>>(
+                    std::shared_ptr<const Smkz::MyGE::Texture2D>>(property)) {
+              Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
+                  *std::get<std::shared_ptr<const Smkz::MyGE::Texture2D>>(
                       property));
             } else if (std::holds_alternative<
-                           std::shared_ptr<const My::MyGE::TextureCube>>(
+                           std::shared_ptr<const Smkz::MyGE::TextureCube>>(
                            property)) {
-              My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-                  *std::get<std::shared_ptr<const My::MyGE::TextureCube>>(
+              Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
+                  *std::get<std::shared_ptr<const Smkz::MyGE::TextureCube>>(
                       property));
             }
           }
@@ -248,17 +237,19 @@ void DynamicMeshApp::Update() {
       },
       false);
 
-  if (auto skybox = world.entityMngr.GetSingleton<My::MyGE::Skybox>();
+  if (auto skybox = world.entityMngr.GetSingleton<Smkz::MyGE::Skybox>();
       skybox && skybox->material) {
     for (const auto& [name, property] : skybox->material->properties) {
-      if (std::holds_alternative<std::shared_ptr<const My::MyGE::Texture2D>>(
+      if (std::holds_alternative<std::shared_ptr<const Smkz::MyGE::Texture2D>>(
               property)) {
-        My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-            *std::get<std::shared_ptr<const My::MyGE::Texture2D>>(property));
+        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
+            *std::get<std::shared_ptr<const Smkz::MyGE::Texture2D>>(property));
       } else if (std::holds_alternative<
-                     std::shared_ptr<const My::MyGE::TextureCube>>(property)) {
-        My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-            *std::get<std::shared_ptr<const My::MyGE::TextureCube>>(property));
+                     std::shared_ptr<const Smkz::MyGE::TextureCube>>(
+                     property)) {
+        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
+            *std::get<std::shared_ptr<const Smkz::MyGE::TextureCube>>(
+                property));
       }
     }
   }
@@ -266,15 +257,15 @@ void DynamicMeshApp::Update() {
   // commit upload, delete ...
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.raw.Get());
-  My::MyGE::RsrcMngrDX12::Instance().CommitUploadAndDelete(
+  Smkz::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
       myCmdQueue.raw.Get());
   frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
 
-  std::vector<My::MyGE::PipelineBase::CameraData> gameCameras;
-  My::MyECS::ArchetypeFilter camFilter{
-      {My::MyECS::CmptAccessType::Of<My::MyGE::Camera>}};
+  std::vector<Smkz::MyGE::PipelineBase::CameraData> gameCameras;
+  Smkz::MyECS::ArchetypeFilter camFilter{
+      {Smkz::MyECS::AccessTypeID_of<Smkz::MyGE::Camera>}};
   world.RunEntityJob(
-      [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
+      [&](Smkz::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
       camFilter);
   assert(gameCameras.size() == 1);  // now only support 1 camera
   pipeline->BeginFrame({&world}, gameCameras.front());
@@ -312,7 +303,7 @@ void DynamicMeshApp::OnMouseMove(WPARAM btnState, int x, int y) {
     mPhi -= dx;
 
     // Restrict the angle mPhi.
-    mTheta = std::clamp(mTheta, 0.1f, My::PI<float> - 0.1f);
+    mTheta = std::clamp(mTheta, 0.1f, Smkz::PI<float> - 0.1f);
   } else if ((btnState & MK_RBUTTON) != 0) {
     // Make each pixel correspond to 0.2 unit in the scene.
     float dx = 0.05f * static_cast<float>(x - mLastMousePos.x);
@@ -330,54 +321,55 @@ void DynamicMeshApp::OnMouseMove(WPARAM btnState, int x, int y) {
 }
 
 void DynamicMeshApp::UpdateCamera() {
-  My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
-                   mRadius * sinf(mTheta) * cosf(mPhi)};
-  auto camera = world.entityMngr.Get<My::MyGE::Camera>(cam);
+  Smkz::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi),
+                     mRadius * cosf(mTheta),
+                     mRadius * sinf(mTheta) * cosf(mPhi)};
+  auto camera = world.entityMngr.Get<Smkz::MyGE::Camera>(cam);
   camera->fov = 60.f;
   camera->aspect = AspectRatio();
   camera->clippingPlaneMin = 1.0f;
   camera->clippingPlaneMax = 1000.0f;
-  auto view =
-      My::transformf::look_at(eye.as<My::pointf3>(), {0.f});  // world to camera
+  auto view = Smkz::transformf::look_at(eye.as<Smkz::pointf3>(),
+                                        {0.f});  // world to camera
   auto c2w = view.inverse();
-  world.entityMngr.Get<My::MyGE::Translation>(cam)->value = eye;
-  world.entityMngr.Get<My::MyGE::Rotation>(cam)->value =
+  world.entityMngr.Get<Smkz::MyGE::Translation>(cam)->value = eye;
+  world.entityMngr.Get<Smkz::MyGE::Rotation>(cam)->value =
       c2w.decompose_quatenion();
 }
 
 void DynamicMeshApp::BuildWorld() {
   auto systemIDs = world.systemMngr.systemTraits.Register<
-      My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
-      My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
-      My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
-      My::MyGE::WorldTimeSystem, AnimateMeshSystem>();
-  for (auto ID : systemIDs)
-    world.systemMngr.Activate(ID);
+      Smkz::MyGE::CameraSystem, Smkz::MyGE::LocalToParentSystem,
+      Smkz::MyGE::RotationEulerSystem, Smkz::MyGE::TRSToLocalToParentSystem,
+      Smkz::MyGE::TRSToLocalToWorldSystem, Smkz::MyGE::WorldToLocalSystem,
+      Smkz::MyGE::WorldTimeSystem, AnimateMeshSystem>();
+  for (auto ID : systemIDs) world.systemMngr.Activate(ID);
 
   {  // skybox
-    auto [e, skybox] = world.entityMngr.Create<My::MyGE::Skybox>();
-    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(
+    auto [e, skybox] = world.entityMngr.Create<Smkz::MyGE::Skybox>();
+    const auto& path = Smkz::MyGE::AssetMngr::Instance().GUIDToAssetPath(
         xg::Guid{"bba13c3e-87d1-463a-974b-324d997349e3"});
     skybox->material =
-        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(path);
+        Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Material>(path);
   }
 
   {
-    auto e =
-        world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::WorldToLocal,
-                                My::MyGE::Camera, My::MyGE::Translation,
-                                My::MyGE::Rotation>();
-    cam = std::get<My::MyECS::Entity>(e);
+    auto e = world.entityMngr.Create<
+        Smkz::MyGE::LocalToWorld, Smkz::MyGE::WorldToLocal, Smkz::MyGE::Camera,
+        Smkz::MyGE::Translation, Smkz::MyGE::Rotation>();
+    cam = std::get<Smkz::MyECS::Entity>(e);
   }
-  { world.entityMngr.Create<My::MyGE::WorldTime>(); }
+  {
+    world.entityMngr.Create<Smkz::MyGE::WorldTime>();
+  }
 
-  auto quadMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
+  auto quadMesh = Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Mesh>(
       "../assets/models/quad.obj");
   auto dynamicCube =
-      world.entityMngr.Create<My::MyGE::LocalToWorld, My::MyGE::MeshFilter,
-                              My::MyGE::MeshRenderer, My::MyGE::Translation,
-                              My::MyGE::Rotation, My::MyGE::Scale>();
-  dynamicMesh = std::make_shared<My::MyGE::Mesh>();
+      world.entityMngr.Create<Smkz::MyGE::LocalToWorld, Smkz::MyGE::MeshFilter,
+                              Smkz::MyGE::MeshRenderer, Smkz::MyGE::Translation,
+                              Smkz::MyGE::Rotation, Smkz::MyGE::Scale>();
+  dynamicMesh = std::make_shared<Smkz::MyGE::Mesh>();
   dynamicMesh->SetPositions(quadMesh->GetPositions());
   dynamicMesh->SetNormals(quadMesh->GetNormals());
   dynamicMesh->SetUV(quadMesh->GetUV());
@@ -385,43 +377,45 @@ void DynamicMeshApp::BuildWorld() {
   dynamicMesh->SetSubMeshCount(quadMesh->GetSubMeshes().size());
   for (size_t i = 0; i < quadMesh->GetSubMeshes().size(); i++)
     dynamicMesh->SetSubMesh(i, quadMesh->GetSubMeshes().at(i));
-  std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = dynamicMesh;
+  std::get<Smkz::MyGE::MeshFilter*>(dynamicCube)->mesh = dynamicMesh;
 }
 
 void DynamicMeshApp::LoadTextures() {
-  auto tex2dGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+  auto tex2dGUIDs = Smkz::MyGE::AssetMngr::Instance().FindAssets(
       std::wregex{LR"(\.\.\\assets\\_internal\\.*\.tex2d)"});
   for (const auto& guid : tex2dGUIDs) {
-    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
-    My::MyGE::RsrcMngrDX12::Instance().RegisterTexture2D(
-        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
+    const auto& path = Smkz::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
+        *Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Texture2D>(
+            path));
   }
 
-  auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
+  auto texcubeGUIDs = Smkz::MyGE::AssetMngr::Instance().FindAssets(
       std::wregex{LR"(\.\.\\assets\\_internal\\.*\.texcube)"});
   for (const auto& guid : texcubeGUIDs) {
-    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
-    My::MyGE::RsrcMngrDX12::Instance().RegisterTextureCube(
-        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(
+    const auto& path = Smkz::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
+        *Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::TextureCube>(
             path));
   }
 }
 
 void DynamicMeshApp::BuildShaders() {
-  auto& assetMngr = My::MyGE::AssetMngr::Instance();
+  auto& assetMngr = Smkz::MyGE::AssetMngr::Instance();
   auto shaderGUIDs = assetMngr.FindAssets(std::wregex{LR"(.*\.shader)"});
   for (const auto& guid : shaderGUIDs) {
     const auto& path = assetMngr.GUIDToAssetPath(guid);
-    auto shader = assetMngr.LoadAsset<My::MyGE::Shader>(path);
-    My::MyGE::RsrcMngrDX12::Instance().RegisterShader(*shader);
-    My::MyGE::ShaderMngr::Instance().Register(shader);
+    auto shader = assetMngr.LoadAsset<Smkz::MyGE::Shader>(path);
+    Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterShader(*shader);
+    Smkz::MyGE::ShaderMngr::Instance().Register(shader);
   }
 }
 
 void DynamicMeshApp::BuildMaterials() {
-  auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
-      L"..\\assets\\materials\\iron.mat");
-  world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
+  auto material =
+      Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Material>(
+          L"..\\assets\\materials\\iron.mat");
+  world.RunEntityJob([=](Smkz::MyGE::MeshRenderer* meshRenderer) {
     meshRenderer->materials.push_back(material);
   });
 }

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <MyECS/World.h>
+#include <MyECS/MyECS.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct TRSToLocalToParentSystem {
   static constexpr char SystemFuncName[] = "TRSToLocalToParentSystem";
 
   static void OnUpdate(MyECS::Schedule& schedule);
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

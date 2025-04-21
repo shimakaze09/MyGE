@@ -3,7 +3,7 @@ ADD_TARGET(
         SOURCE
         "${PROJECT_SOURCE_DIR}/include/MyGE/App/DX12App"
         LIB
-        My::MyGE_Asset
+        My::MyGE_Render
         L_OPTION_INTERFACE
         /SUBSYSTEM:WINDOWS
 )

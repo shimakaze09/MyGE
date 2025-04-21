@@ -3,7 +3,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-class TestApp : public My::MyGE::DX12App {
+class TestApp : public Smkz::MyGE::DX12App {
  public:
   TestApp(HINSTANCE hInstance);
 
@@ -11,7 +11,6 @@ class TestApp : public My::MyGE::DX12App {
 
  private:
   virtual void Update() override {}
-
   virtual void Draw() override {}
 
   virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -39,12 +38,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     TestApp theApp(hInstance);
-    if (!theApp.Init())
-      return 1;
+    if (!theApp.Init()) return 1;
 
     int rst = theApp.Run();
     return rst;
-  } catch (My::MyDX12::Util::Exception& e) {
+  } catch (Smkz::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     return 1;
   }
@@ -53,11 +51,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 TestApp::TestApp(HINSTANCE hInstance) : DX12App(hInstance) {}
 
 bool TestApp::Init() {
-  if (!InitMainWindow())
-    return false;
+  if (!InitMainWindow()) return false;
 
-  if (!InitDirect3D())
-    return false;
+  if (!InitDirect3D()) return false;
 
   OnResize();
   FlushCommandQueue();

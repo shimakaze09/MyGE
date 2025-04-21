@@ -1,6 +1,6 @@
 #pragma once
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Roamer {
   float moveSpeed{1.f};
   float rotateSpeed{1.f};
@@ -8,6 +8,4 @@ struct Roamer {
   bool reverseLeftRight{false};
   bool reverseFrontBack{false};
 };
-}  // namespace My::MyGE
-
-#include "details/Roamer_AutoRefl.inl"
+}  // namespace Smkz::MyGE

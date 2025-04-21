@@ -1,13 +1,13 @@
 #pragma once
 
-#include "RenderState.h"
-
 #include <map>
 #include <string>
 
-namespace My::MyGE {
+#include "RenderState.h"
+
+namespace Smkz::MyGE {
 struct ShaderPass {
-  std::string vertexName; 
+  std::string vertexName;
   std::string fragmentName;
   RenderState renderState;
   std::map<std::string, std::string, std::less<>> tags;
@@ -28,6 +28,4 @@ struct ShaderPass {
   };
   size_t queue{2000};
 };
-}  // namespace My::MyGE
-
-#include "details/ShaderPass_AutoRefl.inl"
+}  // namespace Smkz::MyGE

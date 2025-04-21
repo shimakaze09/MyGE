@@ -1,37 +1,34 @@
 #include <MyGE/Core/Image.h>
 #include <MyGE/Render/TextureCube.h>
-#include <MyGM/vec.h>
 
+#include <MyGM/vec.hpp>
 #include <cassert>
 #include <thread>
 
-using namespace My::MyGE;
-using namespace My;
+using namespace Smkz::MyGE;
+using namespace Smkz;
 
-TextureCube::TextureCube(std::array<std::shared_ptr<const Image>, 6> images) {
-  Init(images);
-}
+TextureCube::TextureCube(const std::array<Image, 6>& images) { Init(images); }
 
-TextureCube::TextureCube(std::shared_ptr<const Image> equirectangularMap) {
+TextureCube::TextureCube(const Image& equirectangularMap) {
   Init(equirectangularMap);
 }
 
-void TextureCube::Init(std::array<std::shared_ptr<const Image>, 6> images) {
+void TextureCube::Init(const std::array<Image, 6>& images) {
   Clear();
   mode = SourceMode::SixSidedImages;
-  for (size_t i = 0; i < 6; i++)
-    this->images[i] = images[i];
+  for (size_t i = 0; i < 6; i++) this->images[i] = images[i];
 }
 
-void TextureCube::Init(std::shared_ptr<const Image> equirectangularMap) {
+void TextureCube::Init(const Image& equirectangularMap) {
   Clear();
   mode = SourceMode::EquirectangularMap;
 #ifdef _DEBUG
-  size_t s = equirectangularMap->height / 2;
+  size_t s = equirectangularMap.GetHeight() / 2;
 #else
   size_t s = equirectangularMap->height;
 #endif
-  size_t c = equirectangularMap->channel;
+  size_t c = equirectangularMap.GetChannel();
 
   vecf3 origin[6] = {
       {1, -1, -1},   // left   +x
@@ -60,12 +57,12 @@ void TextureCube::Init(std::shared_ptr<const Image> equirectangularMap) {
       {0, 2, 0},   // front  -z
   };
 
-  std::array<std::shared_ptr<Image>, 6> imgs;
-  for (size_t i = 0; i < 6; i++)
-    images[i] = imgs[i] = std::make_shared<Image>(s, s, c);
+  std::array<Image, 6> imgs;
+  for (size_t i = 0; i < 6; i++) images[i] = imgs[i] = Image(s, s, c);
 
   size_t N = std::thread::hardware_concurrency();
   auto work = [&](size_t id) {
+    vecf2 invAtan = {0.1591f, 0.3183f};
     for (size_t i = 0; i < 6; i++) {
       auto img = imgs[i];
       for (size_t y = id; y < s; y += N) {
@@ -73,13 +70,11 @@ void TextureCube::Init(std::shared_ptr<const Image> equirectangularMap) {
           vecf3 p =
               origin[i] + (x / float(s)) * right[i] + (y / float(s)) * up[i];
           p.normalize_self();
-          static constexpr vecf2 invAtan = {0.1591f, 0.3183f};
           pointf2 uv = {std::atan2(p[2], p[0]), std::asin(p[1])};
           uv[0] = 0.5f - uv[0] * invAtan[0];
           uv[1] = 0.5f + uv[1] * invAtan[1];
-          auto color = equirectangularMap->SampleLinear(uv);
-          for (size_t k = 0; k < c; k++)
-            img->At(x, y, k) = color[k];
+          auto color = equirectangularMap.SampleLinear(uv);
+          for (size_t k = 0; k < c; k++) img.At(x, y, k) = color[k];
         }
       }
     }
@@ -89,12 +84,10 @@ void TextureCube::Init(std::shared_ptr<const Image> equirectangularMap) {
   for (size_t i = 0; i < std::thread::hardware_concurrency(); i++)
     workers.emplace_back(work, i);
 
-  for (auto& worker : workers)
-    worker.join();
+  for (auto& worker : workers) worker.join();
 }
 
 void TextureCube::Clear() {
-  for (auto& img : images.val)
-    img.reset();
-  equirectangularMap.val.reset();
+  for (auto& img : images) img.Clear();
+  equirectangularMap.Clear();
 }

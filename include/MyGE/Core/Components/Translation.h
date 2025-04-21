@@ -1,11 +1,9 @@
 #pragma once
 
-#include <MyGM/vec.h>
+#include <MyGM/vec.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Translation {
   vecf3 value{0.f};
 };
-}  // namespace My::MyGE
-
-#include "details/Translation_AutoRefl.inl"
+}  // namespace Smkz::MyGE

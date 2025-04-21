@@ -1,13 +1,10 @@
 #pragma once
 
-#include <MyECS/Entity.h>
-
+#include <MyECS/Entity.hpp>
 #include <vector>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Parent {
   MyECS::Entity value{MyECS::Entity::Invalid()};
 };
-}  // namespace My::MyGE
-
-#include "details/Parent_AutoRefl.inl"
+}  // namespace Smkz::MyGE

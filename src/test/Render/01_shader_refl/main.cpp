@@ -1,15 +1,15 @@
 #include <MyGE/App/DX12App/DX12App.h>
 #include <MyGE/Asset/AssetMngr.h>
 #include <MyGE/Core/GameTimer.h>
-#include <MyGE/Render/DX12/RsrcMngrDX12.h>
+#include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
 #include <MyGE/Render/HLSLFile.h>
 #include <MyGE/Render/Shader.h>
 #include <MyGE/Render/ShaderMngr.h>
 
 using Microsoft::WRL::ComPtr;
-using namespace My::MyGE;
-using namespace My::MyECS;
-using namespace My;
+using namespace Smkz::MyGE;
+using namespace Smkz::MyECS;
+using namespace Smkz;
 
 class TestApp : public DX12App {
  public:
@@ -20,7 +20,6 @@ class TestApp : public DX12App {
 
  private:
   virtual void Update() override {}
-
   virtual void Draw() override {}
 
   virtual LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -48,12 +47,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     TestApp theApp(hInstance);
-    if (!theApp.Init())
-      return 1;
+    if (!theApp.Init()) return 1;
 
     int rst = theApp.Run();
     return rst;
-  } catch (My::MyDX12::Util::Exception& e) {
+  } catch (Smkz::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     return 1;
   }
@@ -62,30 +60,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 TestApp::TestApp(HINSTANCE hInstance) : DX12App(hInstance) {}
 
 TestApp::~TestApp() {
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
 void PrintL(const std::string& str, size_t indent) {
-  for (size_t i = 0; i < indent; i++)
-    OutputDebugStringA("  ");
+  for (size_t i = 0; i < indent; i++) OutputDebugStringA("  ");
   OutputDebugStringA(str.c_str());
   OutputDebugStringA("\n");
 }
 
 void PrintL(const std::wstring& str, size_t indent) {
-  for (size_t i = 0; i < indent; i++)
-    OutputDebugStringA("  ");
+  for (size_t i = 0; i < indent; i++) OutputDebugStringA("  ");
   OutputDebugStringW(str.c_str());
   OutputDebugStringW(L"\n");
 }
 
 bool TestApp::Init() {
-  if (!InitMainWindow())
-    return false;
+  if (!InitMainWindow()) return false;
 
-  if (!InitDirect3D())
-    return false;
+  if (!InitDirect3D()) return false;
 
   OnResize();
   FlushCommandQueue();
@@ -101,7 +94,7 @@ bool TestApp::Init() {
   }
 
   auto PrintShader = [](const Shader& shader) {
-    RsrcMngrDX12::Instance().RegisterShader(shader);
+    GPURsrcMngrDX12::Instance().RegisterShader(shader);
     auto PrintRefl = [](ID3D12ShaderReflection* refl, const std::string& name) {
       D3D12_SHADER_DESC shaderDesc;
       ThrowIfFailed(refl->GetDesc(&shaderDesc));
@@ -197,9 +190,9 @@ bool TestApp::Init() {
         indent--;
       }
     };
-    PrintRefl(RsrcMngrDX12::Instance().GetShaderRefl_vs(shader, 0),
+    PrintRefl(GPURsrcMngrDX12::Instance().GetShaderRefl_vs(shader, 0),
               shader.name + " vs");
-    PrintRefl(RsrcMngrDX12::Instance().GetShaderRefl_ps(shader, 0),
+    PrintRefl(GPURsrcMngrDX12::Instance().GetShaderRefl_ps(shader, 0),
               shader.name + " ps");
   };
 

@@ -1,11 +1,9 @@
 #pragma once
 
-#include <MyGM/transform.h>
+#include <MyGM/transform.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct LocalToWorld {
   transformf value{transformf::eye()};
 };
-}  // namespace My::MyGE
-
-#include "details/LocalToWorld_AutoRefl.inl"
+}  // namespace Smkz::MyGE

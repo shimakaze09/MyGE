@@ -9,7 +9,7 @@ struct ImFontAtlas;
 struct ImGuiContext;
 struct ImGuiIO;
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 class ImGUIMngr {
  public:
   static ImGUIMngr& Instance() noexcept {
@@ -36,4 +36,4 @@ class ImGUIMngr {
   ImGUIMngr();
   ~ImGUIMngr();
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

@@ -1,13 +1,10 @@
 #pragma once
 
+#include "../Core/Image.h"
 #include "Texture.h"
 
-#include <memory>
-
-namespace My::MyGE {
-class Image;
-
+namespace Smkz::MyGE {
 struct Texture2D : Texture {
-  std::shared_ptr<const Image> image;
+  Image image;
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

@@ -1,19 +1,17 @@
 #pragma once
 
-#include "../Core/Object.h"
-#include "ShaderProperty.h"
-
 #include <map>
+#include <memory>
 #include <string>
 
-namespace My::MyGE {
+#include "GPURsrc.h"
+#include "ShaderProperty.h"
+
+namespace Smkz::MyGE {
 struct Shader;
 
-struct Material : Object {
+struct Material : GPURsrc {
   std::shared_ptr<const Shader> shader;
   std::map<std::string, ShaderProperty, std::less<>> properties;
 };
-}  // namespace My::MyGE
-
-#include "../Core/details/Object_AutoRefl.inl"
-#include "details/Material_AutoRefl.inl"
+}  // namespace Smkz::MyGE

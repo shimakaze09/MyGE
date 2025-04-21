@@ -1,9 +1,9 @@
 #pragma once
 
-#include <MyECS/World.h>
+#include <MyECS/MyECS.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct SystemControllerSystem {
   static void OnUpdate(MyECS::Schedule&);
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

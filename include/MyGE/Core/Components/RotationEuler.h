@@ -1,11 +1,9 @@
 #pragma once
 
-#include <MyGM/euler.h>
+#include <MyGM/euler.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct RotationEuler {
   eulerf value{0.f};
 };
-}  // namespace My::MyGE
-
-#include "details/RotationEuler_AutoRefl.inl"
+}  // namespace Smkz::MyGE

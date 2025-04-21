@@ -1,14 +1,12 @@
-#include <MyECS/World.h>
 #include <MyGE/App/Editor/Editor.h>
-#include <MyGE/App/Editor/InspectorRegistry.h>
 
-#include "TestInspector.h"
+#include <MyECS/MyECS.hpp>
 
 #ifndef NDEBUG
 #include <dxgidebug.h>
 #endif
 
-using namespace My::MyGE;
+using namespace Smkz::MyGE;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
                    int showCmd) {
@@ -19,14 +17,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
   int rst;
   try {
     Editor app(hInstance);
-    if (!app.Init())
-      return 1;
-
-    app.GetGameWorld()->entityMngr.cmptTraits.Register<TestInspector>();
-    InspectorRegistry::Instance().RegisterCmpts<TestInspector>();
+    if (!app.Init()) return 1;
 
     rst = app.Run();
-  } catch (My::MyDX12::Util::Exception& e) {
+  } catch (Smkz::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     rst = 1;
   }
@@ -34,8 +28,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 #ifndef NDEBUG
   Microsoft::WRL::ComPtr<IDXGIDebug> debug;
   DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug));
-  if (debug)
-    debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
+  if (debug) debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
 #endif
 
   return rst;

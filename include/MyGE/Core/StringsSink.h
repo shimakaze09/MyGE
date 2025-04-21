@@ -4,7 +4,7 @@
 #include <mutex>
 #include <string>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 class StringsSink : public spdlog::sinks::base_sink<std::mutex> {
  public:
   // not thread safe
@@ -23,4 +23,4 @@ class StringsSink : public spdlog::sinks::base_sink<std::mutex> {
  private:
   std::deque<std::string> logs;
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

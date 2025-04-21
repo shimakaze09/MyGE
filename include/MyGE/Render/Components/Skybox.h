@@ -1,13 +1,12 @@
 #pragma once
 
-#include "../Material.h"
-#include <MySTL/memory.h>
+#include <MyGE/Core/Asset.h>
 
-namespace My::MyGE {
+#include "../Material.h"
+
+namespace Smkz::MyGE {
 // singleton
 struct Skybox {
-  MySTL::shared_object<Material> material;
+  TAsset<Material> material;
 };
-}  // namespace My::MyGE
-
-#include "details/Skybox_AutoRefl.inl"
+}  // namespace Smkz::MyGE

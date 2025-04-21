@@ -1,10 +1,9 @@
 #pragma once
 
-#include <MyECS/Entity.h>
-
+#include <MyECS/Entity.hpp>
 #include <_deps/crossguid/guid.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Inspector {
   enum class Mode { Entity, Asset };
 
@@ -13,4 +12,4 @@ struct Inspector {
   MyECS::Entity entity;
   xg::Guid asset;
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

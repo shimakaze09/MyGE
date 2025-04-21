@@ -2,12 +2,11 @@
 #include <MyGE/Core/Systems/InputSystem.h>
 #include <_deps/imgui/imgui.h>
 
-using namespace My::MyGE;
-using namespace My::MyECS;
+using namespace Smkz::MyGE;
+using namespace Smkz::MyECS;
 
 void InputSystem::OnUpdate(Schedule& schedule) {
-  if (!ImGui::GetCurrentContext())
-    return;
+  if (!ImGui::GetCurrentContext()) return;
 
   schedule.RegisterJob(
       [](Singleton<Input> input) {

@@ -1,7 +1,7 @@
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
 #include <MyGE/Render/Mesh.h>
 
-using namespace My::MyGE;
+using namespace Smkz::MyGE;
 
 std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayoutMngr::GenerateDesc(bool uv,
                                                                    bool normal,

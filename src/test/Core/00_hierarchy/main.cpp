@@ -3,9 +3,9 @@
 
 #include <iostream>
 
-using namespace My::MyECS;
-using namespace My::MyGE;
-using namespace My;
+using namespace Smkz::MyECS;
+using namespace Smkz::MyGE;
+using namespace Smkz;
 using namespace std;
 
 struct PrintSystem {
@@ -25,8 +25,7 @@ int main() {
   auto systemIDs = w.systemMngr.systemTraits.Register<
       PrintSystem, LocalToParentSystem, RotationEulerSystem,
       TRSToLocalToParentSystem, TRSToLocalToWorldSystem, WorldToLocalSystem>();
-  for (auto idx : systemIDs)
-    w.systemMngr.Activate(idx);
+  for (auto idx : systemIDs) w.systemMngr.Activate(idx);
 
   auto [r_e, r_c, r_l2w, r_t] =
       w.entityMngr.Create<Children, LocalToWorld, Translation>();

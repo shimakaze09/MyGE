@@ -18,10 +18,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 }
 
 D3DApp* D3DApp::mApp = nullptr;
-
-D3DApp* D3DApp::GetApp() {
-  return mApp;
-}
+D3DApp* D3DApp::GetApp() { return mApp; }
 
 D3DApp::D3DApp(HINSTANCE hInstance) : mhAppInst(hInstance) {
   // Only one D3DApp can be constructed.
@@ -30,25 +27,18 @@ D3DApp::D3DApp(HINSTANCE hInstance) : mhAppInst(hInstance) {
 }
 
 D3DApp::~D3DApp() {
-  if (!myDevice.IsNull())
-    FlushCommandQueue();
+  if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
-HINSTANCE D3DApp::AppInst() const {
-  return mhAppInst;
-}
+HINSTANCE D3DApp::AppInst() const { return mhAppInst; }
 
-HWND D3DApp::MainWnd() const {
-  return mhMainWnd;
-}
+HWND D3DApp::MainWnd() const { return mhMainWnd; }
 
 float D3DApp::AspectRatio() const {
   return static_cast<float>(mClientWidth) / mClientHeight;
 }
 
-bool D3DApp::Get4xMsaaState() const {
-  return m4xMsaaState;
-}
+bool D3DApp::Get4xMsaaState() const { return m4xMsaaState; }
 
 void D3DApp::Set4xMsaaState(bool value) {
   if (m4xMsaaState != value) {
@@ -63,7 +53,7 @@ void D3DApp::Set4xMsaaState(bool value) {
 int D3DApp::Run() {
   MSG msg = {0};
 
-  My::MyGE::GameTimer::Instance().Reset();
+  Smkz::MyGE::GameTimer::Instance().Reset();
 
   while (msg.message != WM_QUIT) {
     // If there are Window messages then process them.
@@ -73,7 +63,7 @@ int D3DApp::Run() {
     }
     // Otherwise, do animation/game stuff.
     else {
-      My::MyGE::GameTimer::Instance().Tick();
+      Smkz::MyGE::GameTimer::Instance().Tick();
 
       if (!mAppPaused) {
         CalculateFrameStats();
@@ -89,11 +79,9 @@ int D3DApp::Run() {
 }
 
 bool D3DApp::Initialize() {
-  if (!InitMainWindow())
-    return false;
+  if (!InitMainWindow()) return false;
 
-  if (!InitDirect3D())
-    return false;
+  if (!InitDirect3D()) return false;
 
   // Do the initial resize code.
   OnResize();
@@ -130,8 +118,7 @@ void D3DApp::OnResize() {
   ThrowIfFailed(myGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
   // Release the previous resources we will be recreating.
-  for (int i = 0; i < SwapChainBufferCount; ++i)
-    mSwapChainBuffer[i].Reset();
+  for (int i = 0; i < SwapChainBufferCount; ++i) mSwapChainBuffer[i].Reset();
   mDepthStencilBuffer.Reset();
 
   // Resize the swap chain.
@@ -224,10 +211,10 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_ACTIVATE:
       if (LOWORD(wParam) == WA_INACTIVE) {
         mAppPaused = true;
-        My::MyGE::GameTimer::Instance().Stop();
+        Smkz::MyGE::GameTimer::Instance().Stop();
       } else {
         mAppPaused = false;
-        My::MyGE::GameTimer::Instance().Start();
+        Smkz::MyGE::GameTimer::Instance().Start();
       }
       return 0;
 
@@ -281,7 +268,7 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_ENTERSIZEMOVE:
       mAppPaused = true;
       mResizing = true;
-      My::MyGE::GameTimer::Instance().Stop();
+      Smkz::MyGE::GameTimer::Instance().Stop();
       return 0;
 
     // WM_EXITSIZEMOVE is sent when the user releases the resize bars.
@@ -289,7 +276,7 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_EXITSIZEMOVE:
       mAppPaused = false;
       mResizing = false;
-      My::MyGE::GameTimer::Instance().Start();
+      Smkz::MyGE::GameTimer::Instance().Start();
       OnResize();
       return 0;
 
@@ -535,7 +522,7 @@ void D3DApp::CalculateFrameStats() {
   frameCnt++;
 
   // Compute averages over one second period.
-  if ((My::MyGE::GameTimer::Instance().TotalTime() - timeElapsed) >= 1.0f) {
+  if ((Smkz::MyGE::GameTimer::Instance().TotalTime() - timeElapsed) >= 1.0f) {
     float fps = (float)frameCnt;  // fps = frameCnt / 1
     float mspf = 1000.0f / fps;
 

@@ -8,21 +8,17 @@
 #include "_deps/stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <MyGM/point.h>
+#include <MyGM/point.hpp>
 
 #include "_deps/stb_image_write.h"
 
-using namespace My::MyGE;
-using namespace My;
+using namespace Smkz::MyGE;
+using namespace Smkz;
 using namespace std;
 
-Image::~Image() {
-  delete data;
-}
+Image::~Image() { delete data; }
 
-Image::Image(const std::string& path, bool flip) {
-  Init(path, flip);
-}
+Image::Image(const std::string& path, bool flip) { Init(path, flip); }
 
 Image::Image(size_t width, size_t height, size_t channel) {
   Init(width, height, channel);
@@ -48,8 +44,7 @@ Image::Image(const Image& image)
 }
 
 Image& Image::operator=(Image&& image) noexcept {
-  if (image.data != nullptr && image.data == data)
-    return *this;
+  if (image.data != nullptr && image.data == data) return *this;
   delete data;
   data = image.data;
   width = image.width;
@@ -59,8 +54,7 @@ Image& Image::operator=(Image&& image) noexcept {
 }
 
 Image& Image::operator=(const Image& image) {
-  if (image.data != nullptr && image.data == data)
-    return *this;
+  if (image.data != nullptr && image.data == data) return *this;
   delete data;
   width = image.width;
   height = image.height;
@@ -77,14 +71,12 @@ bool Image::Init(const std::string& path, bool flip) {
 
   if (path.size() > 4 && path.substr(path.size() - 4, 4) == ".hdr") {
     float* stbi_data = stbi_loadf(path.data(), &w, &h, &c, 0);
-    if (!stbi_data)
-      return false;
+    if (!stbi_data) return false;
     Init(w, h, c, stbi_data);
     stbi_image_free(stbi_data);
   } else {
     auto stbi_data = stbi_load(path.c_str(), &w, &h, &c, 0);
-    if (!stbi_data)
-      return false;
+    if (!stbi_data) return false;
 
     width = static_cast<size_t>(w);
     height = static_cast<size_t>(h);
@@ -127,8 +119,7 @@ bool Image::Save(const std::string& path, bool flip) const {
   size_t k = static_cast<size_t>(-1);
   for (size_t i = 0; i < 5; i++) {
     const auto& postfix = supports[i];
-    if (path.size() < postfix.size())
-      continue;
+    if (path.size() < postfix.size()) continue;
     if (path.substr(path.size() - postfix.size(), postfix.size()) == postfix) {
       k = i;
       break;
@@ -158,12 +149,10 @@ bool Image::Save(const std::string& path, bool flip) const {
 
     delete[] stbi_data;
 
-    if (rst == 0)
-      return false;
+    if (rst == 0) return false;
   } else if (k == 4) {
     int rst = stbi_write_hdr(path.c_str(), w, h, c, data);
-    if (rst == 0)
-      return false;
+    if (rst == 0) return false;
   } else
     return false;
 
@@ -178,9 +167,7 @@ void Image::Clear() {
   channel = static_cast<size_t>(0);
 }
 
-bool Image::IsValid() const noexcept {
-  return data != nullptr;
-}
+bool Image::IsValid() const noexcept { return data != nullptr; }
 
 float& Image::At(size_t x, size_t y, size_t c) {
   assert(IsValid());
@@ -201,8 +188,7 @@ const rgbaf Image::At(size_t x, size_t y) const {
   rgbaf rst{0.f, 0.f, 0.f, 1.f};
 
   size_t offset = (y * width + x) * channel;
-  for (size_t i = 0; i < channel; i++)
-    rst[i] = data[offset + i];
+  for (size_t i = 0; i < channel; i++) rst[i] = data[offset + i];
 
   return rst;
 }
@@ -224,9 +210,6 @@ const rgbaf Image::SampleLinear(const pointf2& uv) const {
   assert(IsValid());
   assert(0 <= u && u <= 1);
   assert(0 <= v && v <= 1);
-
-  Read<Image, pointf3> p;
-  p + vecf3{1, 1, 1};
 
   float xf = width * u - 0.5f;   // [-0.5f, width - 0.5f]
   float yf = height * v - 0.5f;  // [-0.5f, height - 0.5f]

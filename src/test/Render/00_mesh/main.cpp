@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-using namespace My::MyGE;
+using namespace Smkz::MyGE;
 
 int main() {
   std::filesystem::path path = "../assets/models/cube.obj";

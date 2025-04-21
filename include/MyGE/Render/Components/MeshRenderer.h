@@ -2,13 +2,18 @@
 
 #include <vector>
 
+#include "../../Core/SharedVar.h"
 #include "../Material.h"
-#include <MySTL/memory.h>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct MeshRenderer {
-  std::vector<MySTL::shared_object<Material>> materials;
-};
-}  // namespace My::MyGE
+  using allocator_type = std::pmr::vector<SharedVar<Material>>::allocator_type;
+  MeshRenderer(const allocator_type& alloc) : materials(alloc) {}
+  MeshRenderer(const MeshRenderer& other, const allocator_type& alloc)
+      : materials(other.materials, alloc) {}
+  MeshRenderer(MeshRenderer&& other, const allocator_type& alloc)
+      : materials(std::move(other.materials), alloc) {}
 
-#include "details/MeshRenderer_AutoRefl.inl"
+  std::pmr::vector<SharedVar<Material>> materials;
+};
+}  // namespace Smkz::MyGE

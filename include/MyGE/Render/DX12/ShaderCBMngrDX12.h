@@ -4,7 +4,7 @@
 
 #include <unordered_map>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Shader;
 
 // every frame resource have a ShaderCBMngrDX12
@@ -18,7 +18,7 @@ class ShaderCBMngrDX12 {
   MyDX12::DynamicUploadBuffer* GetCommonBuffer();
 
  private:
-  std::unordered_map<size_t, MyDX12::DynamicUploadBuffer*> bufferMap;
+  std::unordered_map<std::size_t, MyDX12::DynamicUploadBuffer*> bufferMap;
   ID3D12Device* device;
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

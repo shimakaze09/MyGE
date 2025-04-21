@@ -1,9 +1,9 @@
 #pragma once
 
-#include <MyECS/World.h>
+#include <MyECS/MyECS.hpp>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct SystemController {
   MyECS::World* world{nullptr};
 };
-}  // namespace My::MyGE
+}  // namespace Smkz::MyGE

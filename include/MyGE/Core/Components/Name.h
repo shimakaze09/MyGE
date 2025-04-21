@@ -1,11 +1,17 @@
 #pragma once
 
+#include <memory_resource>
 #include <string>
 
-namespace My::MyGE {
+namespace Smkz::MyGE {
 struct Name {
-  std::string value;
-};
-}  // namespace My::MyGE
+  using allocator_type = std::pmr::string::allocator_type;
+  Name(const allocator_type& alloc) : value(alloc) {}
+  Name(const Name& other, const allocator_type& alloc)
+      : value(other.value, alloc) {}
+  Name(Name&& other, const allocator_type& alloc)
+      : value(std::move(other.value), alloc) {}
 
-#include "details/Name_AutoRefl.inl"
+  std::pmr::string value;
+};
+}  // namespace Smkz::MyGE

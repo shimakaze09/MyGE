@@ -3,10 +3,10 @@
 #include <_deps/imgui/imgui_impl_dx12.h>
 #include <_deps/imgui/imgui_impl_win32.h>
 
-using namespace My::MyGE;
+using namespace Smkz::MyGE;
 
 struct ImGUIMngr::Impl {
-  My::MyDX12::DescriptorHeapAllocation fontDH;
+  Smkz::MyDX12::DescriptorHeapAllocation fontDH;
   std::vector<ImGuiContext*> contexts;
   ImFontAtlas sharedFontAtlas;
   StyleColors style;
@@ -14,9 +14,7 @@ struct ImGUIMngr::Impl {
 
 ImGUIMngr::ImGUIMngr() : pImpl{new Impl} {}
 
-ImGUIMngr::~ImGUIMngr() {
-  delete pImpl;
-}
+ImGUIMngr::~ImGUIMngr() { delete pImpl; }
 
 void ImGUIMngr::Init(void* hwnd, ID3D12Device* device, size_t numFrames,
                      size_t numContexts, StyleColors style) {
@@ -28,10 +26,10 @@ void ImGUIMngr::Init(void* hwnd, ID3D12Device* device, size_t numFrames,
   ImGui_ImplWin32_Init_Shared(hwnd);
 
   pImpl->fontDH =
-      My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+      Smkz::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
   ImGui_ImplDX12_Init_Shared(
       device, static_cast<int>(numFrames), DXGI_FORMAT_R8G8B8A8_UNORM,
-      My::MyDX12::DescriptorHeapMngr::Instance()
+      Smkz::MyDX12::DescriptorHeapMngr::Instance()
           .GetCSUGpuDH()
           ->GetDescriptorHeap(),
       pImpl->fontDH.GetCpuHandle(), pImpl->fontDH.GetGpuHandle());
@@ -64,20 +62,17 @@ const std::vector<ImGuiContext*>& ImGUIMngr::GetContexts() const {
 }
 
 void ImGUIMngr::Clear() {
-  for (const auto& ctx : pImpl->contexts)
-    ImGui_ImplDX12_Shutdown_Context(ctx);
+  for (const auto& ctx : pImpl->contexts) ImGui_ImplDX12_Shutdown_Context(ctx);
   ImGui_ImplDX12_Shutdown_Shared();
 
   ImGui_ImplWin32_Shutdown_Shared();
-  for (const auto& ctx : pImpl->contexts)
-    ImGui_ImplWin32_Shutdown_Context(ctx);
+  for (const auto& ctx : pImpl->contexts) ImGui_ImplWin32_Shutdown_Context(ctx);
 
-  for (const auto& ctx : pImpl->contexts)
-    ImGui::DestroyContext(ctx);
+  for (const auto& ctx : pImpl->contexts) ImGui::DestroyContext(ctx);
 
   pImpl->contexts.clear();
 
   if (!pImpl->fontDH.IsNull())
-    My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
+    Smkz::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
         std::move(pImpl->fontDH));
 }

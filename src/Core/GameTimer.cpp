@@ -1,7 +1,7 @@
 #include <MyGE/Core/GameTimer.h>
 #include <windows.h>
 
-using namespace My::MyGE;
+using namespace Smkz::MyGE;
 
 GameTimer::GameTimer()
     : mSecondsPerCount(0.0),
@@ -10,8 +10,9 @@ GameTimer::GameTimer()
       mPausedTime(0),
       mPrevTime(0),
       mCurrTime(0),
+      mStopTime(0),
       mStopped(false) {
-  __int64 countsPerSec;
+  std::int64_t countsPerSec;
   QueryPerformanceFrequency((LARGE_INTEGER*)&countsPerSec);
   mSecondsPerCount = 1.0 / (double)countsPerSec;
 }
@@ -48,12 +49,10 @@ float GameTimer::TotalTime() const {
   }
 }
 
-float GameTimer::DeltaTime() const {
-  return (float)mDeltaTime;
-}
+float GameTimer::DeltaTime() const { return (float)mDeltaTime; }
 
 void GameTimer::Reset() {
-  __int64 currTime;
+  std::int64_t currTime;
   QueryPerformanceCounter((LARGE_INTEGER*)&currTime);
 
   mBaseTime = currTime;
@@ -63,7 +62,7 @@ void GameTimer::Reset() {
 }
 
 void GameTimer::Start() {
-  __int64 startTime;
+  std::int64_t startTime;
   QueryPerformanceCounter((LARGE_INTEGER*)&startTime);
 
   // Accumulate the time elapsed between stop and start pairs.
@@ -83,7 +82,7 @@ void GameTimer::Start() {
 
 void GameTimer::Stop() {
   if (!mStopped) {
-    __int64 currTime;
+    std::int64_t currTime;
     QueryPerformanceCounter((LARGE_INTEGER*)&currTime);
 
     mStopTime = currTime;
@@ -97,7 +96,7 @@ void GameTimer::Tick() {
     return;
   }
 
-  __int64 currTime;
+  std::int64_t currTime;
   QueryPerformanceCounter((LARGE_INTEGER*)&currTime);
   mCurrTime = currTime;
 

@@ -120,8 +120,8 @@ class D3DApp {
   int mClientWidth = 800;
   int mClientHeight = 600;
 
-  // My::MyDX12
-  My::MyDX12::Device myDevice;
-  My::MyDX12::CmdQueue myCmdQueue;
-  My::MyDX12::GCmdList myGCmdList;
+  // Smkz::MyDX12
+  Smkz::MyDX12::Device myDevice;
+  Smkz::MyDX12::CmdQueue myCmdQueue;
+  Smkz::MyDX12::GCmdList myGCmdList;
 };

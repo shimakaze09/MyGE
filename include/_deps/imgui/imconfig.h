@@ -64,9 +64,9 @@
 
 //---- Define constructor and implicit cast operators to convert back<>forth between your math types and ImVec2/ImVec4.
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
-#include <MyGM/val.h>
-#include <MyGM/point.h>
-#include <MyGM/vec.h>
+#include <MyGM/val.hpp>
+#include <MyGM/point.hpp>
+#include <MyGM/vec.hpp>
 
 #define IM_VEC2_CLASS_EXTRA                                                        \
         ImVec2(const My::valf2  & f) { x = f[0]; y = f[1]; }                     \
