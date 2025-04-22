@@ -4,6 +4,7 @@
 #include <MyDRefl/MyDRefl.hpp>
 #include <MyECS/IListener.hpp>
 #include <MyECS/MyECS.hpp>
+#include <_deps/crossguid/guid.hpp>
 #include <iostream>
 
 using namespace Smkz::MyGE;
@@ -24,7 +25,7 @@ static bool Traits_BeginEnd(Type t) {
 
   return false;
 }
-enum AddMode { PushBack, PushFront, Insert, Push, None };
+enum class AddMode { PushBack, PushFront, Insert, Push, None };
 static AddMode Traits_AddMode(Type t) {
   for (const auto& [name, info] : MethodRange(t)) {
     if (name == NameIDRegistry::Meta::container_push_back)
@@ -88,163 +89,162 @@ struct Serializer::Impl {
     }
 
     virtual void EnterCmpt(CmptPtr p) override {
-      ObjectView obj{MyDRefl::Mngr.tregistry.Typeof(p.Type()), p.Ptr()};
-      SerializeRecursion(obj);
+      Serializer::SerializeRecursion({Mngr.tregistry.Typeof(p.Type()), p.Ptr()},
+                                     ctx);
     }
-    virtual void ExistCmpt(CmptPtr) override { ctx.writer.EndObject(); }
-
-    void SerializeRecursion(ObjectView obj) {
-      if (obj.GetType().IsArithmetic()) {
-        switch (obj.GetType().GetID().GetValue()) {
-          case TypeID_of<bool>.GetValue():
-            ctx.writer.Bool(obj.As<bool>());
-            break;
-          case TypeID_of<std::int8_t>.GetValue():
-            ctx.writer.Int(obj.As<std::int8_t>());
-            break;
-          case TypeID_of<std::int16_t>.GetValue():
-            ctx.writer.Int(obj.As<std::int16_t>());
-            break;
-          case TypeID_of<std::int32_t>.GetValue():
-            ctx.writer.Int(obj.As<std::int32_t>());
-            break;
-          case TypeID_of<std::int64_t>.GetValue():
-            ctx.writer.Int64(obj.As<std::int64_t>());
-            break;
-          case TypeID_of<std::uint8_t>.GetValue():
-            ctx.writer.Uint(obj.As<std::uint8_t>());
-            break;
-          case TypeID_of<std::uint16_t>.GetValue():
-            ctx.writer.Uint(obj.As<std::uint16_t>());
-            break;
-          case TypeID_of<std::uint32_t>.GetValue():
-            ctx.writer.Uint(obj.As<std::uint32_t>());
-            break;
-          case TypeID_of<std::uint64_t>.GetValue():
-            ctx.writer.Uint64(obj.As<std::uint64_t>());
-            break;
-          case TypeID_of<float>.GetValue():
-            ctx.writer.Double(obj.As<float>());
-            break;
-          case TypeID_of<double>.GetValue():
-            ctx.writer.Double(obj.As<double>());
-            break;
-          default:
-            assert(false);
-        }
-        return;
-      } else if (obj.GetType().Is<std::string_view>()) {
-        ctx.writer.String(obj.As<std::string_view>().data());
-        return;
-      } else if (obj.GetType().Is<std::string>()) {
-        ctx.writer.String(obj.As<std::string>().data());
-        return;
-      } else if (obj.GetType().Is<std::pmr::string>()) {
-        ctx.writer.String(obj.As<std::pmr::string>().data());
-        return;
-      }
-
-      if (ctx.serializer.IsRegistered(obj.GetType().GetID().GetValue())) {
-        ctx.serializer.Visit(obj.GetType().GetID().GetValue(), obj.GetPtr(),
-                             ctx);
-        return;
-      }
-
-      ctx.writer.StartObject();
-      ctx.writer.Key(Key::TypeID);
-      ctx.writer.Uint64(obj.GetType().GetID().GetValue());
-      ctx.writer.Key(Key::TypeName);
-      ctx.writer.String(obj.GetType().GetName().data());
-      ctx.writer.Key(Key::Content);
-
-      // write content
-
-      if (ctx.serializer.IsRegistered(obj.GetType().GetID().GetValue()))
-        ctx.serializer.Visit(obj.GetType().GetID().GetValue(), obj.GetPtr(),
-                             ctx);
-      else if (obj.GetType().IsReference())
-        ctx.writer.String(Key::NotSupport);
-      else if (obj.GetType().Is<MyECS::Entity>())
-        ctx.writer.Uint64(obj.As<Entity>().index);
-      else if (auto attr =
-                   Mngr.GetTypeAttr(obj.GetType(), Type_of<ContainerType>);
-               attr.GetType().Valid()) {
-        ContainerType ct = attr.As<ContainerType>();
-        switch (ct) {
-          case Smkz::MyDRefl::ContainerType::Span:
-          case Smkz::MyDRefl::ContainerType::Stack:
-          case Smkz::MyDRefl::ContainerType::Queue:
-          case Smkz::MyDRefl::ContainerType::PriorityQueue:
-          case Smkz::MyDRefl::ContainerType::None:
-            ctx.writer.String(Key::NotSupport);
-            break;
-          case Smkz::MyDRefl::ContainerType::Array:
-          case Smkz::MyDRefl::ContainerType::Deque:
-          case Smkz::MyDRefl::ContainerType::ForwardList:
-          case Smkz::MyDRefl::ContainerType::List:
-          case Smkz::MyDRefl::ContainerType::MultiSet:
-          case Smkz::MyDRefl::ContainerType::RawArray:
-          case Smkz::MyDRefl::ContainerType::Set:
-          case Smkz::MyDRefl::ContainerType::UnorderedMap:
-          case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
-          case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
-          case Smkz::MyDRefl::ContainerType::UnorderedSet:
-          case Smkz::MyDRefl::ContainerType::Vector:
-            ctx.writer.StartArray();
-            {
-              auto e = obj.end();
-              for (auto iter = obj.begin(); iter != e; ++iter)
-                SerializeRecursion((*iter).RemoveReference());
-            }
-            ctx.writer.EndArray();
-            break;
-          case Smkz::MyDRefl::ContainerType::Pair:
-          case Smkz::MyDRefl::ContainerType::Tuple:
-            ctx.writer.StartArray();
-            {
-              std::size_t size = obj.tuple_size();
-              for (std::size_t i = 0; i < size; i++)
-                SerializeRecursion(obj.get(i).RemoveReference());
-            }
-            ctx.writer.EndArray();
-            break;
-          case Smkz::MyDRefl::ContainerType::Variant:
-            SerializeRecursion(obj.variant_visit_get().RemoveReference());
-            break;
-          case Smkz::MyDRefl::ContainerType::Optional:
-            if (obj.has_value())
-              SerializeRecursion(obj.value().RemoveReference());
-            else
-              ctx.writer.Null();
-            break;
-          default:
-            assert(false);
-            break;
-        }
-      } else if (details::Traits_BeginEnd(obj.GetType())) {
-        ctx.writer.StartArray();
-        {
-          auto e = obj.end();
-          for (auto iter = obj.begin(); iter != e; ++iter)
-            SerializeRecursion((*iter).RemoveReference());
-        }
-        ctx.writer.EndArray();
-      } else {
-        ctx.writer.StartObject();
-        for (const auto& [n, obj] : obj.GetVars(FieldFlag::Owned)) {
-          ctx.writer.Key(n.GetView().data());
-          SerializeRecursion(obj);
-        }
-        ctx.writer.EndObject();
-      }
-
-      ctx.writer.EndObject();
+    virtual void ExistCmpt(CmptPtr) override {
+      // do nothing
     }
   };
 };
 
-namespace Smkz::MyGE::details {
-MyDRefl::SharedObject DeserializeRecursion(
+void Serializer::SerializeRecursion(MyDRefl::ObjectView obj,
+                                    SerializeContext& ctx) {
+  if (obj.GetType().IsArithmetic()) {
+    switch (obj.GetType().GetID().GetValue()) {
+      case TypeID_of<bool>.GetValue():
+        ctx.writer.Bool(obj.As<bool>());
+        break;
+      case TypeID_of<std::int8_t>.GetValue():
+        ctx.writer.Int(obj.As<std::int8_t>());
+        break;
+      case TypeID_of<std::int16_t>.GetValue():
+        ctx.writer.Int(obj.As<std::int16_t>());
+        break;
+      case TypeID_of<std::int32_t>.GetValue():
+        ctx.writer.Int(obj.As<std::int32_t>());
+        break;
+      case TypeID_of<std::int64_t>.GetValue():
+        ctx.writer.Int64(obj.As<std::int64_t>());
+        break;
+      case TypeID_of<std::uint8_t>.GetValue():
+        ctx.writer.Uint(obj.As<std::uint8_t>());
+        break;
+      case TypeID_of<std::uint16_t>.GetValue():
+        ctx.writer.Uint(obj.As<std::uint16_t>());
+        break;
+      case TypeID_of<std::uint32_t>.GetValue():
+        ctx.writer.Uint(obj.As<std::uint32_t>());
+        break;
+      case TypeID_of<std::uint64_t>.GetValue():
+        ctx.writer.Uint64(obj.As<std::uint64_t>());
+        break;
+      case TypeID_of<float>.GetValue():
+        ctx.writer.Double(obj.As<float>());
+        break;
+      case TypeID_of<double>.GetValue():
+        ctx.writer.Double(obj.As<double>());
+        break;
+      default:
+        assert(false);
+    }
+    return;
+  } else if (obj.GetType().Is<std::string>()) {
+    ctx.writer.String(obj.As<std::string>());
+    return;
+  } else if (obj.GetType().Is<std::pmr::string>()) {
+    ctx.writer.String(obj.As<std::pmr::string>().data());
+    return;
+  } else if (obj.GetType().Is<xg::Guid>()) {
+    ctx.writer.String(obj.As<xg::Guid>().str());
+    return;
+  }
+
+  if (ctx.serializer.IsRegistered(obj.GetType().GetID().GetValue())) {
+    ctx.serializer.Visit(obj.GetType().GetID().GetValue(), obj.GetPtr(), ctx);
+    return;
+  }
+
+  ctx.writer.StartObject();
+  ctx.writer.Key(Key::TypeID);
+  ctx.writer.Uint64(obj.GetType().GetID().GetValue());
+  ctx.writer.Key(Key::TypeName);
+  ctx.writer.String(obj.GetType().GetName().data());
+  ctx.writer.Key(Key::Content);
+
+  // write content
+
+  if (ctx.serializer.IsRegistered(obj.GetType().GetID().GetValue()))
+    ctx.serializer.Visit(obj.GetType().GetID().GetValue(), obj.GetPtr(), ctx);
+  else if (obj.GetType().IsReference())
+    ctx.writer.String(Key::NotSupport);
+  else if (obj.GetType().Is<MyECS::Entity>())
+    ctx.writer.Uint64(obj.As<Entity>().index);
+  else if (auto attr = Mngr.GetTypeAttr(obj.GetType(), Type_of<ContainerType>);
+           attr.GetType().Valid()) {
+    ContainerType ct = attr.As<ContainerType>();
+    switch (ct) {
+      case Smkz::MyDRefl::ContainerType::Span:
+      case Smkz::MyDRefl::ContainerType::Stack:
+      case Smkz::MyDRefl::ContainerType::Queue:
+      case Smkz::MyDRefl::ContainerType::PriorityQueue:
+      case Smkz::MyDRefl::ContainerType::None:
+        ctx.writer.String(Key::NotSupport);
+        break;
+      case Smkz::MyDRefl::ContainerType::Array:
+      case Smkz::MyDRefl::ContainerType::Deque:
+      case Smkz::MyDRefl::ContainerType::ForwardList:
+      case Smkz::MyDRefl::ContainerType::List:
+      case Smkz::MyDRefl::ContainerType::MultiSet:
+      case Smkz::MyDRefl::ContainerType::RawArray:
+      case Smkz::MyDRefl::ContainerType::Set:
+      case Smkz::MyDRefl::ContainerType::UnorderedMap:
+      case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
+      case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
+      case Smkz::MyDRefl::ContainerType::UnorderedSet:
+      case Smkz::MyDRefl::ContainerType::Vector:
+        ctx.writer.StartArray();
+        {
+          auto e = obj.end();
+          for (auto iter = obj.begin(); iter != e; ++iter)
+            SerializeRecursion((*iter).RemoveReference(), ctx);
+        }
+        ctx.writer.EndArray();
+        break;
+      case Smkz::MyDRefl::ContainerType::Pair:
+      case Smkz::MyDRefl::ContainerType::Tuple:
+        ctx.writer.StartArray();
+        {
+          std::size_t size = obj.tuple_size();
+          for (std::size_t i = 0; i < size; i++)
+            SerializeRecursion(obj.get(i).RemoveReference(), ctx);
+        }
+        ctx.writer.EndArray();
+        break;
+      case Smkz::MyDRefl::ContainerType::Variant:
+        SerializeRecursion(obj.variant_visit_get().RemoveReference(), ctx);
+        break;
+      case Smkz::MyDRefl::ContainerType::Optional:
+        if (obj.has_value())
+          SerializeRecursion(obj.value().RemoveReference(), ctx);
+        else
+          ctx.writer.Null();
+        break;
+      default:
+        assert(false);
+        break;
+    }
+  } else if (details::Traits_BeginEnd(obj.GetType())) {
+    ctx.writer.StartArray();
+    {
+      auto e = obj.end();
+      for (auto iter = obj.begin(); iter != e; ++iter)
+        SerializeRecursion((*iter).RemoveReference(), ctx);
+    }
+    ctx.writer.EndArray();
+  } else {
+    ctx.writer.StartObject();
+    for (const auto& [n, obj] : obj.GetVars(FieldFlag::Owned)) {
+      ctx.writer.Key(n.GetView().data());
+      SerializeRecursion(obj, ctx);
+    }
+    ctx.writer.EndObject();
+  }
+
+  ctx.writer.EndObject();
+}
+
+MyDRefl::SharedObject Serializer::DeserializeRecursion(
     const rapidjson::Value& value, Serializer::DeserializeContext& ctx) {
   if (value.IsBool())
     return Mngr.MakeShared(Type_of<bool>, TempArgsView{value.GetBool()});
@@ -264,7 +264,7 @@ MyDRefl::SharedObject DeserializeRecursion(
     return Mngr.MakeShared(Type_of<std::uint64_t>,
                            TempArgsView{value.GetUint64()});
   if (value.IsString())
-    return Mngr.MakeShared(Type_of<const char*>,
+    return Mngr.MakeShared(Type_of<std::string>,
                            TempArgsView{value.GetString()});
   if (value.IsNull()) return Mngr.MakeShared(Type_of<std::nullptr_t>);
 
@@ -425,8 +425,9 @@ MyDRefl::SharedObject DeserializeRecursion(
         assert(false);
         return {};
     }
-  } else if (auto addmode = Traits_AddMode(type);
-             addmode != AddMode::None && Traits_BeginEnd(type)) {
+  } else if (auto addmode = details::Traits_AddMode(type);
+             addmode != details::AddMode::None &&
+             details::Traits_BeginEnd(type)) {
     auto obj = Mngr.MakeShared(type);
     const auto& arr = content.GetArray();
     std::size_t N = arr.Size();
@@ -434,16 +435,16 @@ MyDRefl::SharedObject DeserializeRecursion(
       auto ele =
           DeserializeRecursion(arr[static_cast<rapidjson::SizeType>(i)], ctx);
       switch (addmode) {
-        case Smkz::MyGE::details::PushBack:
+        case Smkz::MyGE::details::AddMode::PushBack:
           obj.push_back(ele);
           break;
-        case Smkz::MyGE::details::PushFront:
+        case Smkz::MyGE::details::AddMode::PushFront:
           obj.push_front(ele);
           break;
-        case Smkz::MyGE::details::Insert:
+        case Smkz::MyGE::details::AddMode::Insert:
           obj.insert(ele);
           break;
-        case Smkz::MyGE::details::Push:
+        case Smkz::MyGE::details::AddMode::Push:
           obj.push(ele);
           break;
         default:
@@ -454,6 +455,7 @@ MyDRefl::SharedObject DeserializeRecursion(
     return obj;
   } else {
     auto obj = Mngr.MakeShared(type);
+    if (!obj.GetType()) return {};
     const auto& jsonFields = content.GetObject();
     for (const auto& [n, var] : obj.GetVars(FieldFlag::Owned)) {
       var.Invoke<void>(NameIDRegistry::Meta::operator_assignment,
@@ -464,9 +466,13 @@ MyDRefl::SharedObject DeserializeRecursion(
     return obj;
   }
 }
-}  // namespace Smkz::MyGE::details
 
-Serializer::Serializer() : pImpl{new Impl} {}
+Serializer::Serializer() : pImpl{new Impl} {
+  MyDRefl::Mngr.RegisterType<xg::Guid>();
+  MyDRefl::Mngr.AddMemberMethod(
+      MyDRefl::NameIDRegistry::Meta::operator_assignment,
+      [](xg::Guid& obj, const std::string_view& str) { obj = xg::Guid{str}; });
+}
 
 Serializer::~Serializer() { delete pImpl; }
 
@@ -479,7 +485,10 @@ string Serializer::Serialize(const World* world) {
 
 string Serializer::Serialize(size_t ID, const void* obj) {
   SerializeContext ctx{pImpl->serializer};
-  pImpl->serializer.Visit(ID, obj, ctx);
+
+  SerializeRecursion(ObjectView{MyDRefl::Mngr.tregistry.Typeof(TypeID{ID}),
+                                const_cast<void*>(obj)},
+                     ctx);
   auto json = ctx.sb.GetString();
   return json;
 }
@@ -536,7 +545,7 @@ bool Serializer::SerializeToWorld(MyECS::World* world, string_view json) {
       void* ptr = world->entityMngr.WriteComponent(entity, cmptTypes[i]).Ptr();
       ObjectView obj{MyDRefl::Mngr.tregistry.Typeof(cmptTypes[i]), ptr};
       obj.Invoke<void>(NameIDRegistry::Meta::operator_assignment,
-                       TempArgsView{details::DeserializeRecursion(
+                       TempArgsView{DeserializeRecursion(
                            jsonCmpts[static_cast<SizeType>(i)], ctx)},
                        MethodFlag::Variable);
     }
@@ -550,7 +559,7 @@ MyDRefl::SharedObject Serializer::Deserialize(std::string_view json) {
   ParseResult rst = doc.Parse(json.data());
   EntityIdxMap emptyMap;
   DeserializeContext ctx{emptyMap, pImpl->deserializer};
-  return details::DeserializeRecursion(doc, ctx);
+  return DeserializeRecursion(doc, ctx);
 }
 
 void Serializer::RegisterSerializeFunction(TypeID id, SerializeFunc func) {

@@ -1,1 +1,1 @@
-java org.antlr.v4.Tool -Werror -Dlanguage=Cpp -listener -visitor -package My::MyGE::details -o MyShader MyShader.g4
+java org.antlr.v4.Tool -Werror -Dlanguage=Cpp -listener -visitor -package Smkz::MyGE::details -o MyShader MyShader.g4

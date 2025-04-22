@@ -56,6 +56,9 @@ class Serializer {
   std::string Serialize(const UserType* obj);
   bool SerializeToWorld(MyECS::World*, std::string_view json);
 
+  static void SerializeRecursion(MyDRefl::ObjectView obj,
+                                 SerializeContext& ctx);
+
   //
   // Deserialize
   ////////////////
@@ -75,6 +78,9 @@ class Serializer {
   void RegisterDeserializeFunction(Func&& func);
 
   MyDRefl::SharedObject Deserialize(std::string_view json);
+
+  static MyDRefl::SharedObject DeserializeRecursion(
+      const rapidjson::Value& value, Serializer::DeserializeContext& ctx);
 
  private:
   Serializer();

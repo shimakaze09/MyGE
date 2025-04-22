@@ -6,14 +6,14 @@
                 "__COMPONENTS":[
 					{
 					    "__TYPE":6280071751208021274,
-						"__NAME":"struct My::MyGE::Name",
+						"__NAME":"struct Smkz::MyGE::Name",
                         "__CONTENT":{
                             "value":"World Time"
                         }
 					},
                     {
                         "__TYPE":2923443199210048230,
-                        "__NAME":"struct My::MyGE::WorldTime",
+                        "__NAME":"struct Smkz::MyGE::WorldTime",
                         "__CONTENT":{
                             "elapsedTime":0,
                             "deltaTime":0
@@ -26,14 +26,14 @@
                 "__COMPONENTS":[
 					{
 					    "__TYPE":6280071751208021274,
-						"__NAME":"struct My::MyGE::Name",
+						"__NAME":"struct Smkz::MyGE::Name",
                         "__CONTENT":{
                             "value":"Main Camera"
                         }
 					},
                     {
                         "__TYPE":642547106312328202,
-                        "__NAME":"struct My::MyGE::Camera",
+                        "__NAME":"struct Smkz::MyGE::Camera",
                         "__CONTENT":{
                             "aspect":1.3,
                             "fov":60,
@@ -70,7 +70,7 @@
                     },
                     {
                         "__TYPE":13783419482121707865,
-                        "__NAME":"struct My::MyGE::WorldToLocal",
+                        "__NAME":"struct Smkz::MyGE::WorldToLocal",
                         "__CONTENT":{
                             "value":[
                                 [
@@ -102,7 +102,7 @@
                     },
                     {
                         "__TYPE":17063587210077935459,
-                        "__NAME":"struct My::MyGE::Rotation",
+                        "__NAME":"struct Smkz::MyGE::Rotation",
                         "__CONTENT":{
                             "value":[
                                 0,
@@ -114,7 +114,7 @@
                     },
                     {
                         "__TYPE":2604922715127532027,
-                        "__NAME":"struct My::MyGE::LocalToWorld",
+                        "__NAME":"struct Smkz::MyGE::LocalToWorld",
                         "__CONTENT":{
                             "value":[
                                 [
@@ -146,7 +146,7 @@
                     },
                     {
                         "__TYPE":14698696005955049792,
-                        "__NAME":"struct My::MyGE::Translation",
+                        "__NAME":"struct Smkz::MyGE::Translation",
                         "__CONTENT":{
                             "value":[
                                 0,
@@ -162,14 +162,14 @@
                 "__COMPONENTS":[
 					{
 					    "__TYPE":6280071751208021274,
-						"__NAME":"struct My::MyGE::Name",
+						"__NAME":"struct Smkz::MyGE::Name",
                         "__CONTENT":{
                             "value":"Quad Root"
                         }
 					},
                     {
                         "__TYPE":14545184120177678863,
-                        "__NAME":"struct My::MyGE::MeshRenderer",
+                        "__NAME":"struct Smkz::MyGE::MeshRenderer",
                         "__CONTENT":{
                             "materials":[
                                 "0cbdfba1-357c-4fe5-b69a-bd5e021e0808"
@@ -178,21 +178,21 @@
                     },
                     {
                         "__TYPE":7519005855496496789,
-                        "__NAME":"struct My::MyGE::Scale",
+                        "__NAME":"struct Smkz::MyGE::Scale",
                         "__CONTENT":{
                             "value":1
                         }
                     },
                     {
                         "__TYPE":14240832921824082506,
-                        "__NAME":"struct My::MyGE::MeshFilter",
+                        "__NAME":"struct Smkz::MyGE::MeshFilter",
                         "__CONTENT":{
                             "mesh":"108e8daf-3672-41da-9de2-05c43c442b4e"
                         }
                     },
                     {
                         "__TYPE":17063587210077935459,
-                        "__NAME":"struct My::MyGE::Rotation",
+                        "__NAME":"struct Smkz::MyGE::Rotation",
                         "__CONTENT":{
                             "value":[
                                 0,
@@ -204,7 +204,7 @@
                     },
                     {
                         "__TYPE":2604922715127532027,
-                        "__NAME":"struct My::MyGE::LocalToWorld",
+                        "__NAME":"struct Smkz::MyGE::LocalToWorld",
                         "__CONTENT":{
                             "value":[
                                 [
@@ -236,7 +236,7 @@
                     },
                     {
                         "__TYPE":14698696005955049792,
-                        "__NAME":"struct My::MyGE::Translation",
+                        "__NAME":"struct Smkz::MyGE::Translation",
                         "__CONTENT":{
                             "value":[
                                 0,
@@ -247,7 +247,7 @@
                     },
                     {
                         "__TYPE":7697404053516024686,
-                        "__NAME":"struct My::MyGE::Children",
+                        "__NAME":"struct Smkz::MyGE::Children",
                         "__CONTENT":{
                             "value":[
                                 3,
@@ -262,19 +262,19 @@
                 "__COMPONENTS":[
 					{
 					    "__TYPE":6280071751208021274,
-						"__NAME":"struct My::MyGE::Name",
+						"__NAME":"struct Smkz::MyGE::Name",
                         "__CONTENT":{
                             "value":"Quad Child 0"
                         }
 					},
 					{
 					    "__TYPE":10417055917306979397,
-						"__NAME":"struct My::MyGE::LocalToParent",
+						"__NAME":"struct Smkz::MyGE::LocalToParent",
                         "__CONTENT":{}
 					},
                     {
                         "__TYPE":14545184120177678863,
-                        "__NAME":"struct My::MyGE::MeshRenderer",
+                        "__NAME":"struct Smkz::MyGE::MeshRenderer",
                         "__CONTENT":{
                             "materials":[
                                 "0cbdfba1-357c-4fe5-b69a-bd5e021e0808"
@@ -283,21 +283,21 @@
                     },
                     {
                         "__TYPE":7519005855496496789,
-                        "__NAME":"struct My::MyGE::Scale",
+                        "__NAME":"struct Smkz::MyGE::Scale",
                         "__CONTENT":{
                             "value":1
                         }
                     },
                     {
                         "__TYPE":14240832921824082506,
-                        "__NAME":"struct My::MyGE::MeshFilter",
+                        "__NAME":"struct Smkz::MyGE::MeshFilter",
                         "__CONTENT":{
                             "mesh":"108e8daf-3672-41da-9de2-05c43c442b4e"
                         }
                     },
                     {
                         "__TYPE":17063587210077935459,
-                        "__NAME":"struct My::MyGE::Rotation",
+                        "__NAME":"struct Smkz::MyGE::Rotation",
                         "__CONTENT":{
                             "value":[
                                 0,
@@ -309,7 +309,7 @@
                     },
                     {
                         "__TYPE":2604922715127532027,
-                        "__NAME":"struct My::MyGE::LocalToWorld",
+                        "__NAME":"struct Smkz::MyGE::LocalToWorld",
                         "__CONTENT":{
                             "value":[
                                 [
@@ -341,7 +341,7 @@
                     },
                     {
                         "__TYPE":14698696005955049792,
-                        "__NAME":"struct My::MyGE::Translation",
+                        "__NAME":"struct Smkz::MyGE::Translation",
                         "__CONTENT":{
                             "value":[
                                 2,
@@ -352,7 +352,7 @@
                     },
                     {
                         "__TYPE":17831513644510599201,
-                        "__NAME":"struct My::MyGE::Parent",
+                        "__NAME":"struct Smkz::MyGE::Parent",
                         "__CONTENT":{
                             "value":2
                         }
@@ -364,19 +364,19 @@
                 "__COMPONENTS":[
 					{
 					    "__TYPE":6280071751208021274,
-						"__NAME":"struct My::MyGE::Name",
+						"__NAME":"struct Smkz::MyGE::Name",
                         "__CONTENT":{
                             "value":"Quad Child 1"
                         }
 					},
 					{
 					    "__TYPE":10417055917306979397,
-						"__NAME":"struct My::MyGE::LocalToParent",
+						"__NAME":"struct Smkz::MyGE::LocalToParent",
                         "__CONTENT":{}
 					},
                     {
                         "__TYPE":14545184120177678863,
-                        "__NAME":"struct My::MyGE::MeshRenderer",
+                        "__NAME":"struct Smkz::MyGE::MeshRenderer",
                         "__CONTENT":{
                             "materials":[
                                 "0cbdfba1-357c-4fe5-b69a-bd5e021e0808"
@@ -385,21 +385,21 @@
                     },
                     {
                         "__TYPE":7519005855496496789,
-                        "__NAME":"struct My::MyGE::Scale",
+                        "__NAME":"struct Smkz::MyGE::Scale",
                         "__CONTENT":{
                             "value":1
                         }
                     },
                     {
                         "__TYPE":14240832921824082506,
-                        "__NAME":"struct My::MyGE::MeshFilter",
+                        "__NAME":"struct Smkz::MyGE::MeshFilter",
                         "__CONTENT":{
                             "mesh":"108e8daf-3672-41da-9de2-05c43c442b4e"
                         }
                     },
                     {
                         "__TYPE":17063587210077935459,
-                        "__NAME":"struct My::MyGE::Rotation",
+                        "__NAME":"struct Smkz::MyGE::Rotation",
                         "__CONTENT":{
                             "value":[
                                 0,
@@ -411,7 +411,7 @@
                     },
                     {
                         "__TYPE":2604922715127532027,
-                        "__NAME":"struct My::MyGE::LocalToWorld",
+                        "__NAME":"struct Smkz::MyGE::LocalToWorld",
                         "__CONTENT":{
                             "value":[
                                 [
@@ -443,7 +443,7 @@
                     },
                     {
                         "__TYPE":14698696005955049792,
-                        "__NAME":"struct My::MyGE::Translation",
+                        "__NAME":"struct Smkz::MyGE::Translation",
                         "__CONTENT":{
                             "value":[
                                 -2,
@@ -454,7 +454,7 @@
                     },
                     {
                         "__TYPE":17831513644510599201,
-                        "__NAME":"struct My::MyGE::Parent",
+                        "__NAME":"struct Smkz::MyGE::Parent",
                         "__CONTENT":{
                             "value":2
                         }
@@ -466,14 +466,14 @@
 				"__COMPONENTS":[
 					{
 					    "__TYPE":6280071751208021274,
-						"__NAME":"struct My::MyGE::Name",
+						"__NAME":"struct Smkz::MyGE::Name",
                         "__CONTENT":{
                             "value":"skybox"
                         }
 					},
 					{
 						"__TYPE":7354925606790053159,
-						"__NAME":"struct My::MyGE::Skybox",
+						"__NAME":"struct Smkz::MyGE::Skybox",
 						"__CONTENT":{
 							"material":"728c5b9d-5025-42b4-ae1e-795b44eb9c46"
 						}
