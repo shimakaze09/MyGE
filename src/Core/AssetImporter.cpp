@@ -3,6 +3,12 @@
 
 using namespace Smkz::MyGE;
 
+std::string AssetImporter::ReserializeAsset() const {
+  auto asset = AssetMngr::Instance().GUIDToAsset(guid);
+  if (!asset.GetType() || !asset.GetPtr()) return {};
+  return Serializer::Instance().Serialize(asset);
+}
+
 void AssetImporter::RegisterToMyDRefl() {
   if (MyDRefl::Mngr.typeinfos.contains(Type_of<AssetImporter>)) return;
 

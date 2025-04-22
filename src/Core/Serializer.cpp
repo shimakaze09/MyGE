@@ -1,3 +1,4 @@
+#include <MyGE/Core/AssetMngr.h>
 #include <MyGE/Core/Serializer.h>
 #include <rapidjson/error/en.h>
 
@@ -168,10 +169,22 @@ void Serializer::SerializeRecursion(MyDRefl::ObjectView obj,
     ctx.serializer.Visit(obj.GetType().GetID().GetValue(), obj.GetPtr(), ctx);
   else if (obj.GetType().IsReference())
     ctx.writer.String(Key::NotSupport);
-  else if (obj.GetType().Is<MyECS::Entity>())
+  else if (obj.GetType().Is<UECS::Entity>())
     ctx.writer.Uint64(obj.As<Entity>().index);
-  else if (auto attr = Mngr.GetTypeAttr(obj.GetType(), Type_of<ContainerType>);
-           attr.GetType().Valid()) {
+  else if (obj.GetType().Is<SharedObject>()) {
+    auto sobj = obj.As<SharedObject>();
+    if (AssetMngr::Instance().Contains(sobj)) {
+      ctx.writer.StartObject();
+      ctx.writer.Key(Key::Name);
+      ctx.writer.String(AssetMngr::Instance().NameofAsset(sobj).data());
+      ctx.writer.Key(Key::Guid);
+      ctx.writer.String(AssetMngr::Instance().GetAssetGUID(sobj).str());
+      ctx.writer.EndObject();
+    } else
+      ctx.writer.String(Key::NotSupport);
+  } else if (auto attr =
+                 Mngr.GetTypeAttr(obj.GetType(), Type_of<ContainerType>);
+             attr.GetType().Valid()) {
     ContainerType ct = attr.As<ContainerType>();
     switch (ct) {
       case Smkz::MyDRefl::ContainerType::Span:
@@ -435,16 +448,16 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
       auto ele =
           DeserializeRecursion(arr[static_cast<rapidjson::SizeType>(i)], ctx);
       switch (addmode) {
-        case Smkz::MyGE::details::AddMode::PushBack:
+        case Smkz::Utopia::details::AddMode::PushBack:
           obj.push_back(ele);
           break;
-        case Smkz::MyGE::details::AddMode::PushFront:
+        case Smkz::Utopia::details::AddMode::PushFront:
           obj.push_front(ele);
           break;
-        case Smkz::MyGE::details::AddMode::Insert:
+        case Smkz::Utopia::details::AddMode::Insert:
           obj.insert(ele);
           break;
-        case Smkz::MyGE::details::AddMode::Push:
+        case Smkz::Utopia::details::AddMode::Push:
           obj.push(ele);
           break;
         default:
@@ -484,16 +497,19 @@ string Serializer::Serialize(const World* world) {
 }
 
 string Serializer::Serialize(size_t ID, const void* obj) {
+  return Serialize(ObjectView{MyDRefl::Mngr.tregistry.Typeof(TypeID{ID}),
+                              const_cast<void*>(obj)});
+}
+
+std::string Serializer::Serialize(ObjectView obj) {
   SerializeContext ctx{pImpl->serializer};
 
-  SerializeRecursion(ObjectView{MyDRefl::Mngr.tregistry.Typeof(TypeID{ID}),
-                                const_cast<void*>(obj)},
-                     ctx);
+  SerializeRecursion(obj, ctx);
   auto json = ctx.sb.GetString();
   return json;
 }
 
-bool Serializer::SerializeToWorld(MyECS::World* world, string_view json) {
+bool Serializer::SerializeToWorld(UECS::World* world, string_view json) {
   Document doc;
   ParseResult rst = doc.Parse(json.data());
 

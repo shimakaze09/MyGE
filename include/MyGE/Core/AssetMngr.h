@@ -36,6 +36,8 @@ class AssetMngr {
   // If the asset does not exist, AssetPathToGUID will return invalid xg::Guid
   xg::Guid AssetPathToGUID(const std::filesystem::path& path) const;
 
+  bool DeleteAsset(const std::filesystem::path& path);
+
   bool CreateAsset(MyDRefl::SharedObject obj,
                    const std::filesystem::path& path);
 
@@ -49,9 +51,6 @@ class AssetMngr {
 
   xg::Guid GetAssetGUID(MyDRefl::SharedObject obj) const;
   const std::filesystem::path& GetAssetPath(MyDRefl::SharedObject obj) const;
-
-  // empty xg::Guid is root
-  const std::map<xg::Guid, std::set<xg::Guid>>& GetAssetTree() const;
 
   // get first asset type
   Type GetAssetType(const std::filesystem::path&) const;
@@ -92,6 +91,9 @@ class AssetMngr {
       std::shared_ptr<AssetImporterCreator> creator);
 
   std::string_view NameofAsset(MyDRefl::SharedObject obj) const;
+
+  void SetImporterOverride(const std::filesystem::path& path,
+                           std::shared_ptr<AssetImporter> importer);
 
  private:
   struct Impl;
