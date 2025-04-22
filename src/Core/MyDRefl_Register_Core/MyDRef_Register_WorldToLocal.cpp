@@ -1,13 +1,13 @@
 #include <MyGE/Core/Components/WorldToLocal.h>
 
-#include <UDRefl/UDRefl.hpp>
+#include <MyDRefl/MyDRefl.hpp>
 
-#include "UDRefl_Register_Core_impl.h"
+#include "MyDRefl_Register_Core_impl.h"
 
 using namespace Smkz::MyGE;
-using namespace Smkz::UDRefl;
+using namespace Smkz::MyDRefl;
 
-void Smkz::MyGE::details::UDRefl_Register_WorldToLocal() {
+void Smkz::MyGE::details::MyDRefl_Register_WorldToLocal() {
   Mngr.RegisterType<WorldToLocal>();
   Mngr.AddField<&WorldToLocal::value>("value");
 }

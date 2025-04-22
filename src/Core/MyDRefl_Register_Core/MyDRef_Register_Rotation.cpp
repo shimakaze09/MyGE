@@ -1,13 +1,13 @@
 #include <MyGE/Core/Components/Rotation.h>
 
-#include <UDRefl/UDRefl.hpp>
+#include <MyDRefl/MyDRefl.hpp>
 
-#include "UDRefl_Register_Core_impl.h"
+#include "MyDRefl_Register_Core_impl.h"
 
 using namespace Smkz::MyGE;
-using namespace Smkz::UDRefl;
+using namespace Smkz::MyDRefl;
 
-void Smkz::MyGE::details::UDRefl_Register_Rotation() {
+void Smkz::MyGE::details::MyDRefl_Register_Rotation() {
   Mngr.RegisterType<Rotation>();
   Mngr.AddField<&Rotation::value>("value");
 }

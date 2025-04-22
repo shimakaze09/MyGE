@@ -483,15 +483,16 @@ void GameStarter::BuildWorld() {
           Smkz::MyGE::RotationEuler, Smkz::MyGE::Scale,
           Smkz::MyGE::NonUniformScale, Smkz::MyGE::Translation,
           Smkz::MyGE::WorldToLocal>();
-  // OutputDebugStringA(Smkz::MyGE::Serializer::Instance().ToJSON(&world).c_str());
+  // OutputDebugStringA(Smkz::MyGE::Serializer::Instance().Serialize(&world).c_str());
   auto scene = Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Scene>(
       L"..\\assets\\scenes\\Game.scene");
-  Smkz::MyGE::Serializer::Instance().ToWorld(&world, scene->GetText());
+  Smkz::MyGE::Serializer::Instance().SerializeToWorld(&world, scene->GetText());
   cam =
       world.entityMngr
           .GetEntityArray({{Smkz::MyECS::AccessTypeID_of<Smkz::MyGE::Camera>}})
           .front();
-  OutputDebugStringA(Smkz::MyGE::Serializer::Instance().ToJSON(&world).c_str());
+  OutputDebugStringA(
+      Smkz::MyGE::Serializer::Instance().Serialize(&world).c_str());
 
   auto mainLua = Smkz::MyGE::LuaCtxMngr::Instance().Register(&world)->Main();
   sol::state_view solLua(mainLua);

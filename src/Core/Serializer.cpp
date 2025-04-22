@@ -1,14 +1,14 @@
 #include <MyGE/Core/Serializer.h>
 #include <rapidjson/error/en.h>
 
+#include <MyDRefl/MyDRefl.hpp>
 #include <MyECS/IListener.hpp>
 #include <MyECS/MyECS.hpp>
-#include <UDRefl/UDRefl.hpp>
 #include <iostream>
 
 using namespace Smkz::MyGE;
 using namespace Smkz::MyECS;
-using namespace Smkz::UDRefl;
+using namespace Smkz::MyDRefl;
 using namespace Smkz;
 using namespace rapidjson;
 using namespace std;
@@ -57,7 +57,7 @@ struct Serializer::Impl {
 
     virtual void EnterWorld(const World* world) override {
       ctx.writer.StartObject();
-      ctx.writer.Key(Serializer::Key::ENTITY_MNGR);
+      ctx.writer.Key(Serializer::Key::EntityMngr);
       w = world;
     }
     virtual void ExistWorld(const World* world) override {
@@ -67,7 +67,7 @@ struct Serializer::Impl {
 
     virtual void EnterEntityMngr(const EntityMngr*) override {
       ctx.writer.StartObject();
-      ctx.writer.Key(Serializer::Key::ENTITIES);
+      ctx.writer.Key(Serializer::Key::Entities);
       ctx.writer.StartArray();
     }
     virtual void ExistEntityMngr(const EntityMngr*) override {
@@ -77,9 +77,9 @@ struct Serializer::Impl {
 
     virtual void EnterEntity(Entity e) override {
       ctx.writer.StartObject();
-      ctx.writer.Key(Key::INDEX);
+      ctx.writer.Key(Key::Index);
       ctx.writer.Uint64(e.index);
-      ctx.writer.Key(Key::COMPONENTS);
+      ctx.writer.Key(Key::Components);
       ctx.writer.StartArray();
     }
     virtual void ExistEntity(Entity) override {
@@ -88,7 +88,7 @@ struct Serializer::Impl {
     }
 
     virtual void EnterCmpt(CmptPtr p) override {
-      ObjectView obj{UDRefl::Mngr.tregistry.Typeof(p.Type()), p.Ptr()};
+      ObjectView obj{MyDRefl::Mngr.tregistry.Typeof(p.Type()), p.Ptr()};
       SerializeRecursion(obj);
     }
     virtual void ExistCmpt(CmptPtr) override { ctx.writer.EndObject(); }
@@ -151,12 +151,11 @@ struct Serializer::Impl {
       }
 
       ctx.writer.StartObject();
-      ctx.writer.Key(Key::TYPEID);
+      ctx.writer.Key(Key::TypeID);
       ctx.writer.Uint64(obj.GetType().GetID().GetValue());
-      ctx.writer.Key(Key::TYPENAME);
-      ctx.writer.String(
-          Mngr.tregistry.Typeof(obj.GetType().GetID()).GetName().data());
-      ctx.writer.Key(Key::CONTENT);
+      ctx.writer.Key(Key::TypeName);
+      ctx.writer.String(obj.GetType().GetName().data());
+      ctx.writer.Key(Key::Content);
 
       // write content
 
@@ -164,7 +163,7 @@ struct Serializer::Impl {
         ctx.serializer.Visit(obj.GetType().GetID().GetValue(), obj.GetPtr(),
                              ctx);
       else if (obj.GetType().IsReference())
-        ctx.writer.String(Key::NOT_SUPPORT);
+        ctx.writer.String(Key::NotSupport);
       else if (obj.GetType().Is<MyECS::Entity>())
         ctx.writer.Uint64(obj.As<Entity>().index);
       else if (auto attr =
@@ -172,25 +171,25 @@ struct Serializer::Impl {
                attr.GetType().Valid()) {
         ContainerType ct = attr.As<ContainerType>();
         switch (ct) {
-          case Smkz::UDRefl::ContainerType::Span:
-          case Smkz::UDRefl::ContainerType::Stack:
-          case Smkz::UDRefl::ContainerType::Queue:
-          case Smkz::UDRefl::ContainerType::PriorityQueue:
-          case Smkz::UDRefl::ContainerType::None:
-            ctx.writer.String(Key::NOT_SUPPORT);
+          case Smkz::MyDRefl::ContainerType::Span:
+          case Smkz::MyDRefl::ContainerType::Stack:
+          case Smkz::MyDRefl::ContainerType::Queue:
+          case Smkz::MyDRefl::ContainerType::PriorityQueue:
+          case Smkz::MyDRefl::ContainerType::None:
+            ctx.writer.String(Key::NotSupport);
             break;
-          case Smkz::UDRefl::ContainerType::Array:
-          case Smkz::UDRefl::ContainerType::Deque:
-          case Smkz::UDRefl::ContainerType::ForwardList:
-          case Smkz::UDRefl::ContainerType::List:
-          case Smkz::UDRefl::ContainerType::MultiSet:
-          case Smkz::UDRefl::ContainerType::RawArray:
-          case Smkz::UDRefl::ContainerType::Set:
-          case Smkz::UDRefl::ContainerType::UnorderedMap:
-          case Smkz::UDRefl::ContainerType::UnorderedMultiSet:
-          case Smkz::UDRefl::ContainerType::UnorderedMultiMap:
-          case Smkz::UDRefl::ContainerType::UnorderedSet:
-          case Smkz::UDRefl::ContainerType::Vector:
+          case Smkz::MyDRefl::ContainerType::Array:
+          case Smkz::MyDRefl::ContainerType::Deque:
+          case Smkz::MyDRefl::ContainerType::ForwardList:
+          case Smkz::MyDRefl::ContainerType::List:
+          case Smkz::MyDRefl::ContainerType::MultiSet:
+          case Smkz::MyDRefl::ContainerType::RawArray:
+          case Smkz::MyDRefl::ContainerType::Set:
+          case Smkz::MyDRefl::ContainerType::UnorderedMap:
+          case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
+          case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
+          case Smkz::MyDRefl::ContainerType::UnorderedSet:
+          case Smkz::MyDRefl::ContainerType::Vector:
             ctx.writer.StartArray();
             {
               auto e = obj.end();
@@ -199,8 +198,8 @@ struct Serializer::Impl {
             }
             ctx.writer.EndArray();
             break;
-          case Smkz::UDRefl::ContainerType::Pair:
-          case Smkz::UDRefl::ContainerType::Tuple:
+          case Smkz::MyDRefl::ContainerType::Pair:
+          case Smkz::MyDRefl::ContainerType::Tuple:
             ctx.writer.StartArray();
             {
               std::size_t size = obj.tuple_size();
@@ -209,10 +208,10 @@ struct Serializer::Impl {
             }
             ctx.writer.EndArray();
             break;
-          case Smkz::UDRefl::ContainerType::Variant:
+          case Smkz::MyDRefl::ContainerType::Variant:
             SerializeRecursion(obj.variant_visit_get().RemoveReference());
             break;
-          case Smkz::UDRefl::ContainerType::Optional:
+          case Smkz::MyDRefl::ContainerType::Optional:
             if (obj.has_value())
               SerializeRecursion(obj.value().RemoveReference());
             else
@@ -245,8 +244,8 @@ struct Serializer::Impl {
 };
 
 namespace Smkz::MyGE::details {
-UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
-                                          Serializer::DeserializeContext& ctx) {
+MyDRefl::SharedObject DeserializeRecursion(
+    const rapidjson::Value& value, Serializer::DeserializeContext& ctx) {
   if (value.IsBool())
     return Mngr.MakeShared(Type_of<bool>, TempArgsView{value.GetBool()});
   if (value.IsFloat())
@@ -271,9 +270,9 @@ UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
 
   assert(value.IsObject());
   const auto& jsonObj = value.GetObject();
-  if (jsonObj.FindMember(Serializer::Key::TYPEID) == jsonObj.end()) return {};
+  if (jsonObj.FindMember(Serializer::Key::TypeID) == jsonObj.end()) return {};
 
-  std::size_t id = jsonObj[Serializer::Key::TYPEID].GetUint64();
+  std::uint64_t id = jsonObj[Serializer::Key::TypeID].GetUint64();
   Type type = Mngr.tregistry.Typeof(TypeID{id});
 
   if (type.IsReference()) {
@@ -283,7 +282,7 @@ UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
 
   type = type.RemoveConst();
 
-  const rapidjson::Value& content = jsonObj[Serializer::Key::CONTENT];
+  const rapidjson::Value& content = jsonObj[Serializer::Key::Content];
 
   // content -> obj
 
@@ -291,7 +290,7 @@ UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
     auto* info = Mngr.GetTypeInfo(type);
     void* buffer = Mngr.GetObjectResource()->allocate(
         std::max<std::size_t>(1, info->size), info->alignment);
-    ctx.deserializer.Visit(buffer, content, ctx);
+    ctx.deserializer.Visit(type.GetID().GetValue(), buffer, content, ctx);
     return SharedObject(type,
                         SharedBuffer(buffer, [type, s = info->size,
                                               a = info->alignment](void* ptr) {
@@ -345,14 +344,14 @@ UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
              attr.GetType().Valid()) {
     ContainerType ct = attr.As<ContainerType>();
     switch (ct) {
-      case Smkz::UDRefl::ContainerType::Span:
-      case Smkz::UDRefl::ContainerType::Stack:
-      case Smkz::UDRefl::ContainerType::Queue:
-      case Smkz::UDRefl::ContainerType::PriorityQueue:
-      case Smkz::UDRefl::ContainerType::None:
+      case Smkz::MyDRefl::ContainerType::Span:
+      case Smkz::MyDRefl::ContainerType::Stack:
+      case Smkz::MyDRefl::ContainerType::Queue:
+      case Smkz::MyDRefl::ContainerType::PriorityQueue:
+      case Smkz::MyDRefl::ContainerType::None:
         return {};
-      case Smkz::UDRefl::ContainerType::RawArray:
-      case Smkz::UDRefl::ContainerType::Array: {
+      case Smkz::MyDRefl::ContainerType::RawArray:
+      case Smkz::MyDRefl::ContainerType::Array: {
         auto obj = Mngr.MakeShared(type);
         const auto& arr = content.GetArray();
         std::size_t N = obj.size();
@@ -362,9 +361,9 @@ UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
               arr[static_cast<rapidjson::SizeType>(i)], ctx);
         return obj;
       }
-      case Smkz::UDRefl::ContainerType::Deque:
-      case Smkz::UDRefl::ContainerType::Vector:
-      case Smkz::UDRefl::ContainerType::List: {
+      case Smkz::MyDRefl::ContainerType::Deque:
+      case Smkz::MyDRefl::ContainerType::Vector:
+      case Smkz::MyDRefl::ContainerType::List: {
         auto obj = Mngr.MakeShared(type);
         const auto& arr = content.GetArray();
         std::size_t N = arr.Size();
@@ -373,7 +372,7 @@ UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
               arr[static_cast<rapidjson::SizeType>(i)], ctx));
         return obj;
       }
-      case Smkz::UDRefl::ContainerType::ForwardList: {
+      case Smkz::MyDRefl::ContainerType::ForwardList: {
         auto obj = Mngr.MakeShared(type);
         const auto& arr = content.GetArray();
         std::size_t N = arr.Size();
@@ -382,12 +381,12 @@ UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
               arr[static_cast<rapidjson::SizeType>(N - 1 - i)], ctx));
         return obj;
       }
-      case Smkz::UDRefl::ContainerType::MultiSet:
-      case Smkz::UDRefl::ContainerType::Set:
-      case Smkz::UDRefl::ContainerType::UnorderedMap:
-      case Smkz::UDRefl::ContainerType::UnorderedMultiSet:
-      case Smkz::UDRefl::ContainerType::UnorderedMultiMap:
-      case Smkz::UDRefl::ContainerType::UnorderedSet: {
+      case Smkz::MyDRefl::ContainerType::MultiSet:
+      case Smkz::MyDRefl::ContainerType::Set:
+      case Smkz::MyDRefl::ContainerType::UnorderedMap:
+      case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
+      case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
+      case Smkz::MyDRefl::ContainerType::UnorderedSet: {
         auto obj = Mngr.MakeShared(type);
         const auto& arr = content.GetArray();
         std::size_t N = arr.Size();
@@ -396,8 +395,8 @@ UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
               arr[static_cast<rapidjson::SizeType>(i)], ctx));
         return obj;
       }
-      case Smkz::UDRefl::ContainerType::Pair:
-      case Smkz::UDRefl::ContainerType::Tuple: {
+      case Smkz::MyDRefl::ContainerType::Pair:
+      case Smkz::MyDRefl::ContainerType::Tuple: {
         std::vector<SharedObject> args;
         const auto& arr = content.GetArray();
         std::size_t N = arr.Size();
@@ -413,10 +412,10 @@ UDRefl::SharedObject DeserializeRecursion(const rapidjson::Value& value,
         ArgsView argsview(argptrs.data(), argtypes);
         return Mngr.MakeShared(type, argsview);
       }
-      case Smkz::UDRefl::ContainerType::Variant:
+      case Smkz::MyDRefl::ContainerType::Variant:
         return Mngr.MakeShared(
             type, TempArgsView{DeserializeRecursion(content, ctx)});
-      case Smkz::UDRefl::ContainerType::Optional:
+      case Smkz::MyDRefl::ContainerType::Optional:
         if (content.IsNull())
           return Mngr.MakeShared(type);
         else
@@ -471,21 +470,21 @@ Serializer::Serializer() : pImpl{new Impl} {}
 
 Serializer::~Serializer() { delete pImpl; }
 
-string Serializer::ToJSON(const World* world) {
+string Serializer::Serialize(const World* world) {
   Impl::WorldSerializer worldSerializer(pImpl->serializer);
   world->Accept(&worldSerializer);
   auto json = worldSerializer.ctx.sb.GetString();
   return json;
 }
 
-string Serializer::ToJSON(size_t ID, const void* obj) {
+string Serializer::Serialize(size_t ID, const void* obj) {
   SerializeContext ctx{pImpl->serializer};
   pImpl->serializer.Visit(ID, obj, ctx);
   auto json = ctx.sb.GetString();
   return json;
 }
 
-bool Serializer::ToWorld(MyECS::World* world, string_view json) {
+bool Serializer::SerializeToWorld(MyECS::World* world, string_view json) {
   Document doc;
   ParseResult rst = doc.Parse(json.data());
 
@@ -496,8 +495,8 @@ bool Serializer::ToWorld(MyECS::World* world, string_view json) {
     return false;
   }
 
-  auto entityMngr = doc[Serializer::Key::ENTITY_MNGR].GetObject();
-  auto entities = entityMngr[Serializer::Key::ENTITIES].GetArray();
+  auto entityMngr = doc[Serializer::Key::EntityMngr].GetObject();
+  auto entities = entityMngr[Serializer::Key::Entities].GetArray();
 
   // 1. use free entry
   // 2. use new entry
@@ -509,7 +508,7 @@ bool Serializer::ToWorld(MyECS::World* world, string_view json) {
   size_t newEntityIndex = world->entityMngr.TotalEntityNum() + leftFreeEntryNum;
   for (const auto& val_e : entities) {
     const auto& e = val_e.GetObject();
-    size_t index = e[Key::INDEX].GetUint64();
+    size_t index = e[Key::Index].GetUint64();
     if (leftFreeEntryNum > 0) {
       size_t freeIdx = freeEntries[--leftFreeEntryNum];
       size_t version = world->entityMngr.GetEntityVersion(freeIdx);
@@ -522,21 +521,20 @@ bool Serializer::ToWorld(MyECS::World* world, string_view json) {
 
   for (const auto& val_e : entities) {
     const auto& jsonEntity = val_e.GetObject();
-    const auto& jsonCmpts = jsonEntity[Key::COMPONENTS].GetArray();
+    const auto& jsonCmpts = jsonEntity[Key::Components].GetArray();
 
     std::vector<TypeID> cmptTypes;
     cmptTypes.resize(jsonCmpts.Size());
     for (SizeType i = 0; i < jsonCmpts.Size(); i++) {
       const auto& cmpt = jsonCmpts[i].GetObject();
-      size_t cmptID = cmpt[Key::TYPEID].GetUint64();
-      cmptTypes[i] = TypeID{cmptID};
+      cmptTypes[i] = TypeID{cmpt[Key::TypeID].GetUint64()};
     }
 
     auto entity =
         world->entityMngr.Create(std::span{cmptTypes.data(), cmptTypes.size()});
     for (size_t i = 0; i < cmptTypes.size(); i++) {
       void* ptr = world->entityMngr.WriteComponent(entity, cmptTypes[i]).Ptr();
-      ObjectView obj{UDRefl::Mngr.tregistry.Typeof(cmptTypes[i]), ptr};
+      ObjectView obj{MyDRefl::Mngr.tregistry.Typeof(cmptTypes[i]), ptr};
       obj.Invoke<void>(NameIDRegistry::Meta::operator_assignment,
                        TempArgsView{details::DeserializeRecursion(
                            jsonCmpts[static_cast<SizeType>(i)], ctx)},
@@ -547,7 +545,7 @@ bool Serializer::ToWorld(MyECS::World* world, string_view json) {
   return true;
 }
 
-UDRefl::SharedObject Serializer::ToUserType(std::string_view json) {
+MyDRefl::SharedObject Serializer::Deserialize(std::string_view json) {
   Document doc;
   ParseResult rst = doc.Parse(json.data());
   EntityIdxMap emptyMap;
@@ -555,30 +553,10 @@ UDRefl::SharedObject Serializer::ToUserType(std::string_view json) {
   return details::DeserializeRecursion(doc, ctx);
 }
 
-void Serializer::RegisterSerializeFunction(size_t id, SerializeFunc func) {
-  pImpl->serializer.Register(id, std::move(func));
+void Serializer::RegisterSerializeFunction(TypeID id, SerializeFunc func) {
+  pImpl->serializer.Register(id.GetValue(), std::move(func));
 }
 
-void Serializer::RegisterDeserializeFunction(size_t id, DeserializeFunc func) {
-  pImpl->deserializer.Register(id, std::move(func));
-}
-
-void Serializer::RegisterComponentSerializeFunction(TypeID type,
-                                                    SerializeFunc func) {
-  RegisterSerializeFunction(type.GetValue(), std::move(func));
-}
-
-void Serializer::RegisterComponentDeserializeFunction(TypeID type,
-                                                      DeserializeFunc func) {
-  RegisterDeserializeFunction(type.GetValue(), std::move(func));
-}
-
-void Serializer::RegisterUserTypeSerializeFunction(size_t id,
-                                                   SerializeFunc func) {
-  RegisterSerializeFunction(id, std::move(func));
-}
-
-void Serializer::RegisterUserTypeDeserializeFunction(size_t id,
-                                                     DeserializeFunc func) {
-  RegisterDeserializeFunction(id, std::move(func));
+void Serializer::RegisterDeserializeFunction(TypeID id, DeserializeFunc func) {
+  pImpl->deserializer.Register(id.GetValue(), std::move(func));
 }

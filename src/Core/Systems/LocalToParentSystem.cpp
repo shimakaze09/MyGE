@@ -9,9 +9,8 @@
 using namespace Smkz::MyGE;
 using namespace Smkz::MyECS;
 
-void LocalToParentSystem::ChildLocalToWorld(World* w,
-                                            const transformf& parent_l2w,
-                                            Entity e) {
+void LocalToParentSystem::ChildLocalSerializeToWorld(
+    World* w, const transformf& parent_l2w, Entity e) {
   transformf l2w;
   if (w->entityMngr.Have(e, TypeID_of<LocalToWorld>) &&
       w->entityMngr.Have(e, TypeID_of<LocalToParent>)) {
@@ -24,7 +23,8 @@ void LocalToParentSystem::ChildLocalToWorld(World* w,
 
   if (w->entityMngr.Have(e, TypeID_of<Children>)) {
     auto children = w->entityMngr.ReadComponent<Children>(e);
-    for (const auto& child : children->value) ChildLocalToWorld(w, l2w, child);
+    for (const auto& child : children->value)
+      ChildLocalSerializeToWorld(w, l2w, child);
   }
 }
 
@@ -33,7 +33,7 @@ void LocalToParentSystem::OnUpdate(Schedule& schedule) {
   schedule.RegisterEntityJob(
       [](World* w, const LocalToWorld* l2w, const Children* children) {
         for (const auto& child : children->value)
-          ChildLocalToWorld(w, l2w->value, child);
+          ChildLocalSerializeToWorld(w, l2w->value, child);
       },
       SystemFuncName,
       Schedule::EntityJobConfig{
