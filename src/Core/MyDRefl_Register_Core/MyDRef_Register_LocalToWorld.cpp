@@ -9,5 +9,5 @@ using namespace Smkz::MyDRefl;
 
 void Smkz::MyGE::details::MyDRefl_Register_LocalSerializeToWorld() {
   Mngr.RegisterType<LocalToWorld>();
-  Mngr.AddField<&LocalToWorld::value>("value");
+  Mngr.SimpleAddField<&LocalToWorld::value>("value");
 }

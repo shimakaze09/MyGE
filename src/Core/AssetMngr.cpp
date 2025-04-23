@@ -21,7 +21,7 @@ struct AssetMngr::Impl {
 
   std::unordered_map<void*, xg::Guid> assetID2guid;
   std::unordered_map<void*, std::string> assetID2name;
-  std::multimap<xg::Guid, UDRefl::SharedObject> guid2asset;
+  std::multimap<xg::Guid, MyDRefl::SharedObject> guid2asset;
 
   std::unordered_map<xg::Guid, std::shared_ptr<AssetImporter>> guid2importer;
 
@@ -109,7 +109,7 @@ struct AssetMngr::Impl {
 };
 
 AssetMngr::AssetMngr() : pImpl{new Impl} {
-  AssetImporter::RegisterToUDRefl();
+  AssetImporter::RegisterToMyDRefl();
   Serializer::Instance().RegisterSerializeFunction(
       [](const AssetImporter* aimporter, Serializer::SerializeContext& ctx) {
         aimporter->Serialize(ctx);
@@ -150,7 +150,7 @@ xg::Guid AssetMngr::AssetPathToGUID(const std::filesystem::path& path) const {
   return target == pImpl->path2guid.end() ? xg::Guid{} : target->second;
 }
 
-bool AssetMngr::Contains(UDRefl::SharedObject obj) const {
+bool AssetMngr::Contains(MyDRefl::SharedObject obj) const {
   return pImpl->assetID2guid.contains(obj.GetPtr());
 }
 
@@ -163,7 +163,7 @@ std::vector<xg::Guid> AssetMngr::FindAssets(
   return rst;
 }
 
-xg::Guid AssetMngr::GetAssetGUID(UDRefl::SharedObject obj) const {
+xg::Guid AssetMngr::GetAssetGUID(MyDRefl::SharedObject obj) const {
   auto target = pImpl->assetID2guid.find(obj.GetPtr());
   if (target == pImpl->assetID2guid.end()) return {};
   return target->second;
@@ -173,7 +173,7 @@ const std::filesystem::path& AssetMngr::GetAssetPath(SharedObject obj) const {
   return GUIDToAssetPath(GetAssetGUID(obj));
 }
 
-Ubpa::Type AssetMngr::GetAssetType(const std::filesystem::path& path) const {
+Smkz::Type AssetMngr::GetAssetType(const std::filesystem::path& path) const {
   auto guid = AssetPathToGUID(path);
   if (!guid.isValid()) return {};
   auto target = pImpl->guid2asset.find(guid);
@@ -201,6 +201,18 @@ SharedObject AssetMngr::GUIDToAsset(const xg::Guid& guid, Type type) const {
   auto iter_end = pImpl->guid2asset.upper_bound(guid);
   for (auto iter = iter_begin; iter != iter_end; ++iter) {
     if (iter->second.GetType() == type) return iter->second;
+  }
+
+  return {};
+}
+
+MyDRefl::SharedObject AssetMngr::GUIDToAsset(const xg::Guid& guid,
+                                             std::string_view name) const {
+  auto iter_begin = pImpl->guid2asset.lower_bound(guid);
+  auto iter_end = pImpl->guid2asset.upper_bound(guid);
+  for (auto iter = iter_begin; iter != iter_end; ++iter) {
+    if (pImpl->assetID2name.at(iter->second.GetPtr()) == name)
+      return iter->second;
   }
 
   return {};
@@ -405,7 +417,7 @@ bool AssetMngr::MoveAsset(const std::filesystem::path& src,
   return true;
 }
 
-std::string_view AssetMngr::NameofAsset(UDRefl::SharedObject obj) const {
+std::string_view AssetMngr::NameofAsset(MyDRefl::SharedObject obj) const {
   auto target = pImpl->assetID2name.find(obj.GetPtr());
   if (target == pImpl->assetID2name.end()) return {};
 
@@ -417,6 +429,7 @@ void AssetMngr::SetImporterOverride(const std::filesystem::path& path,
   auto guid = AssetPathToGUID(path);
   if (!guid.isValid()) return;
   pImpl->guid2importer.insert_or_assign(guid, importer);
+  ReserializeAsset(path);
 }
 
 std::string AssetMngr::Impl::LoadText(const std::filesystem::path& path) {

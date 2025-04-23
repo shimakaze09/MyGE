@@ -21,10 +21,10 @@ class MyAssetImporter final : public TAssetImporter<MyAssetImporter> {
     std::string name = path.stem().string();
     auto myasset = std::make_shared<MyAsset>();
     myasset->data = initdata;
-    ctx.AddObject(name, UDRefl::SharedObject{Type_of<MyAsset>, myasset});
+    ctx.AddObject(name, MyDRefl::SharedObject{Type_of<MyAsset>, myasset});
     ctx.AddObject("default",
-                  UDRefl::SharedObject{Type_of<DefaultAsset>,
-                                       std::make_shared<DefaultAsset>()});
+                  MyDRefl::SharedObject{Type_of<DefaultAsset>,
+                                        std::make_shared<DefaultAsset>()});
     ctx.SetMainObjectID(name);
 
     return ctx;
@@ -36,11 +36,11 @@ class MyAssetImporter final : public TAssetImporter<MyAssetImporter> {
                                             asset.GetPtr());
   }
 
-  static void RegisterToUDRefl() {
-    RegisterToUDReflHelper();
-    UDRefl::Mngr.AddField<&MyAssetImporter::initdata>("initdata");
-    UDRefl::Mngr.RegisterType<MyAsset>();
-    UDRefl::Mngr.AddField<&MyAsset::data>("data");
+  static void RegisterToMyDRefl() {
+    RegisterToMyDReflHelper();
+    MyDRefl::Mngr.AddField<&MyAssetImporter::initdata>("initdata");
+    MyDRefl::Mngr.RegisterType<MyAsset>();
+    MyDRefl::Mngr.AddField<&MyAsset::data>("data");
   }
 
  private:
@@ -125,9 +125,11 @@ int main() {
   {
     auto myasset = std::make_shared<MyAsset>();
     myasset->data = 2;
-    AssetMngr::Instance().CreateAsset(myasset, LR"(b.myasset)");
-    AssetMngr::Instance().DeleteAsset(LR"(b.myasset)");
-    AssetMngr::Instance().CreateAsset(myasset, LR"(b.myasset)");
+    auto create_success =
+        AssetMngr::Instance().CreateAsset(myasset, LR"(b.myasset)");
+    assert(create_success);
+    auto delete_success = AssetMngr::Instance().DeleteAsset(LR"(b.myasset)");
+    assert(delete_success);
   }
 
   AssetMngr::Instance().Clear();

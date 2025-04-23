@@ -3,5 +3,4 @@ ADD_TARGET(
         MODE EXE
         LIB
         My::MyGE_Core
-        My::MyGE_Asset
 )

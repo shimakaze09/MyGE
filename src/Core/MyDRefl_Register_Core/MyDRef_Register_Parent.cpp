@@ -9,5 +9,5 @@ using namespace Smkz::MyDRefl;
 
 void Smkz::MyGE::details::MyDRefl_Register_Parent() {
   Mngr.RegisterType<Parent>();
-  Mngr.AddField<&Parent::value>("value");
+  Mngr.SimpleAddField<&Parent::value>("value");
 }

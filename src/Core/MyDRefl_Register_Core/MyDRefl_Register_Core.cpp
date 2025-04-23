@@ -5,6 +5,8 @@
 using namespace Smkz::MyGE;
 
 void Smkz::MyGE::MyDRefl_Register_Core() {
+  details::MyDRefl_Register_MyGM();
+  details::MyDRefl_Register_MyECS();
   details::MyDRefl_Register_Children();
   details::MyDRefl_Register_Input();
   details::MyDRefl_Register_LocalToParent();
@@ -19,5 +21,4 @@ void Smkz::MyGE::MyDRefl_Register_Core() {
   details::MyDRefl_Register_Translation();
   details::MyDRefl_Register_WorldTime();
   details::MyDRefl_Register_WorldToLocal();
-  details::MyDRefl_Register_MyECS();
 }

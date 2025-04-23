@@ -8,6 +8,6 @@ using namespace Smkz::MyDRefl;
 
 void Smkz::MyGE::details::MyDRefl_Register_MyECS() {
   Mngr.RegisterType<MyECS::Entity>();
-  Mngr.AddField<&MyECS::Entity::index>("index");
-  Mngr.AddField<&MyECS::Entity::version>("version");
+  Mngr.SimpleAddField<&MyECS::Entity::index>("index");
+  Mngr.SimpleAddField<&MyECS::Entity::version>("version");
 }

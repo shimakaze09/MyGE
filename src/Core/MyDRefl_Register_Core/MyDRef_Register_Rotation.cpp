@@ -9,5 +9,5 @@ using namespace Smkz::MyDRefl;
 
 void Smkz::MyGE::details::MyDRefl_Register_Rotation() {
   Mngr.RegisterType<Rotation>();
-  Mngr.AddField<&Rotation::value>("value");
+  Mngr.SimpleAddField<&Rotation::value>("value");
 }

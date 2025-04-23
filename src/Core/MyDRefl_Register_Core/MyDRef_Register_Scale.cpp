@@ -9,5 +9,5 @@ using namespace Smkz::MyDRefl;
 
 void Smkz::MyGE::details::MyDRefl_Register_Scale() {
   Mngr.RegisterType<Scale>();
-  Mngr.AddField<&Scale::value>("value");
+  Mngr.SimpleAddField<&Scale::value>("value");
 }

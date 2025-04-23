@@ -69,20 +69,20 @@
 #include <MyGM/vec.hpp>
 
 #define IM_VEC2_CLASS_EXTRA                                                        \
-        ImVec2(const My::valf2  & f) { x = f[0]; y = f[1]; }                     \
-        ImVec2(const My::pointf2& f) { x = f[0]; y = f[1]; }                     \
-        ImVec2(const My::vecf2  & f) { x = f[0]; y = f[1]; }                     \
-        operator My::valf2  () const { return My::valf2  (x,y); }              \
-        operator My::pointf2() const { return My::pointf2(x,y); }              \
-        operator My::vecf2  () const { return My::vecf2  (x,y); }
+        ImVec2(const Smkz::valf2  & f) { x = f[0]; y = f[1]; }                     \
+        ImVec2(const Smkz::pointf2& f) { x = f[0]; y = f[1]; }                     \
+        ImVec2(const Smkz::vecf2  & f) { x = f[0]; y = f[1]; }                     \
+        operator Smkz::valf2  () const { return Smkz::valf2  (x,y); }              \
+        operator Smkz::pointf2() const { return Smkz::pointf2(x,y); }              \
+        operator Smkz::vecf2  () const { return Smkz::vecf2  (x,y); }
 
 #define IM_VEC4_CLASS_EXTRA                                                        \
-        ImVec4(const My::valf4  & f) { x = f[0]; y = f[1]; z = f[2]; w = f[3]; } \
-        ImVec4(const My::pointf4& f) { x = f[0]; y = f[1]; z = f[2]; w = f[3]; } \
-        ImVec4(const My::vecf4  & f) { x = f[0]; y = f[1]; z = f[2]; w = f[3]; } \
-        operator My::valf4  () const { return My::valf4  (x, y, z, w); }       \
-        operator My::pointf4() const { return My::pointf4(x, y, z, w); }       \
-        operator My::vecf4  () const { return My::vecf4  (x, y, z, w); }
+        ImVec4(const Smkz::valf4  & f) { x = f[0]; y = f[1]; z = f[2]; w = f[3]; } \
+        ImVec4(const Smkz::pointf4& f) { x = f[0]; y = f[1]; z = f[2]; w = f[3]; } \
+        ImVec4(const Smkz::vecf4  & f) { x = f[0]; y = f[1]; z = f[2]; w = f[3]; } \
+        operator Smkz::valf4  () const { return Smkz::valf4  (x, y, z, w); }       \
+        operator Smkz::pointf4() const { return Smkz::pointf4(x, y, z, w); }       \
+        operator Smkz::vecf4  () const { return Smkz::vecf4  (x, y, z, w); }
 
 //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.
 // Your renderer back-end will need to support it (most example renderer back-ends support both 16/32-bit indices).
