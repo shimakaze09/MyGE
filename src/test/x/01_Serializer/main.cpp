@@ -1,5 +1,6 @@
 #include <MyGE/Core/AssetMngr.h>
 #include <MyGE/Core/Serializer.h>
+#include <MyGE/Core/SharedVar.h>
 #include <assert.h>
 
 #include <MyGM/MyGM.hpp>
@@ -52,6 +53,13 @@ struct D {
            lhs.v_t == rhs.v_t && lhs.v_v0 == rhs.v_v0 && lhs.v_v1 == rhs.v_v1 &&
            lhs.v_o0 == rhs.v_o0 && lhs.v_o1 == rhs.v_o1 &&
            lhs.v_vecf3 == rhs.v_vecf3;
+  }
+};
+
+struct E {
+  SharedVar<DefaultAsset> asset;
+  friend bool operator==(const E& lhs, const E& rhs) {
+    return lhs.asset.get() == rhs.asset.get();
   }
 };
 
@@ -138,5 +146,15 @@ int main() {
     std::cout << json << std::endl;
     D d2 = Serializer::Instance().Deserialize(json).As<D>();
     assert(d2 == d);
+  }
+  {
+    MyDRefl::Mngr.RegisterType<E>();
+
+    MyDRefl::Mngr.AddField<&E::asset>("asset");
+    E e{.asset = asset};
+    std::string json = Serializer::Instance().Serialize(&e);
+    std::cout << json << std::endl;
+    E e2 = Serializer::Instance().Deserialize(json).As<E>();
+    assert(e2 == e);
   }
 }

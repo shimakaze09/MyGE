@@ -1,12 +1,11 @@
 #pragma once
 
-#include <MyGE/Core/Asset.h>
-
+#include "../../Core/SharedVar.h"
 #include "../Material.h"
 
 namespace Smkz::MyGE {
 // singleton
 struct Skybox {
-  TAsset<Material> material;
+  SharedVar<Material> material;
 };
 }  // namespace Smkz::MyGE

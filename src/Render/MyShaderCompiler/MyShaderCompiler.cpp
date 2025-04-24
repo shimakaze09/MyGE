@@ -82,7 +82,7 @@ struct MyShaderCompiler::Impl {
         success = false;
         return ERROR;
       }
-      shader.hlslFile = AssetMngr::Instance().LoadAsset<HLSLFile>(path).obj;
+      shader.hlslFile = AssetMngr::Instance().LoadAsset<HLSLFile>(path);
       if (!shader.hlslFile) {
         success = false;
         return ERROR;
@@ -457,7 +457,7 @@ struct MyShaderCompiler::Impl {
         success = false;
         return ERROR;
       }
-      return tex2d.obj.cast_to_shared_ptr();
+      return tex2d;
     }
 
     virtual antlrcpp::Any visitProperty_cube(
@@ -505,7 +505,7 @@ struct MyShaderCompiler::Impl {
         success = false;
         return ERROR;
       }
-      return texcube.obj.cast_to_shared_ptr();
+      return texcube;
     }
 
     virtual antlrcpp::Any visitProperty_rgb(

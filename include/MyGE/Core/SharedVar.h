@@ -270,13 +270,13 @@ class SharedVar {
   // Assign
   ///////////
 
-  SharedVar& operator=(SharedVar& rhs) noexcept {
+  SharedVar& operator=(const SharedVar& rhs) noexcept {
     ptr = rhs.ptr;
     return *this;
   }
 
   template <typename U>
-  SharedVar& operator=(SharedVar<U>& rhs) noexcept {
+  SharedVar& operator=(const SharedVar<U>& rhs) noexcept {
     ptr = rhs.ptr;
     return *this;
   }
@@ -1253,6 +1253,17 @@ struct Smkz::MyDRefl::details::TypeAutoRegister<Smkz::MyGE::SharedVar<T>> {
                   Smkz::MyGE::SharedVar<T>&(Smkz::MyDRefl::SharedObject)>::
             template get(&Smkz::MyGE::SharedVar<T>::operator=)>(
         Smkz::MyDRefl::NameIDRegistry::Meta::operator_assignment);
+    mngr.AddConstructor<Smkz::MyGE::SharedVar<T>,
+                        Smkz::MyDRefl::SharedObject>();
+    mngr.AddMethod<
+        MemFuncOf<Smkz::MyGE::SharedVar<T>, Smkz::MyDRefl::SharedObject()>::
+            template get(&Smkz::MyGE::SharedVar<T>::cast_to_shared_obj)>(
+        "cast_to_shared_obj");
+    mngr.AddMethod<MemFuncOf<Smkz::MyGE::SharedVar<T>,
+                             Smkz::MyDRefl::SharedObject() const>::
+                       template get(
+                           &Smkz::MyGE::SharedVar<T>::cast_to_shared_obj)>(
+        "cast_to_shared_obj");
     Smkz::MyDRefl::details::TypeAutoRegister_Default<
         Smkz::MyGE::SharedVar<T>>::run(mngr);
   }
