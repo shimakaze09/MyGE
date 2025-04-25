@@ -3,6 +3,7 @@
 #include <MyGM/MyGM.hpp>
 #include <vector>
 
+#include "../Core/AssetImporter.h"
 #include "GPURsrc.h"
 #include "SubMeshDescriptor.h"
 
