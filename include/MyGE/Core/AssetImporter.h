@@ -7,9 +7,6 @@
 #include "Serializer.h"
 
 namespace Smkz::MyGE {
-template <typename Impl>
-class TAssetImporterCreator;
-
 class AssetImportContext {
  public:
   void AddObject(std::string id, MyDRefl::SharedObject obj) {
@@ -35,6 +32,27 @@ class AssetImportContext {
   std::map<std::string, MyDRefl::SharedObject> assets;
 };
 
+/*
+ * [Template]
+ * class XXXImporter final : public TAssetImporter<XXXImporter> {
+ * public:
+ *   using TAssetImporter<XXXImporter>::TAssetImporter;
+ *   virtual AssetImportContext ImportAsset() const override {
+ *     AssetImportContext ctx;
+ *     const auto& path = GetFullPath();
+ *     if (path.empty()) return {};
+ *     // fill ctx with path ...
+ *     return ctx;
+ *   }
+ *  static void RegisterToMyDRefl() {
+ *    RegisterToMyDReflHelper();
+ *    // Register fields
+ *    // Register Asset XXX
+ *  }
+ *
+ *  // fields
+ * };
+ */
 class AssetImporter {
  public:
   AssetImporter() = default;
@@ -42,6 +60,7 @@ class AssetImporter {
   virtual ~AssetImporter() = default;
 
   const xg::Guid& GetGuid() const noexcept { return guid; }
+  std::filesystem::path GetFullPath() const;
 
   virtual MyDRefl::ObjectView This() const noexcept = 0;
 
@@ -88,6 +107,14 @@ class TAssetImporter : public AssetImporter {
   using AssetImporter::RegisterToMyDRefl;
 };
 
+/*
+ * [Template]
+ * class XXXImporterCreator final : public TAssetImporterCreator<XXXImporter> {
+ *   virtual std::vector<std::string> SupportedExtentions() const override {
+ *     return { ".abc", ".def", ... };
+ *   }
+ * };
+ */
 class AssetImporterCreator {
  public:
   virtual ~AssetImporterCreator() = default;
@@ -106,6 +133,8 @@ class AssetImporterCreator {
     auto importer = importer_base.AsShared<AssetImporter>();
     return importer;
   }
+
+  virtual std::vector<std::string> SupportedExtentions() const = 0;
 };
 
 template <typename Importer>
@@ -154,5 +183,9 @@ class DefaultAssetImporter final : public TAssetImporter<DefaultAssetImporter> {
 };
 
 class DefaultAssetImporterCreator final
-    : public TAssetImporterCreator<DefaultAssetImporter> {};
+    : public TAssetImporterCreator<DefaultAssetImporter> {
+  virtual std::vector<std::string> SupportedExtentions() const override {
+    return {};
+  }
+};
 }  // namespace Smkz::MyGE

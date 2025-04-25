@@ -28,8 +28,8 @@ class GPURsrc {
   void SetClean() noexcept { dirty = false; }
 
   bool IsEditable() const noexcept { return editable; }
-  bool SetEditable() noexcept { editable = true; }
-  bool SetReadOnly() noexcept { editable = false; }
+  void SetEditable() noexcept { editable = true; }
+  void SetReadOnly() noexcept { editable = false; }
 
  protected:
   GPURsrc() noexcept : id{curID++} {}
@@ -46,7 +46,7 @@ class GPURsrc {
  private:
   size_t id;
   bool dirty{true};
-  bool editable{false};
+  bool editable{true};
   inline static std::atomic<size_t> curID{0};
 };
 }  // namespace Smkz::MyGE

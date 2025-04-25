@@ -102,9 +102,9 @@ int main() {
   }
   {
     MyDRefl::Mngr.RegisterType<B>();
-    MyDRefl::Mngr.AddField<&B::v_str>("v_str");
-    MyDRefl::Mngr.AddField<&B::v_pmr_str>("v_pmr_str");
-    MyDRefl::Mngr.AddField<&B::v_guid>("v_guid");
+    MyDRefl::Mngr.SimpleAddField<&B::v_str>("v_str");
+    MyDRefl::Mngr.SimpleAddField<&B::v_pmr_str>("v_pmr_str");
+    MyDRefl::Mngr.SimpleAddField<&B::v_guid>("v_guid");
     B b{.v_str = "abc", .v_pmr_str = "def", .v_guid = xg::newGuid()};
     std::string json = Serializer::Instance().Serialize(&b);
     std::cout << json << std::endl;

@@ -22,4 +22,10 @@ void Smkz::MyGE::details::MyDRefl_Register_MyGM() {
   Mngr.RegisterType<transformf>();
   Mngr.RegisterType<eulerf>();
   Mngr.RegisterType<quatf>();
+  Mngr.RegisterType<rgbf>();
+  Mngr.RegisterType<rgbaf>();
+  Mngr.RegisterType<trianglef2>();
+  Mngr.RegisterType<trianglef3>();
+  Mngr.RegisterType<bboxf2>();
+  Mngr.RegisterType<bboxf3>();
 }

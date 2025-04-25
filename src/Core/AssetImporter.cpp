@@ -3,6 +3,11 @@
 
 using namespace Smkz::MyGE;
 
+std::filesystem::path AssetImporter::GetFullPath() const {
+  return AssetMngr::Instance().GetFullPath(
+      AssetMngr::Instance().GUIDToAssetPath(GetGuid()));
+}
+
 std::string AssetImporter::ReserializeAsset() const {
   auto asset = AssetMngr::Instance().GUIDToAsset(guid);
   if (!asset.GetType() || !asset.GetPtr()) return {};
@@ -18,7 +23,8 @@ void AssetImporter::RegisterToMyDRefl() {
 
 AssetImportContext DefaultAssetImporter::ImportAsset() const {
   AssetImportContext ctx;
-  const auto& path = AssetMngr::Instance().GUIDToAssetPath(GetGuid());
+
+  auto path = GetFullPath();
   if (path.empty()) return {};
   std::string name = path.stem().string();
   ctx.AddObject(name, MyDRefl::SharedObject{Type_of<DefaultAsset>,

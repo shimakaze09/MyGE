@@ -16,7 +16,7 @@ class MyAssetImporter final : public TAssetImporter<MyAssetImporter> {
 
   virtual AssetImportContext ImportAsset() const override {
     AssetImportContext ctx;
-    const auto& path = AssetMngr::Instance().GUIDToAssetPath(GetGuid());
+    auto path = GetFullPath();
     if (path.empty()) return {};
     std::string name = path.stem().string();
     auto myasset = std::make_shared<MyAsset>();
@@ -48,7 +48,11 @@ class MyAssetImporter final : public TAssetImporter<MyAssetImporter> {
 };
 
 class MyAssetImporterCreator final
-    : public TAssetImporterCreator<MyAssetImporter> {};
+    : public TAssetImporterCreator<MyAssetImporter> {
+  virtual std::vector<std::string> SupportedExtentions() const override {
+    return {".myasset"};
+  }
+};
 
 int main() {
   // Enable run-time memory check for debug builds.
@@ -99,9 +103,9 @@ int main() {
   {
     AssetMngr::Instance().ImportAssetRecursively(LR"(recursive_0)");
   }
+  AssetMngr::Instance().RegisterAssetImporterCreator(
+      std::make_shared<MyAssetImporterCreator>());
   {
-    AssetMngr::Instance().RegisterAssetImporterCreator(
-        ".myasset", std::make_shared<MyAssetImporterCreator>());
     auto mainasset = AssetMngr::Instance().LoadMainAsset(LR"(a.myasset)");
     assert(mainasset.GetType().Is<MyAsset>());
     auto defaultAsset =
@@ -112,8 +116,6 @@ int main() {
   }
   {
     AssetMngr::Instance().Clear();
-    AssetMngr::Instance().RegisterAssetImporterCreator(
-        ".myasset", std::make_shared<MyAssetImporterCreator>());
     auto mainasset = AssetMngr::Instance().LoadMainAsset(LR"(a.myasset)");
     assert(mainasset.GetType().Is<MyAsset>());
     auto defaultAsset =

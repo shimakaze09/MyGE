@@ -4,9 +4,9 @@
 
 namespace Smkz::MyGE {
 struct Light {
-  enum class Type { Directional, Point, Spot, Rect, Disk };
+  enum class Mode { Directional, Point, Spot, Rect, Disk };
 
-  Type type{Type::Directional};
+  Mode mode{Mode::Directional};
   rgbf color{1.f};
   float intensity{1.f};
   float range{10.f};
