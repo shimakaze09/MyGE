@@ -1,7 +1,12 @@
 #pragma once
 
 namespace Smkz::MyGE::details {
-void MyDRefl_Register_MyGM();
+void MyDRefl_Register_MyGM_0();
+void MyDRefl_Register_MyGM_1();
+void MyDRefl_Register_MyGM_2();
+void MyDRefl_Register_MyGM_3();
+void MyDRefl_Register_MyGM_4();
+void MyDRefl_Register_MyGM_5();
 void MyDRefl_Register_MyECS();
 void MyDRefl_Register_Children();
 void MyDRefl_Register_Input();

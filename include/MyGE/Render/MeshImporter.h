@@ -8,7 +8,7 @@ class MeshImporter final : public TAssetImporter<MeshImporter> {
   using TAssetImporter<MeshImporter>::TAssetImporter;
 
   virtual AssetImportContext ImportAsset() const override;
-  static void RegisterToUDRefl();
+  static void RegisterToMyDRefl();
 };
 
 class MeshImporterCreator final : public TAssetImporterCreator<MeshImporter> {

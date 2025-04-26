@@ -3,16 +3,16 @@
 #include "../Core/AssetImporter.h"
 
 namespace Smkz::MyGE {
-class HLSLFileImporter final : public TAssetImporter<HLSLFileImporter> {
+class ShaderImporter final : public TAssetImporter<ShaderImporter> {
  public:
-  using TAssetImporter<HLSLFileImporter>::TAssetImporter;
+  using TAssetImporter<ShaderImporter>::TAssetImporter;
 
   virtual AssetImportContext ImportAsset() const override;
   static void RegisterToMyDRefl();
 };
 
-class HLSLFileImporterCreator final
-    : public TAssetImporterCreator<HLSLFileImporter> {
+class ShaderImporterCreator final
+    : public TAssetImporterCreator<ShaderImporter> {
  public:
   virtual std::vector<std::string> SupportedExtentions() const override;
 };

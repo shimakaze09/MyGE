@@ -51,4 +51,5 @@ ADD_TARGET(
         ${c_options_private}
         DEFINE
         NOMINMAX
+        MY_MYDREFL_INCLUDE_ALL_STD_NAME
 )

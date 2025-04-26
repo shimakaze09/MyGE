@@ -412,17 +412,16 @@ struct MyShaderCompiler::Impl {
 
     virtual antlrcpp::Any visitProperty_2D(
         details::MyShaderParser::Property_2DContext* ctx) override {
-      std::shared_ptr<Texture2D> tex2d = ctx->val_tex2d()->accept(this);
+      SharedVar<Texture2D> tex2d = ctx->val_tex2d()->accept(this);
       if (!success)
-        return std::pair{std::string{},
-                         ShaderProperty{std::shared_ptr<Texture2D>{}}};
+        return std::pair{std::string{}, ShaderProperty{SharedVar<Texture2D>{}}};
       auto name = ctx->property_name()->getText();
       return std::pair{name, ShaderProperty{tex2d}};
     }
 
     virtual antlrcpp::Any visitVal_tex2d(
         details::MyShaderParser::Val_tex2dContext* ctx) override {
-      static const std::shared_ptr<Texture2D> ERROR;
+      static const SharedVar<Texture2D> ERROR;
       xg::Guid guid;
       if (ctx->default_texture_2d()) {
         auto name = ctx->default_texture_2d()->getText();
@@ -462,17 +461,17 @@ struct MyShaderCompiler::Impl {
 
     virtual antlrcpp::Any visitProperty_cube(
         details::MyShaderParser::Property_cubeContext* ctx) override {
-      std::shared_ptr<TextureCube> texcube = ctx->val_texcube()->accept(this);
+      SharedVar<TextureCube> texcube = ctx->val_texcube()->accept(this);
       if (!success)
         return std::pair{std::string{},
-                         ShaderProperty{std::shared_ptr<TextureCube>{}}};
+                         ShaderProperty{SharedVar<TextureCube>{}}};
       auto name = ctx->property_name()->getText();
       return std::pair{name, ShaderProperty{texcube}};
     }
 
     virtual antlrcpp::Any visitVal_texcube(
         details::MyShaderParser::Val_texcubeContext* ctx) override {
-      static const std::shared_ptr<TextureCube> ERROR = nullptr;
+      static const SharedVar<TextureCube> ERROR = nullptr;
       xg::Guid guid;
       if (ctx->default_texture_cube()) {
         auto name = ctx->default_texture_cube()->getText();

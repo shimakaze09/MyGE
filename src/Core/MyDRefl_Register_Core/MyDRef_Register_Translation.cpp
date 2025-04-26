@@ -9,5 +9,5 @@ using namespace Smkz::MyDRefl;
 
 void Smkz::MyGE::details::MyDRefl_Register_Translation() {
   Mngr.RegisterType<Translation>();
-  Mngr.AddField<&Translation::value>("value");
+  Mngr.SimpleAddField<&Translation::value>("value");
 }

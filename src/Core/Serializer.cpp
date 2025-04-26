@@ -101,6 +101,12 @@ struct Serializer::Impl {
 
 void Serializer::SerializeRecursion(MyDRefl::ObjectView obj,
                                     SerializeContext& ctx) {
+  if (obj.GetType().IsReference()) {
+    ctx.writer.String(Key::NotSupport);
+    return;
+  }
+
+  obj = obj.RemoveConst();
   if (obj.GetType().IsArithmetic()) {
     switch (obj.GetType().GetID().GetValue()) {
       case TypeID_of<bool>.GetValue():
@@ -169,12 +175,32 @@ void Serializer::SerializeRecursion(MyDRefl::ObjectView obj,
 
   if (ctx.serializer.IsRegistered(obj.GetType().GetID().GetValue()))
     ctx.serializer.Visit(obj.GetType().GetID().GetValue(), obj.GetPtr(), ctx);
-  else if (obj.GetType().IsReference())
-    ctx.writer.String(Key::NotSupport);
-  else if (obj.GetType().Is<UECS::Entity>())
+  else if (obj.GetType().IsEnum()) {
+    bool found = false;
+    for (const auto& [name, v] : obj.GetVars(FieldFlag::Unowned)) {
+      if (v == obj) {
+        ctx.writer.String(name.GetView().data());
+        found = true;
+        break;
+      }
+    }
+    if (!found) ctx.writer.String(Key::NotSupport);
+  } else if (obj.GetType().Is<MyECS::Entity>())
     ctx.writer.Uint64(obj.As<Entity>().index);
   else if (obj.GetType().Is<SharedObject>()) {
     auto sobj = obj.As<SharedObject>();
+    if (AssetMngr::Instance().Contains(sobj)) {
+      ctx.writer.StartObject();
+      ctx.writer.Key(Key::Name);
+      ctx.writer.String(AssetMngr::Instance().NameofAsset(sobj).data());
+      ctx.writer.Key(Key::Guid);
+      ctx.writer.String(AssetMngr::Instance().GetAssetGUID(sobj).str());
+      ctx.writer.EndObject();
+    } else
+      ctx.writer.String(Key::NotSupport);
+  } else if (obj.GetType().GetName().starts_with(
+                 "Smkz::MyGE::SharedVar<")) {  // TODO
+    auto sobj = obj.Invoke("cast_to_shared_obj");
     if (AssetMngr::Instance().Contains(sobj)) {
       ctx.writer.StartObject();
       ctx.writer.Key(Key::Name);
@@ -201,6 +227,8 @@ void Serializer::SerializeRecursion(MyDRefl::ObjectView obj,
       case Smkz::MyDRefl::ContainerType::ForwardList:
       case Smkz::MyDRefl::ContainerType::List:
       case Smkz::MyDRefl::ContainerType::MultiSet:
+      case Smkz::MyDRefl::ContainerType::Map:
+      case Smkz::MyDRefl::ContainerType::MultiMap:
       case Smkz::MyDRefl::ContainerType::RawArray:
       case Smkz::MyDRefl::ContainerType::Set:
       case Smkz::MyDRefl::ContainerType::UnorderedMap:
@@ -324,6 +352,26 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
     return Mngr.MakeShared(
         Type_of<SharedObject>,
         TempArgsView{ObjectView{Type_of<SharedObject>, &obj}});
+  } else if (type.GetName().starts_with("Smkz::MyGE::SharedVar<")) {  // TODO
+    if (!content.IsObject()) return {};  // not support
+
+    auto asset = content.GetObject();
+    auto n = asset[Key::Name].GetString();
+    auto guid = xg::Guid{asset[Key::Guid].GetString()};
+
+    auto obj = AssetMngr::Instance().GUIDToAsset(guid, n);
+    // SharedVar of SharedObject
+    return Mngr.MakeShared(
+        type, TempArgsView{ObjectView{Type_of<SharedObject>, &obj}});
+  } else if (type.IsEnum()) {
+    std::string name = content.GetString();
+    if (name == Key::NotSupport) return Mngr.MakeShared(type);
+
+    for (const auto& [n, v] : VarRange{type}) {
+      if (n.Is(name)) return Mngr.MakeShared(type, TempArgsView{v});
+    }
+
+    return Mngr.MakeShared(type);
   } else if (type.Is<Entity>()) {
     assert(content.IsUint64());
     return Mngr.MakeShared(
@@ -528,7 +576,7 @@ std::string Serializer::Serialize(ObjectView obj) {
   return json;
 }
 
-bool Serializer::SerializeToWorld(UECS::World* world, string_view json) {
+bool Serializer::SerializeToWorld(MyECS::World* world, string_view json) {
   Document doc;
   ParseResult rst = doc.Parse(json.data());
 

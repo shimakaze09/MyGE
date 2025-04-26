@@ -5,7 +5,12 @@
 using namespace Smkz::MyGE;
 
 void Smkz::MyGE::MyDRefl_Register_Core() {
-  details::MyDRefl_Register_MyGM();
+  details::MyDRefl_Register_MyGM_0();
+  details::MyDRefl_Register_MyGM_1();
+  details::MyDRefl_Register_MyGM_2();
+  details::MyDRefl_Register_MyGM_3();
+  details::MyDRefl_Register_MyGM_4();
+  details::MyDRefl_Register_MyGM_5();
   details::MyDRefl_Register_MyECS();
   details::MyDRefl_Register_Children();
   details::MyDRefl_Register_Input();

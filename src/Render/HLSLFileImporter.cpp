@@ -5,7 +5,7 @@
 
 using namespace Smkz::MyGE;
 
-void HLSLFileImporter::RegisterToUDRefl() { RegisterToUDReflHelper(); }
+void HLSLFileImporter::RegisterToMyDRefl() { RegisterToMyDReflHelper(); }
 
 AssetImportContext HLSLFileImporter::ImportAsset() const {
   AssetImportContext ctx;
@@ -26,7 +26,7 @@ AssetImportContext HLSLFileImporter::ImportAsset() const {
 
   std::shared_ptr<HLSLFile> hlsl =
       std::make_shared<HLSLFile>(str, path.parent_path().string());
-  ctx.AddObject(name, UDRefl::SharedObject{Type_of<HLSLFile>, hlsl});
+  ctx.AddObject(name, MyDRefl::SharedObject{Type_of<HLSLFile>, hlsl});
   ctx.SetMainObjectID(name);
 
   return ctx;
