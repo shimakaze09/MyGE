@@ -8,7 +8,7 @@ class TextureImporter final : public TAssetImporter<TextureImporter> {
   using TAssetImporter<TextureImporter>::TAssetImporter;
 
   virtual AssetImportContext ImportAsset() const override;
-  static void RegisterToUDRefl();
+  static void RegisterToMyDRefl();
 
   enum class Mode { Texture2D, TextureCube };
 

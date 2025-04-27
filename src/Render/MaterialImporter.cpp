@@ -1,53 +1,49 @@
-#include <Utopia/Render/MaterialImporter.h>
-
-#include "ShaderImporter/ShaderImporterRegisterImpl.h"
-
-#include <Utopia/Render/Material.h>
+#include <MyGE/Render/Material.h>
+#include <MyGE/Render/MaterialImporter.h>
 
 #include <filesystem>
 
-using namespace Ubpa::Utopia;
+#include "ShaderImporter/ShaderImporterRegisterImpl.h"
 
-void MaterialImporter::RegisterToUDRefl() {
-	RegisterToUDReflHelper();
+using namespace Smkz::MyGE;
 
-	// Register ShaderProperty and map
-	details::ShaderImporterRegister_Shader();
+void MaterialImporter::RegisterToMyDRefl() {
+  RegisterToMyDReflHelper();
 
-	UDRefl::Mngr.RegisterType<Material>();
-	UDRefl::Mngr.AddField<&Material::shader>("shader");
-	UDRefl::Mngr.SimpleAddField<&Material::properties>("properties");
+  // Register ShaderProperty and map
+  details::ShaderImporterRegister_Shader();
+
+  MyDRefl::Mngr.RegisterType<Material>();
+  MyDRefl::Mngr.AddField<&Material::shader>("shader");
+  MyDRefl::Mngr.SimpleAddField<&Material::properties>("properties");
 }
 
 AssetImportContext MaterialImporter::ImportAsset() const {
-	AssetImportContext ctx;
-	auto path = GetFullPath();
-	if (path.empty())
-		return {};
+  AssetImportContext ctx;
+  auto path = GetFullPath();
+  if (path.empty()) return {};
 
-	std::string name = path.stem().string();
+  std::string name = path.stem().string();
 
-	std::ifstream ifs(path);
-	assert(ifs.is_open());
-	std::string str;
+  std::ifstream ifs(path);
+  assert(ifs.is_open());
+  std::string str;
 
-	ifs.seekg(0, std::ios::end);
-	str.reserve(ifs.tellg());
-	ifs.seekg(0, std::ios::beg);
+  ifs.seekg(0, std::ios::end);
+  str.reserve(ifs.tellg());
+  ifs.seekg(0, std::ios::beg);
 
-	str.assign(
-		std::istreambuf_iterator<char>(ifs),
-		std::istreambuf_iterator<char>()
-	);
+  str.assign(std::istreambuf_iterator<char>(ifs),
+             std::istreambuf_iterator<char>());
 
-	auto materail = Serializer::Instance().Deserialize(str).AsShared<Material>();
+  auto materail = Serializer::Instance().Deserialize(str).AsShared<Material>();
 
-	ctx.AddObject(name, UDRefl::SharedObject{ Type_of<Material>, materail });
-	ctx.SetMainObjectID(name);
+  ctx.AddObject(name, MyDRefl::SharedObject{Type_of<Material>, materail});
+  ctx.SetMainObjectID(name);
 
-	return ctx;
+  return ctx;
 }
 
 std::vector<std::string> MaterialImporterCreator::SupportedExtentions() const {
-	return { ".mat" };
+  return {".mat"};
 }

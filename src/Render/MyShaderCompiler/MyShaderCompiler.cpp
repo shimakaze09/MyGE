@@ -14,11 +14,11 @@ using namespace Smkz::MyGE;
 struct MyShaderCompiler::Impl {
   class MyShaderCompilerInstance : private details::MyShaderBaseVisitor {
    public:
-    std::tuple<bool, Shader> Compile(std::string_view ushader) {
+    std::tuple<bool, Shader> Compile(std::string_view myshader) {
       success = true;
       curPass = nullptr;
 
-      antlr4::ANTLRInputStream input(ushader.data());
+      antlr4::ANTLRInputStream input(myshader.data());
       details::MyShaderLexer lexer(&input);
       antlr4::CommonTokenStream tokens(&lexer);
       details::MyShaderParser parser(&tokens);
@@ -426,11 +426,11 @@ struct MyShaderCompiler::Impl {
       if (ctx->default_texture_2d()) {
         auto name = ctx->default_texture_2d()->getText();
         if (name == "White")
-          guid = xg::Guid{"1936ed7e-6896-4ace-abd9-5b084fcfb891"};
+          guid = xg::Guid{"aad48aae-8778-412a-a1e0-abcf00edf829"};
         else if (name == "Black")
-          guid = xg::Guid{"ece48884-cc0d-4288-be5e-c58a6d2ea187"};
+          guid = xg::Guid{"e4a8c681-2f85-4832-aa67-4270fb3f5d2b"};
         else if (name == "Bump")
-          guid = xg::Guid{"b5e7fb39-fedd-4371-a00a-552a86307db7"};
+          guid = xg::Guid{"52d5893d-4a96-4999-bab1-c5f71ee33f44"};
         else {
           assert(false);
           success = false;
@@ -456,7 +456,7 @@ struct MyShaderCompiler::Impl {
         success = false;
         return ERROR;
       }
-      return tex2d;
+      return SharedVar<Texture2D>{tex2d};
     }
 
     virtual antlrcpp::Any visitProperty_cube(
@@ -476,9 +476,9 @@ struct MyShaderCompiler::Impl {
       if (ctx->default_texture_cube()) {
         auto name = ctx->default_texture_cube()->getText();
         if (name == "White")
-          guid = xg::Guid{"ca4f09fc-b1fb-4a45-99c1-c2d7bfe828c2"};
-        else if (name == "Balck")
-          guid = xg::Guid{"4fcdaad5-f960-4d8f-aab8-29b771636256"};
+          guid = xg::Guid{"f890bdde-42ca-4801-874d-988c9faeb5e7"};
+        else if (name == "Black")
+          guid = xg::Guid{"a8b469a4-fbe3-4ff5-9caf-d1b6a19554fc"};
         else {
           assert(false);
           success = false;
@@ -504,7 +504,7 @@ struct MyShaderCompiler::Impl {
         success = false;
         return ERROR;
       }
-      return texcube;
+      return SharedVar<TextureCube>{texcube};
     }
 
     virtual antlrcpp::Any visitProperty_rgb(
@@ -881,8 +881,8 @@ MyShaderCompiler::MyShaderCompiler() : pImpl{new Impl} {}
 
 MyShaderCompiler::~MyShaderCompiler() { delete pImpl; }
 
-std::tuple<bool, Shader> MyShaderCompiler::Compile(std::string_view ushader) {
+std::tuple<bool, Shader> MyShaderCompiler::Compile(std::string_view myshader) {
   Shader shader;
   Impl::MyShaderCompilerInstance compiler;
-  return compiler.Compile(ushader);
+  return compiler.Compile(myshader);
 }

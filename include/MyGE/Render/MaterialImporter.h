@@ -8,7 +8,7 @@ class MaterialImporter final : public TAssetImporter<MaterialImporter> {
   using TAssetImporter<MaterialImporter>::TAssetImporter;
 
   virtual AssetImportContext ImportAsset() const override;
-  static void RegisterToUDRefl();
+  static void RegisterToMyDRefl();
 };
 
 class MaterialImporterCreator final

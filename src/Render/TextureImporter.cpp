@@ -6,15 +6,15 @@
 
 using namespace Smkz::MyGE;
 
-void TextureImporter::RegisterToUDRefl() {
-  RegisterToUDReflHelper();
+void TextureImporter::RegisterToMyDRefl() {
+  RegisterToMyDReflHelper();
 
-  UDRefl::Mngr.RegisterType<TextureImporter::Mode>();
-  UDRefl::Mngr.SimpleAddField<TextureImporter::Mode::Texture2D>("Texture2D");
-  UDRefl::Mngr.SimpleAddField<TextureImporter::Mode::TextureCube>(
+  MyDRefl::Mngr.RegisterType<TextureImporter::Mode>();
+  MyDRefl::Mngr.SimpleAddField<TextureImporter::Mode::Texture2D>("Texture2D");
+  MyDRefl::Mngr.SimpleAddField<TextureImporter::Mode::TextureCube>(
       "TextureCube");
 
-  UDRefl::Mngr.SimpleAddField<&TextureImporter::mode>("mode");
+  MyDRefl::Mngr.SimpleAddField<&TextureImporter::mode>("mode");
 }
 
 AssetImportContext TextureImporter::ImportAsset() const {
@@ -31,11 +31,11 @@ AssetImportContext TextureImporter::ImportAsset() const {
       Texture2D t;
       t.image = std::move(img);
       auto tex = std::make_shared<Texture2D>(std::move(t));
-      ctx.AddObject(name, UDRefl::SharedObject{Type_of<Texture2D>, tex});
+      ctx.AddObject(name, MyDRefl::SharedObject{Type_of<Texture2D>, tex});
     } break;
     case Smkz::MyGE::TextureImporter::Mode::TextureCube: {
       auto tex = std::make_shared<TextureCube>(std::move(img));
-      ctx.AddObject(name, UDRefl::SharedObject{Type_of<TextureCube>, tex});
+      ctx.AddObject(name, MyDRefl::SharedObject{Type_of<TextureCube>, tex});
     } break;
     default:
       assert(false);
