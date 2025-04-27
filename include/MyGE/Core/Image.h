@@ -55,6 +55,9 @@ class Image {
   size_t GetHeight() const noexcept { return height; }
   size_t GetChannel() const noexcept { return channel; }
 
+  friend bool operator==(const Image& lhs, const Image& rhs) noexcept;
+  friend bool operator!=(const Image& lhs, const Image& rhs) noexcept;
+
  private:
   float* data{nullptr};
   size_t width{static_cast<size_t>(0)};

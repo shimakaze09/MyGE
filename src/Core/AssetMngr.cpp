@@ -281,7 +281,7 @@ SharedObject AssetMngr::LoadAsset(const std::filesystem::path& path,
     for (const auto& [n, obj] : ctx.GetAssets()) {
       pImpl->assetID2guid.emplace(obj.GetPtr(), guid);
       pImpl->assetID2name.emplace(obj.GetPtr(), n);
-      if (obj == mainObj) continue;
+      if (obj.GetPtr() == mainObj.GetPtr()) continue;
       pImpl->guid2asset.emplace(guid, obj);
     }
     if (mainObj) pImpl->guid2asset.emplace(guid, mainObj);
@@ -306,7 +306,7 @@ std::vector<SharedObject> AssetMngr::LoadAllAssets(
     for (const auto& [n, obj] : ctx.GetAssets()) {
       pImpl->assetID2guid.emplace(obj.GetPtr(), guid);
       pImpl->assetID2name.emplace(obj.GetPtr(), n);
-      if (obj == mainObj) continue;
+      if (obj.GetPtr() == mainObj.GetPtr()) continue;
       pImpl->guid2asset.emplace(guid, obj);
     }
     if (mainObj) pImpl->guid2asset.emplace(guid, mainObj);
