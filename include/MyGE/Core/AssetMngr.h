@@ -63,12 +63,11 @@ class AssetMngr {
 
   // if not loaded, return nullptr
 
-  MyDRefl::SharedObject GUIDToAsset(const xg::Guid&) const;
-  MyDRefl::SharedObject GUIDToAsset(const xg::Guid&, Type type) const;
-  MyDRefl::SharedObject GUIDToAsset(const xg::Guid&,
-                                    std::string_view name) const;
+  MyDRefl::SharedObject GUIDToAsset(const xg::Guid&);
+  MyDRefl::SharedObject GUIDToAsset(const xg::Guid&, Type type);
+  MyDRefl::SharedObject GUIDToAsset(const xg::Guid&, std::string_view name);
   template <typename T>
-  std::shared_ptr<T> GUIDToAsset(const xg::Guid&) const;
+  std::shared_ptr<T> GUIDToAsset(const xg::Guid&);
 
   // import asset at path (relative)
   // * generate meta

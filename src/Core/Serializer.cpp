@@ -461,7 +461,9 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
         return obj;
       }
       case Smkz::MyDRefl::ContainerType::MultiSet:
+      case Smkz::MyDRefl::ContainerType::MultiMap:
       case Smkz::MyDRefl::ContainerType::Set:
+      case Smkz::MyDRefl::ContainerType::Map:
       case Smkz::MyDRefl::ContainerType::UnorderedMap:
       case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
       case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
