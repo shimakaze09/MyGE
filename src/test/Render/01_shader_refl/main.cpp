@@ -1,5 +1,5 @@
 #include <MyGE/App/DX12App/DX12App.h>
-#include <MyGE/Asset/AssetMngr.h>
+#include <MyGE/Core/AssetMngr.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
 #include <MyGE/Render/HLSLFile.h>

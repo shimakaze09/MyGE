@@ -1,5 +1,6 @@
 #pragma once
 
+#include <MyTemplate/Name.hpp>
 #include <variant>
 #include <vector>
 
@@ -49,3 +50,8 @@ struct RootDescriptor {
 using RootParameter =
     std::variant<RootDescriptorTable, RootConstants, RootDescriptor>;
 }  // namespace Smkz::MyGE
+
+template <>
+constexpr auto Smkz::type_name<Smkz::MyGE::RootParameter>() noexcept {
+  return TSTR("Smkz::MyGE::RootParameter");
+}

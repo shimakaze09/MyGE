@@ -3,6 +3,7 @@
 #include <MyGM/rgb.hpp>
 #include <MyGM/rgba.hpp>
 #include <MyGM/val.hpp>
+#include <MyTemplate/Name.hpp>
 #include <memory>
 #include <variant>
 
@@ -43,3 +44,8 @@ struct ShaderProperty {
   ShaderPropertyVariant value;
 };
 }  // namespace Smkz::MyGE
+
+template <>
+constexpr auto Smkz::type_name<Smkz::MyGE::ShaderPropertyVariant>() noexcept {
+  return TSTR("Smkz::MyGE::ShaderPropertyVariant");
+}

@@ -9,7 +9,7 @@ struct Inspector {
 
   bool lock{false};
   Mode mode;
-  MyECS::Entity entity;
+  MyECS::Entity entity{MyECS::Entity::Invalid()};
   xg::Guid asset;
 };
 }  // namespace Smkz::MyGE

@@ -16,7 +16,7 @@ ADD_DEP(MyGM 0.7.2)
 ADD_DEP(MyECS 0.16.1)
 ADD_DEP(MyDX12 0.1.0)
 ADD_DEP(MyDRefl 0.10.3)
-ADD_DEP(MyANTLR 0.2.1)
+ADD_DEP(MyANTLR 0.3.0)
 
 DOWNLOAD_ZIP(
         https://cdn.jsdelivr.net/gh/shimakaze09/MyData@main/MyGE/crossguid/crossguid_19032025.zip

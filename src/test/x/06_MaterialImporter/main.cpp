@@ -63,4 +63,12 @@ int main() {
   AssetMngr::Instance().DeleteAsset(LR"(test.bmp)");
 
   AssetMngr::Instance().Clear();
+
+  AssetMngr::Instance().SetRootPath(LR"(..\assets)");
+  AssetMngr::Instance().ImportAssetRecursively(LR"(.)");
+
+  auto m = AssetMngr::Instance().LoadAsset<Material>(
+      LR"(_internal\materials\skyBlack.mat)");
+  const auto skyboxprop = m->properties.at("gSkybox");
+  return 0;
 }

@@ -14,11 +14,6 @@ void simple_register_variant_alternatives(ReflMngr& mngr,
 }  // namespace Smkz::MyGE::details
 
 template <>
-constexpr auto Smkz::type_name<ShaderPropertyVariant>() noexcept {
-  return TSTR("Smkz::MyGE::ShaderPropertyVariant");
-}
-
-template <>
 struct Smkz::MyDRefl::details::TypeAutoRegister<ShaderPropertyVariant> {
   static auto run(MyDRefl::ReflMngr& mngr) {
     using T = ShaderPropertyVariant;
