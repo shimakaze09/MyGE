@@ -63,6 +63,12 @@ struct E {
   }
 };
 
+struct F {
+  std::map<std::string, int> v_m;
+  std::set<std::string> v_s;
+  constexpr auto operator<=>(const F&) const = default;
+};
+
 int main() {
   // Enable run-time memory check for debug builds.
 #if defined(DEBUG) | defined(_DEBUG)
@@ -156,5 +162,16 @@ int main() {
     std::cout << json << std::endl;
     E e2 = Serializer::Instance().Deserialize(json).As<E>();
     assert(e2 == e);
+  }
+  {
+    MyDRefl::Mngr.RegisterType<F>();
+
+    MyDRefl::Mngr.AddField<&F::v_m>("v_m");
+    MyDRefl::Mngr.AddField<&F::v_s>("v_s");
+    F f{.v_m = {{"123", 3}, {"456", 2}}, .v_s = {"aa", "bb", "cc"}};
+    std::string json = Serializer::Instance().Serialize(&f);
+    std::cout << json << std::endl;
+    F f2 = Serializer::Instance().Deserialize(json).As<F>();
+    assert(f2 == f);
   }
 }

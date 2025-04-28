@@ -80,15 +80,15 @@
 //	constexpr auto GenerateNameField(std::string_view n) {
 //		return USRefl::Field{
 //			TSTR(""), nullptr, USRefl::AttrList{
-//				USRefl::Attr{TSTR(UInspector::name), n}
+//				USRefl::Attr{TSTR(MyInspector::name), n}
 //			}
 //		};
 //	}
 //
 //	template<typename Fld>
 //	constexpr std::string_view GetFieldName(Fld field) {
-//		if constexpr (field.attrs.Contains(TSTR(UInspector::name)))
-//			return field.attrs.Find(TSTR(UInspector::name)).value;
+//		if constexpr (field.attrs.Contains(TSTR(MyInspector::name)))
+//			return field.attrs.Find(TSTR(MyInspector::name)).value;
 //		else
 //			return field.name;
 //	}
@@ -149,14 +149,14 @@
 //	template<typename Field, typename Value>
 //	void InspectField(Field field, Value& var,
 // InspectorRegistry::InspectContext ctx) { 		if constexpr
-//(!field.attrs.Contains(TSTR(UInspector::hide))) { 			if
-// constexpr (field.attrs.Contains(TSTR(UInspector::header))) {
-// std::string_view sv{ field.attrs.Find(TSTR(UInspector::header)).value };
+//(!field.attrs.Contains(TSTR(MyInspector::hide))) { 			if
+// constexpr (field.attrs.Contains(TSTR(MyInspector::header))) {
+// std::string_view sv{ field.attrs.Find(TSTR(MyInspector::header)).value };
 // ImGui::Text(sv.data());
 //			}
 //			if constexpr
-//(field.attrs.Contains(TSTR(UInspector::tooltip))) {
-// std::string_view sv{ field.attrs.Find(TSTR(UInspector::tooltip)).value };
+//(field.attrs.Contains(TSTR(MyInspector::tooltip))) {
+// std::string_view sv{ field.attrs.Find(TSTR(MyInspector::tooltip)).value };
 // HelpMarker(sv); 				ImGui::SameLine();
 //			}
 //			InspectVar(field, var, ctx);
@@ -373,9 +373,9 @@
 //			ImGui::Checkbox(GetFieldName(field).data(), &var);
 //		else if constexpr (std::is_integral_v<Value> ||
 // std::is_floating_point_v<Value>) { 			if constexpr
-//(field.attrs.Contains(TSTR(UInspector::range))) {
-// Value minvalue = field.attrs.Find(TSTR(UInspector::range)).value.first;
-// Value maxvalue = field.attrs.Find(TSTR(UInspector::range)).value.second;
+//(field.attrs.Contains(TSTR(MyInspector::range))) {
+// Value minvalue = field.attrs.Find(TSTR(MyInspector::range)).value.first;
+// Value maxvalue = field.attrs.Find(TSTR(MyInspector::range)).value.second;
 // if constexpr (std::is_same_v<Value, uint8_t>)
 //					ImGui::SliderScalar(GetFieldName(field).data(),
 // ImGuiDataType_U8, &var, &minvalue, &maxvalue);
@@ -413,15 +413,15 @@
 //				float step;
 //
 //				if constexpr
-//(field.attrs.Contains(TSTR(UInspector::min_value)))
-// minvalue = field.attrs.Find(TSTR(UInspector::min_value)).value;
+//(field.attrs.Contains(TSTR(MyInspector::min_value)))
+// minvalue = field.attrs.Find(TSTR(MyInspector::min_value)).value;
 // else if constexpr (std::is_floating_point_v<Value>)
 // minvalue = -std::numeric_limits<Value>::max(); else
 // minvalue = std::numeric_limits<Value>::min();
 //
 //				if constexpr
-//(field.attrs.Contains(TSTR(UInspector::step)))
-// step = field.attrs.Find(TSTR(UInspector::step)).value;
+//(field.attrs.Contains(TSTR(MyInspector::step)))
+// step = field.attrs.Find(TSTR(MyInspector::step)).value;
 // else if constexpr (std::is_floating_point_v<Value>)
 // step = 0.01f; 				else
 // step = 1.f; // integer
@@ -973,22 +973,7 @@
 
 namespace Smkz::MyGE {
 template <typename Func>
-void InspectorRegistry::RegisterCmpt(Func&& func) {
-  using ArgList = FuncTraits_ArgList<Func>;
-  static_assert(Length_v<ArgList> == 2);
-  static_assert(std::is_same_v<At_t<ArgList, 1>, InspectContext>);
-  using CmptPtr = At_t<ArgList, 0>;
-  static_assert(std::is_pointer_v<CmptPtr>);
-  using Cmpt = std::remove_pointer_t<CmptPtr>;
-  static_assert(!std::is_const_v<Cmpt>);
-  RegisterCmpt(TypeID_of<Cmpt>,
-               [f = std::forward<Func>(func)](void* cmpt, InspectContext ctx) {
-                 f(reinterpret_cast<Cmpt*>(cmpt), ctx);
-               });
-}
-
-template <typename Func>
-void InspectorRegistry::RegisterAsset(Func&& func) {
+void InspectorRegistry::Register(Func&& func) {
   using ArgList = FuncTraits_ArgList<Func>;
   static_assert(Length_v<ArgList> == 2);
   static_assert(std::is_same_v<At_t<ArgList, 1>, InspectContext>);

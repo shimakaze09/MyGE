@@ -60,7 +60,7 @@ void TextureCube::Init(const Image& equirectangularMap) {
   std::array<Image, 6> imgs;
   for (size_t i = 0; i < 6; i++) images[i] = imgs[i] = Image(s, s, c);
 
-  size_t N = std::thread::hardware_concurrency();
+  const size_t N = std::thread::hardware_concurrency();
   auto work = [&](size_t id) {
     vecf2 invAtan = {0.1591f, 0.3183f};
     for (size_t i = 0; i < 6; i++) {

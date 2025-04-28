@@ -69,6 +69,15 @@ int main() {
 
   auto m = AssetMngr::Instance().LoadAsset<Material>(
       LR"(_internal\materials\skyBlack.mat)");
-  const auto skyboxprop = m->properties.at("gSkybox");
+  assert(m.get());
+  assert(m->properties.contains("gSkybox"));
+  const auto& skybox = m->properties.at("gSkybox").value;
+  assert(std::holds_alternative<SharedVar<TextureCube>>(skybox));
+  auto texcube = AssetMngr::Instance().LoadAsset<TextureCube>(
+      LR"(_internal\textures\blackCube.png)");
+  assert(texcube.get());
+  assert(std::get<SharedVar<TextureCube>>(skybox).get() == texcube.get());
+
+  AssetMngr::Instance().Clear();
   return 0;
 }

@@ -29,6 +29,8 @@ class AssetMngr {
   void SetRootPath(std::filesystem::path path);
 
   std::filesystem::path GetFullPath(const std::filesystem::path& path) const;
+  std::filesystem::path GetRelativePath(
+      const std::filesystem::path& path) const;
 
   void Clear();
 

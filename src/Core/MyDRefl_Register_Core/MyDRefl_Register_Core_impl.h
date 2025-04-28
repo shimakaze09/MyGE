@@ -11,7 +11,7 @@ void MyDRefl_Register_MyECS();
 void MyDRefl_Register_Children();
 void MyDRefl_Register_Input();
 void MyDRefl_Register_LocalToParent();
-void MyDRefl_Register_LocalSerializeToWorld();
+void MyDRefl_Register_LocalToWorld();
 void MyDRefl_Register_Name();
 void MyDRefl_Register_NonUniformScale();
 void MyDRefl_Register_Parent();

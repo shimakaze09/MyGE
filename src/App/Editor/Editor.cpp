@@ -14,6 +14,7 @@
 #include <MyGE/Core/Components/Components.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/ImGUIMngr.h>
+#include <MyGE/Core/MyDRefl_Register_Core.h>
 #include <MyGE/Core/Serializer.h>
 #include <MyGE/Core/StringsSink.h>
 #include <MyGE/Core/Systems/Systems.h>
@@ -26,6 +27,7 @@
 #include <MyGE/Render/MaterialImporter.h>
 #include <MyGE/Render/Mesh.h>
 #include <MyGE/Render/MeshImporter.h>
+#include <MyGE/Render/MyDRefl_Register_Render.h>
 #include <MyGE/Render/Shader.h>
 #include <MyGE/Render/ShaderImporter.h>
 #include <MyGE/Render/ShaderMngr.h>
@@ -238,6 +240,9 @@ bool Editor::Impl::Init() {
   AssetMngr::Instance().ImportAssetRecursively(LR"(.)");
 
   // InitInspectorRegistry();
+
+  MyDRefl_Register_Core();
+  MyDRefl_Register_Render();
 
   LoadTextures();
   BuildShaders();
@@ -856,8 +861,9 @@ void Editor::Impl::BuildShaders() {
 // xg::Guid*)payload->Data; 			const auto& path =
 // AssetMngr::Instance().GUIDToAssetPath(payload_guid);
 // assert(!path.empty()); 			if (auto shader =
-//AssetMngr::Instance().LoadAsset<Shader>(path)) { 				material->shader =
-//shader.obj; 				material->properties = shader->properties;
+// AssetMngr::Instance().LoadAsset<Shader>(path)) {
+// material->shader = shader.obj;
+// material->properties = shader->properties;
 //			}
 //		}
 //		ImGui::EndDragDropTarget();
@@ -870,11 +876,13 @@ void Editor::Impl::BuildShaders() {
 //		// Helper class to easy setup a text filter.
 //		// You may want to implement a more feature-full filtering
 // scheme in your own application. 		static ImGuiTextFilter filter;
-// filter.Draw(); 		int ID = 0; 		ShaderMngr::Instance().Refresh(); 		size_t N =
-//ShaderMngr::Instance().GetShaderMap().size(); 		for (const auto& [name, shader]
+// filter.Draw(); 		int ID = 0;
+// ShaderMngr::Instance().Refresh(); 		size_t N =
+// ShaderMngr::Instance().GetShaderMap().size(); 		for (const auto&
+// [name, shader]
 //: ShaderMngr::Instance().GetShaderMap()) { 			auto shader_s =
 // shader.lock(); 			if (shader_s != material->shader &&
-//filter.PassFilter(name.c_str())) { 				ImGui::PushID(ID);
+// filter.PassFilter(name.c_str())) { ImGui::PushID(ID);
 //				ImGui::PushStyleColor(ImGuiCol_Button,
 //(ImVec4)ImColor::HSV(ID / float(N), 0.6f, 0.6f));
 //				ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
@@ -882,7 +890,8 @@ void Editor::Impl::BuildShaders() {
 //				ImGui::PushStyleColor(ImGuiCol_ButtonActive,
 //(ImVec4)ImColor::HSV(ID / float(N), 0.8f, 0.8f)); if
 //(ImGui::Button(name.c_str())) {
-//material->shader = shader_s; 					material->properties = shader_s->properties;
+// material->shader = shader_s;
+// material->properties = shader_s->properties;
 //				}
 //				ImGui::PopStyleColor(3);
 //				ImGui::PopID();
@@ -899,7 +908,7 @@ void Editor::Impl::BuildShaders() {
 //	USRefl::TypeInfo<Material>::ForEachVarOf(*material, [ctx, &changed](auto
 // field, auto& var) { 		if (field.name == "shader")
 // return; 		if (detail::InspectVar1(field, var, ctx))
-//changed = true;
+// changed = true;
 //	});
 //	if (changed) {
 //		const auto& path =

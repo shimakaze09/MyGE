@@ -17,10 +17,13 @@ bool IsDeepestDirectory(const std::filesystem::path& directory) {
 
   for (const auto& entry : std::filesystem::directory_iterator(directory)) {
     const auto& path = entry.path();
-    if (AssetMngr::Instance().AssetPathToGUID(path).isValid()) return true;
+    if (AssetMngr::Instance()
+            .AssetPathToGUID(AssetMngr::Instance().GetRelativePath(path))
+            .isValid())
+      return false;
   }
 
-  return false;
+  return true;
 }
 
 bool IsAncestorDirectory(const std::filesystem::path& x,
@@ -56,11 +59,15 @@ void ProjectViewerSystemPrintDirectoryTree(
        std::filesystem::directory_iterator(parent)) {
     if (!directory_entry.is_directory()) continue;
 
-    const auto& path = directory_entry.path();
-    auto guid = AssetMngr::Instance().AssetPathToGUID(path);
-    bool isDeepestDirectory = IsDeepestDirectory(path);
+    const auto& fullpath = directory_entry.path();
+    const auto relpath = AssetMngr::Instance().GetRelativePath(fullpath);
+    auto guid = AssetMngr::Instance().AssetPathToGUID(relpath);
 
-    auto name = path.stem();
+    if (!guid.isValid()) continue;
+
+    bool isDeepestDirectory = IsDeepestDirectory(fullpath);
+
+    auto name = relpath.stem();
 
     ImGuiTreeNodeFlags nodeFlags = nodeBaseFlags;
     if (viewer->selectedFolder == guid)
@@ -68,17 +75,17 @@ void ProjectViewerSystemPrintDirectoryTree(
     if (isDeepestDirectory)
       nodeFlags |=
           ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-    if (IsAncestorDirectory(path, selectedDirectoryPath))
+    if (IsAncestorDirectory(relpath, selectedDirectoryPath))
       ImGui::SetNextItemOpen(true, ImGuiCond_Always);
 
     bool nodeOpen =
-        ImGui::TreeNodeEx(AssetMngr::Instance().LoadMainAsset(path).GetPtr(),
+        ImGui::TreeNodeEx(AssetMngr::Instance().LoadMainAsset(relpath).GetPtr(),
                           nodeFlags, "%s", name.string().c_str());
 
     if (ImGui::IsItemClicked()) viewer->selectedFolder = guid;
 
     if (nodeOpen && !isDeepestDirectory) {
-      ProjectViewerSystemPrintDirectoryTree(viewer, path);
+      ProjectViewerSystemPrintDirectoryTree(viewer, fullpath);
       ImGui::TreePop();
     }
   }
@@ -88,13 +95,16 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
                                     ProjectViewer* viewer) {
   if (!viewer->selectedFolder.isValid()) return;
 
-  const auto selectedFolderPath = AssetMngr::Instance().GetFullPath(
-      AssetMngr::Instance().GUIDToAssetPath(viewer->selectedFolder));
+  const auto selectedFolderPath =
+      AssetMngr::Instance().GUIDToAssetPath(viewer->selectedFolder);
+  const auto selectedFolderFullPath =
+      AssetMngr::Instance().GetFullPath(selectedFolderPath);
+
   {  // header
     std::vector<std::filesystem::path> paths;
     {
       auto curPath = selectedFolderPath;
-      while (curPath != AssetMngr::Instance().GetRootPath()) {
+      while (!curPath.empty()) {
         paths.emplace_back(curPath);
         curPath = curPath.parent_path();
       }
@@ -103,8 +113,10 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
       size_t idx = paths.size() - 1 - i;
       const auto& path = paths[idx];
       if (idx > 0) {
-        if (ImGui::SmallButton(path.stem().string().c_str()))
+        if (ImGui::SmallButton(path.stem().string().c_str())) {
           viewer->selectedFolder = AssetMngr::Instance().AssetPathToGUID(path);
+          viewer->selectedAsset = {};
+        }
         ImGui::SameLine();
         ImGui::Text(">");
         ImGui::SameLine();
@@ -116,25 +128,25 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
   ImGui::Separator();
 
   auto file = AssetMngr::Instance().LoadAsset<Texture2D>(
-      LR"(_internal\FolderViewer\textures\file.png)");
+      LR"(_internal\FolderViewer\file.png)");
   auto folder = AssetMngr::Instance().LoadAsset<Texture2D>(
-      LR"(_internal\FolderViewer\textures\folder.png)");
+      LR"(_internal\FolderViewer\folder.png)");
   // auto code =
-  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\textures\code.png)");
+  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\code.png)");
   // auto image =
-  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\textures\image.png)");
+  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\image.png)");
   auto material = AssetMngr::Instance().LoadAsset<Texture2D>(
-      LR"(_internal\FolderViewer\textures\material.png)");
+      LR"(_internal\FolderViewer\material.png)");
   auto shader = AssetMngr::Instance().LoadAsset<Texture2D>(
-      LR"(_internal\FolderViewer\textures\shader.png)");
+      LR"(_internal\FolderViewer\shader.png)");
   auto hlsl = AssetMngr::Instance().LoadAsset<Texture2D>(
-      LR"(_internal\FolderViewer\textures\hlsl.png)");
+      LR"(_internal\FolderViewer\hlsl.png)");
   // auto scene =
-  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\textures\scene.png)");
+  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\scene.png)");
   auto model = AssetMngr::Instance().LoadAsset<Texture2D>(
-      LR"(_internal\FolderViewer\textures\model.v)");
+      LR"(_internal\FolderViewer\model.png)");
   // auto texcube =
-  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\textures\texcube.png)");
+  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\texcube.png)");
 
   auto fileID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*file);
   auto folderID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*folder);
@@ -161,8 +173,9 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
   std::deque<xg::Guid> childQueue;
 
   for (const auto& entry :
-       std::filesystem::directory_iterator(selectedFolderPath)) {
-    auto guid = AssetMngr::Instance().AssetPathToGUID(entry.path());
+       std::filesystem::directory_iterator(selectedFolderFullPath)) {
+    auto guid = AssetMngr::Instance().AssetPathToGUID(
+        AssetMngr::Instance().GetRelativePath(entry.path()));
     if (!guid.isValid()) continue;
 
     if (std::filesystem::is_directory(entry.path()))
@@ -173,7 +186,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
 
   for (const auto& child : childQueue) {
     const auto& path = AssetMngr::Instance().GUIDToAssetPath(child);
-    const bool isDir = std::filesystem::is_directory(path);
+    const bool isDir =
+        std::filesystem::is_directory(AssetMngr::Instance().GetFullPath(path));
     ImGui::PushID(reinterpret_cast<const void* const&>(child.bytes()));
     auto ext = path.extension();
     auto name = path.stem();
@@ -188,8 +202,13 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
         if (ext == ".png" || ext == ".jpg" || ext == ".bmp" || ext == ".hdr" ||
             ext == ".tga") {
           auto tex2d = AssetMngr::Instance().LoadAsset<Texture2D>(path);
-          Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(*tex2d);
-          id = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*tex2d).ptr;
+          if (tex2d.get()) {
+            Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(*tex2d);
+            id = GPURsrcMngrDX12::Instance()
+                     .GetTexture2DSrvGpuHandle(*tex2d)
+                     .ptr;
+          } else
+            id = fileID.ptr;
         } else if (ext == ".mat")
           id = materialID.ptr;
         else if (ext == ".shader")
@@ -242,7 +261,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
             std::filesystem::path newpath =
                 path.parent_path().wstring() + LR"(\)" +
                 std::filesystem::path(viewer->rename).wstring() + ext.wstring();
-            if (!std::filesystem::exists(newpath) &&
+            if (!std::filesystem::exists(
+                    AssetMngr::Instance().GetFullPath(newpath)) &&
                 AssetMngr::Instance().MoveAsset(path, newpath))
               nameStr = viewer->rename;
           }

@@ -7,7 +7,7 @@
 using namespace Smkz::MyGE;
 using namespace Smkz::MyDRefl;
 
-void Smkz::MyGE::details::MyDRefl_Register_LocalSerializeToWorld() {
+void Smkz::MyGE::details::MyDRefl_Register_LocalToWorld() {
   Mngr.RegisterType<LocalToWorld>();
   Mngr.SimpleAddField<&LocalToWorld::value>("value");
 }

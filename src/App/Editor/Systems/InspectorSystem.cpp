@@ -28,8 +28,9 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
             if (ImGui::Begin("Inspector") && inspector->asset.isValid()) {
               ImGui::Checkbox("lock", &inspector->lock);
               ImGui::Separator();
-              if (InspectorRegistry::Instance().IsRegisteredAsset(type))
-                InspectorRegistry::Instance().Inspect(type, asset.GetPtr());
+              if (InspectorRegistry::Instance().IsRegistered(type))
+                InspectorRegistry::Instance().Inspect(
+                    world, type, asset.GetPtr());  // use self world?
             }
             ImGui::End();
             break;
@@ -56,7 +57,8 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
                     hierarchy->world->entityMngr.cmptTraits.GetNames().size();
                 for (const auto& [type, name] :
                      hierarchy->world->entityMngr.cmptTraits.GetNames()) {
-                  if (!hierarchy->world->entityMngr.Have(inspector->entity,
+                  if (!type.Is<MyECS::Entity>() &&
+                      !hierarchy->world->entityMngr.Have(inspector->entity,
                                                          type) &&
                       filter.PassFilter(name.data())) {
                     ImGui::PushID(ID);
@@ -149,11 +151,10 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
               ImGui::Separator();
 
               auto cmpts = hierarchy->world->entityMngr.Components(
-                  inspector->entity, Smkz::MyECS::AccessMode::WRITE);
+                  inspector->entity, MyECS::AccessMode::WRITE);
               for (size_t i = 0; i < cmpts.size(); i++) {
                 auto type = cmpts[i].AccessType();
-                if (InspectorRegistry::Instance().IsRegisteredCmpt(type))
-                  continue;
+                if (InspectorRegistry::Instance().IsRegistered(type)) continue;
                 auto name =
                     hierarchy->world->entityMngr.cmptTraits.Nameof(type);
                 if (name.empty())
@@ -163,10 +164,10 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
               }
 
               for (const auto& cmpt : cmpts) {
-                if (InspectorRegistry::Instance().IsRegisteredCmpt(
+                if (InspectorRegistry::Instance().IsRegistered(
                         cmpt.AccessType()))
-                  InspectorRegistry::Instance().Inspect(hierarchy->world,
-                                                        cmpt.Ptr());
+                  InspectorRegistry::Instance().InspectComponent(
+                      hierarchy->world, MyECS::CmptPtr{cmpt});
               }
             }
             ImGui::End();

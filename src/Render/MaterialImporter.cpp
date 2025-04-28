@@ -11,11 +11,11 @@ void MaterialImporter::RegisterToMyDRefl() {
   RegisterToMyDReflHelper();
 
   // Register ShaderProperty and map
-  // details::ShaderImporterRegister_Shader();
+  details::ShaderImporterRegister_Shader();
 
   MyDRefl::Mngr.RegisterType<Material>();
   MyDRefl::Mngr.AddField<&Material::shader>("shader");
-  MyDRefl::Mngr.AddField<&Material::properties>("properties");
+  MyDRefl::Mngr.SimpleAddField<&Material::properties>("properties");
 }
 
 AssetImportContext MaterialImporter::ImportAsset() const {

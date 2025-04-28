@@ -6,7 +6,7 @@
 using namespace Smkz::MyGE;
 using namespace Smkz::MyDRefl;
 
-void MyDRefl_Register_Render() {
+void Smkz::MyGE::MyDRefl_Register_Render() {
   // Camera
   // TODO: attrs
   Mngr.RegisterType<Camera>();
