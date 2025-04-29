@@ -2,6 +2,7 @@
 
 #include <MyVisitor/ncVisitor.h>
 
+#include <MyDRefl/Object.hpp>
 #include <MyECS/MyECS.hpp>
 #include <_deps/crossguid/guid.hpp>
 #include <functional>
@@ -76,6 +77,8 @@ class InspectorRegistry {
   }
 
   static void InspectRecursively(std::string_view name, TypeID, void* obj,
+                                 InspectContext ctx);
+  static void InspectRecursively(std::string_view name, UDRefl::ObjectView obj,
                                  InspectContext ctx);
 
  private:

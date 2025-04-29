@@ -24,7 +24,9 @@ void TextureCube::Init(const Image& equirectangularMap) {
   Clear();
   mode = SourceMode::EquirectangularMap;
 #ifdef _DEBUG
-  size_t s = equirectangularMap.GetHeight() / 2;
+  size_t s = equirectangularMap.GetHeight() <= 512
+                 ? equirectangularMap.GetHeight()
+                 : equirectangularMap.GetHeight() / 2;
 #else
   size_t s = equirectangularMap->height;
 #endif
@@ -58,13 +60,13 @@ void TextureCube::Init(const Image& equirectangularMap) {
   };
 
   std::array<Image, 6> imgs;
-  for (size_t i = 0; i < 6; i++) images[i] = imgs[i] = Image(s, s, c);
+  for (size_t i = 0; i < 6; i++) imgs[i] = Image(s, s, c);
 
   const size_t N = std::thread::hardware_concurrency();
   auto work = [&](size_t id) {
     vecf2 invAtan = {0.1591f, 0.3183f};
     for (size_t i = 0; i < 6; i++) {
-      auto img = imgs[i];
+      auto& img = imgs[i];
       for (size_t y = id; y < s; y += N) {
         for (size_t x = 0; x < s; x++) {
           vecf3 p =
@@ -85,6 +87,8 @@ void TextureCube::Init(const Image& equirectangularMap) {
     workers.emplace_back(work, i);
 
   for (auto& worker : workers) worker.join();
+
+  images = std::move(imgs);
 }
 
 void TextureCube::Clear() {

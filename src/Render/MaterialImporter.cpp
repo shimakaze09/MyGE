@@ -1,5 +1,6 @@
 #include <MyGE/Render/Material.h>
 #include <MyGE/Render/MaterialImporter.h>
+#include <MyGE/Render/Shader.h>
 
 #include <filesystem>
 
@@ -36,9 +37,18 @@ AssetImportContext MaterialImporter::ImportAsset() const {
   str.assign(std::istreambuf_iterator<char>(ifs),
              std::istreambuf_iterator<char>());
 
-  auto materail = Serializer::Instance().Deserialize(str).AsShared<Material>();
+  auto material = Serializer::Instance().Deserialize(str).AsShared<Material>();
 
-  ctx.AddObject(name, MyDRefl::SharedObject{Type_of<Material>, materail});
+  if (material->shader) {
+    for (const auto& [n, prop] : material->shader->properties) {
+      auto target = material->properties.find(n);
+      if (target != material->properties.end()) continue;
+
+      material->properties.emplace_hint(target, n, prop);
+    }
+  }
+
+  ctx.AddObject(name, MyDRefl::SharedObject{Type_of<Material>, material});
   ctx.SetMainObjectID(name);
 
   return ctx;

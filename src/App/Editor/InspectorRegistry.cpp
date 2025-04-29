@@ -76,11 +76,15 @@ void InspectorRegistry::Inspect(const MyECS::World* w, TypeID typeID,
     }
     auto assets = AssetMngr::Instance().LoadAllAssets(path);
     for (const auto& asset : assets) {
+      ImGui::PushID(asset.GetPtr());
       if (ImGui::CollapsingHeader(asset.GetType().GetName().data())) {
         InspectorRegistry::InspectContext ctx{w, pImpl->inspector};
         for (const auto& [n, var] : asset.GetVars())
           InspectRecursively(n, var.GetType().GetID(), var.GetPtr(), ctx);
+        if (ImGui::Button("apply"))
+          AssetMngr::Instance().ReserializeAsset(path);
       }
+      ImGui::PopID();
     }
   } else {
     auto type = MyDRefl::Mngr.tregistry.Typeof(typeID);
@@ -98,12 +102,211 @@ void InspectorRegistry::InspectRecursively(std::string_view name, TypeID typeID,
   }
 
   auto type = MyDRefl::Mngr.tregistry.Typeof(typeID);
+  if (!type.Valid()) return;
+
   MyDRefl::ObjectView objv{type, obj};
+  InspectRecursively(name, objv, ctx);
+}
+
+void InspectorRegistry::InspectRecursively(std::string_view name,
+                                           MyDRefl::ObjectView objv,
+                                           InspectContext ctx) {
+  if (ctx.inspector.IsRegistered(objv.GetType().GetID().GetValue())) {
+    ctx.inspector.Visit(objv.GetType().GetID().GetValue(), objv.GetPtr(), ctx);
+    return;
+  }
+
+  auto type = objv.GetType();
   if (!type.Valid()) return;
 
   if (type.IsConst()) {
-    // TODO
-    ImGui::Text(name.data());
+    objv = objv.RemoveConst();
+    type = objv.GetType();
+
+    if (type.IsArithmetic()) {
+      switch (type.GetID().GetValue()) {
+        case TypeID_of<bool>.GetValue():
+          ImGui::Text("%s", objv.As<bool>() ? "true" : "false");
+          break;
+        case TypeID_of<std::int8_t>.GetValue():
+          ImGui::Text("%d", static_cast<int>(objv.As<std::int8_t>()));
+          break;
+        case TypeID_of<std::int16_t>.GetValue():
+          ImGui::Text("%d", static_cast<int>(objv.As<std::int16_t>()));
+          break;
+        case TypeID_of<std::int32_t>.GetValue():
+          ImGui::Text("%d", static_cast<int>(objv.As<std::int32_t>()));
+          break;
+        case TypeID_of<std::int64_t>.GetValue():
+          ImGui::Text("%I64d", objv.As<std::int64_t>());
+          break;
+        case TypeID_of<std::uint8_t>.GetValue():
+          ImGui::Text("%ud",
+                      static_cast<unsigned int>(objv.As<std::uint8_t>()));
+          break;
+        case TypeID_of<std::uint16_t>.GetValue():
+          ImGui::Text("%ud",
+                      static_cast<unsigned int>(objv.As<std::uint16_t>()));
+          break;
+        case TypeID_of<std::uint32_t>.GetValue():
+          ImGui::Text("%ud",
+                      static_cast<unsigned int>(objv.As<std::uint32_t>()));
+          break;
+        case TypeID_of<std::uint64_t>.GetValue():
+          ImGui::Text("%zu", objv.As<std::uint64_t>());
+          break;
+        case TypeID_of<float>.GetValue():
+          ImGui::Text("%f", objv.As<float>());
+          break;
+        case TypeID_of<double>.GetValue():
+          ImGui::Text("%lf", objv.As<double>());
+          break;
+        default:
+          assert(false);
+          break;
+      }
+      ImGui::SameLine();
+      ImGui::Text(name.data());
+    } else if (type.IsEnum()) {
+      std::string_view cur;
+      for (const auto& [n, var] : VarRange{objv.GetType()}) {
+        if (var == objv) {
+          cur = n;
+          break;
+        }
+      }
+      assert(!cur.empty());
+      ImGui::Text(cur.data());
+      ImGui::SameLine();
+      ImGui::Text(name.data());
+    } else if (type.Is<std::string>()) {
+      ImGui::Text(objv.As<std::string>().data());
+      ImGui::SameLine();
+      ImGui::Text(name.data());
+    } else if (type.Is<std::pmr::string>()) {
+      ImGui::Text(objv.As<std::pmr::string>().data());
+      ImGui::SameLine();
+      ImGui::Text(name.data());
+    } else if (type.Is<std::string_view>()) {
+      ImGui::Text(objv.As<std::string_view>().data());
+      ImGui::SameLine();
+      ImGui::Text(name.data());
+    } else if (type.Is<SharedObject>()) {
+      ImGui::Text("(*)");
+      ImGui::SameLine();
+
+      {  // button
+        auto sobj = objv.As<SharedObject>();
+        // button
+        if (sobj.GetPtr()) {
+          const auto& path = AssetMngr::Instance().GetAssetPath(sobj.GetPtr());
+          if (!path.empty()) {
+            auto name = path.stem().string();
+            ImGui::Button(name.c_str());
+          } else
+            ImGui::Button("UNKNOW");
+        } else
+          ImGui::Button("nullptr");
+      }
+
+      ImGui::SameLine();
+      ImGui::Text(name.data());
+    } else if (type.GetName().starts_with("Smkz::MyGE::SharedVar<")) {
+      ImGui::Text("(*)");
+      ImGui::SameLine();
+
+      auto sobj = objv.Invoke("cast_to_shared_obj");
+      {  // button
+        // button
+        if (sobj.GetPtr()) {
+          const auto& path = AssetMngr::Instance().GetAssetPath(sobj.GetPtr());
+          if (!path.empty()) {
+            auto name = path.stem().string();
+            ImGui::Button(name.c_str());
+          } else
+            ImGui::Button("UNKNOW");
+        } else
+          ImGui::Button("nullptr");
+      }
+      ImGui::SameLine();
+      ImGui::Text(name.data());
+    } else if (auto attr = Mngr.GetTypeAttr(type, Type_of<ContainerType>);
+               attr.GetType().Valid()) {
+      ContainerType ct = attr.As<ContainerType>();
+      switch (ct) {
+        case Smkz::MyDRefl::ContainerType::Stack:
+        case Smkz::MyDRefl::ContainerType::Queue:
+        case Smkz::MyDRefl::ContainerType::PriorityQueue:
+        case Smkz::MyDRefl::ContainerType::None:
+          break;
+        case Smkz::MyDRefl::ContainerType::Array:
+        case Smkz::MyDRefl::ContainerType::RawArray: {  // valf1, valf2, valf3,
+                                                        // valf4, ...
+                                                        // TODO
+        }
+          [[fallthrough]];
+        case Smkz::MyDRefl::ContainerType::Span:
+        case Smkz::MyDRefl::ContainerType::Vector:
+        case Smkz::MyDRefl::ContainerType::Deque:
+        case Smkz::MyDRefl::ContainerType::ForwardList:  // TODO: append
+        case Smkz::MyDRefl::ContainerType::List:
+        case Smkz::MyDRefl::ContainerType::MultiSet:
+        case Smkz::MyDRefl::ContainerType::Map:
+        case Smkz::MyDRefl::ContainerType::MultiMap:
+        case Smkz::MyDRefl::ContainerType::Set:
+        case Smkz::MyDRefl::ContainerType::UnorderedMap:
+        case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
+        case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
+        case Smkz::MyDRefl::ContainerType::UnorderedSet: {
+          if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            std::size_t i = 0;
+            auto e = objv.end();
+            for (auto iter = objv.begin(); iter != e; ++iter) {
+              auto n = std::to_string(i++);
+              auto v = (*iter).RemoveReference().AddConst();
+              InspectRecursively(n, v, ctx);
+            }
+            ImGui::TreePop();
+          }
+        } break;
+        case Smkz::MyDRefl::ContainerType::Pair:
+        case Smkz::MyDRefl::ContainerType::Tuple: {
+          if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            std::size_t size = objv.tuple_size();
+            std::size_t i = 0;
+            for (std::size_t i = 0; i < size; i++) {
+              auto n = std::to_string(i);
+              auto v = objv.get(i).RemoveReference().AddConst();
+              InspectRecursively(n, v, ctx);
+            }
+            ImGui::TreePop();
+          }
+        } break;
+        case Smkz::MyDRefl::ContainerType::Variant: {
+          auto v = objv.variant_visit_get().RemoveReference().AddConst();
+          InspectRecursively(name, v, ctx);
+        } break;
+        case Smkz::MyDRefl::ContainerType::Optional: {
+          if (objv.has_value()) {
+            auto v = objv.value().RemoveReference().AddConst();
+            InspectRecursively(name, v, ctx);
+          } else
+            ImGui::Text("null");
+        } break;
+        default:
+          assert(false);
+          break;
+      }
+    } else {
+      if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        for (const auto& [n, var] :
+             VarRange{objv.AddConst(), FieldFlag::Owned}) {
+          assert(var.GetType().IsConst());
+          InspectRecursively(n, var, ctx);
+        }
+        ImGui::TreePop();
+      }
+    }
   } else {
     if (type.IsArithmetic()) {
       switch (type.GetID().GetValue()) {
@@ -111,34 +314,44 @@ void InspectorRegistry::InspectRecursively(std::string_view name, TypeID typeID,
           ImGui::Checkbox(name.data(), &objv.As<bool>());
           break;
         case TypeID_of<std::int8_t>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_S8, obj, 1, 1.f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_S8, objv.GetPtr(), 1,
+                             1.f);
           break;
         case TypeID_of<std::int16_t>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_S16, obj, 1, 1.f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_S16, objv.GetPtr(), 1,
+                             1.f);
           break;
         case TypeID_of<std::int32_t>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_S32, obj, 1, 1.f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_S32, objv.GetPtr(), 1,
+                             1.f);
           break;
         case TypeID_of<std::int64_t>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_S64, obj, 1, 1.f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_S64, objv.GetPtr(), 1,
+                             1.f);
           break;
         case TypeID_of<std::uint8_t>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_U8, obj, 1, 1.f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_U8, objv.GetPtr(), 1,
+                             1.f);
           break;
         case TypeID_of<std::uint16_t>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_U16, obj, 1, 1.f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_U16, objv.GetPtr(), 1,
+                             1.f);
           break;
         case TypeID_of<std::uint32_t>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_U32, obj, 1, 1.f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_U32, objv.GetPtr(), 1,
+                             1.f);
           break;
         case TypeID_of<std::uint64_t>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_U64, obj, 1, 1.f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_U64, objv.GetPtr(), 1,
+                             1.f);
           break;
         case TypeID_of<float>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_Float, obj, 1, 0.1f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_Float, objv.GetPtr(), 1,
+                             0.1f);
           break;
         case TypeID_of<double>.GetValue():
-          ImGui::DragScalarN(name.data(), ImGuiDataType_Double, obj, 1, 0.1f);
+          ImGui::DragScalarN(name.data(), ImGuiDataType_Double, objv.GetPtr(),
+                             1, 0.1f);
           break;
         default:
           assert(false);
@@ -146,7 +359,7 @@ void InspectorRegistry::InspectRecursively(std::string_view name, TypeID typeID,
       }
     } else if (type.IsEnum()) {
       std::string_view cur;
-      for (const auto& [n, var] : VarRange{objv.GetType()}) {
+      for (const auto& [n, var] : objv.GetVars(FieldFlag::Unowned)) {
         if (var == objv) {
           cur = n;
           break;
@@ -263,7 +476,7 @@ void InspectorRegistry::InspectRecursively(std::string_view name, TypeID typeID,
         case Smkz::MyDRefl::ContainerType::PriorityQueue:
         case Smkz::MyDRefl::ContainerType::None:
           break;
-        case Smkz::MyDRefl::ContainerType::Array:       // TODO:
+        case Smkz::MyDRefl::ContainerType::Array:
         case Smkz::MyDRefl::ContainerType::RawArray: {  // valf1, valf2, valf3,
                                                         // valf4, ...
           auto N = static_cast<int>(objv.size());
@@ -271,48 +484,45 @@ void InspectorRegistry::InspectRecursively(std::string_view name, TypeID typeID,
             auto type = objv[0].RemoveReference().GetType();
             if (type.IsArithmetic()) {
               switch (type.GetID().GetValue()) {
-                case TypeID_of<bool>.GetValue():
-                  ImGui::Checkbox(name.data(), &objv.As<bool>());
-                  break;
                 case TypeID_of<std::int8_t>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_S8, obj, N,
-                                     1.f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_S8,
+                                     objv.GetPtr(), N, 1.f);
                   break;
                 case TypeID_of<std::int16_t>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_S16, obj, N,
-                                     1.f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_S16,
+                                     objv.GetPtr(), N, 1.f);
                   break;
                 case TypeID_of<std::int32_t>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_S32, obj, N,
-                                     1.f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_S32,
+                                     objv.GetPtr(), N, 1.f);
                   break;
                 case TypeID_of<std::int64_t>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_S64, obj, N,
-                                     1.f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_S64,
+                                     objv.GetPtr(), N, 1.f);
                   break;
                 case TypeID_of<std::uint8_t>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_U8, obj, N,
-                                     1.f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_U8,
+                                     objv.GetPtr(), N, 1.f);
                   break;
                 case TypeID_of<std::uint16_t>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_U16, obj, N,
-                                     1.f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_U16,
+                                     objv.GetPtr(), N, 1.f);
                   break;
                 case TypeID_of<std::uint32_t>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_U32, obj, N,
-                                     1.f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_U32,
+                                     objv.GetPtr(), N, 1.f);
                   break;
                 case TypeID_of<std::uint64_t>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_U64, obj, N,
-                                     1.f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_U64,
+                                     objv.GetPtr(), N, 1.f);
                   break;
                 case TypeID_of<float>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_Float, obj, N,
-                                     0.1f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_Float,
+                                     objv.GetPtr(), N, 0.1f);
                   break;
                 case TypeID_of<double>.GetValue():
-                  ImGui::DragScalarN(name.data(), ImGuiDataType_Double, obj, N,
-                                     0.1f);
+                  ImGui::DragScalarN(name.data(), ImGuiDataType_Double,
+                                     objv.GetPtr(), N, 0.1f);
                   break;
                 default:
                   assert(false);
@@ -323,11 +533,11 @@ void InspectorRegistry::InspectRecursively(std::string_view name, TypeID typeID,
           }
         }
           [[fallthrough]];
-        case Smkz::MyDRefl::ContainerType::Span:
         case Smkz::MyDRefl::ContainerType::Vector:
         case Smkz::MyDRefl::ContainerType::Deque:
         case Smkz::MyDRefl::ContainerType::ForwardList:  // TODO: append
         case Smkz::MyDRefl::ContainerType::List:
+        case Smkz::MyDRefl::ContainerType::Span:
         case Smkz::MyDRefl::ContainerType::MultiSet:
         case Smkz::MyDRefl::ContainerType::Map:
         case Smkz::MyDRefl::ContainerType::MultiMap:
@@ -336,38 +546,48 @@ void InspectorRegistry::InspectRecursively(std::string_view name, TypeID typeID,
         case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
         case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
         case Smkz::MyDRefl::ContainerType::UnorderedSet: {
-          if (ImGui::TreeNode(name.data())) {
+          if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ct == Smkz::MyDRefl::ContainerType::Vector ||
+                ct == Smkz::MyDRefl::ContainerType::Deque ||
+                ct == Smkz::MyDRefl::ContainerType::ForwardList ||
+                ct == Smkz::MyDRefl::ContainerType::List) {
+              int s = static_cast<int>(objv.size());
+              int origs = s;
+              ImGui::InputInt("resize", &s, 1);
+              if (s != origs && s >= 0) objv.resize(static_cast<size_t>(s));
+            }
+
             std::size_t i = 0;
             auto e = objv.end();
             for (auto iter = objv.begin(); iter != e; ++iter) {
               auto n = std::to_string(i++);
               auto v = (*iter).RemoveReference();
-              InspectRecursively(n, v.GetType().GetID(), v.GetPtr(), ctx);
+              InspectRecursively(n, v, ctx);
             }
             ImGui::TreePop();
           }
         } break;
         case Smkz::MyDRefl::ContainerType::Pair:
         case Smkz::MyDRefl::ContainerType::Tuple: {
-          if (ImGui::TreeNode(name.data())) {
+          if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
             std::size_t size = objv.tuple_size();
             std::size_t i = 0;
             for (std::size_t i = 0; i < size; i++) {
-              auto n = std::to_string(i++);
+              auto n = std::to_string(i);
               auto v = objv.get(i).RemoveReference();
-              InspectRecursively(n, v.GetType().GetID(), v.GetPtr(), ctx);
+              InspectRecursively(n, v, ctx);
             }
             ImGui::TreePop();
           }
         } break;
         case Smkz::MyDRefl::ContainerType::Variant: {
           auto v = objv.variant_visit_get().RemoveReference();
-          InspectRecursively(name, v.GetType().GetID(), v.GetPtr(), ctx);
+          InspectRecursively(name, v, ctx);
         } break;
         case Smkz::MyDRefl::ContainerType::Optional: {
           if (objv.has_value()) {
             auto v = objv.value().RemoveReference();
-            InspectRecursively(name, v.GetType().GetID(), v.GetPtr(), ctx);
+            InspectRecursively(name, v, ctx);
           } else
             ImGui::Text("null");
         } break;
@@ -376,9 +596,9 @@ void InspectorRegistry::InspectRecursively(std::string_view name, TypeID typeID,
           break;
       }
     } else {
-      if (ImGui::TreeNode(name.data())) {
+      if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
         for (const auto& [n, var] : VarRange{objv, FieldFlag::Owned})
-          InspectRecursively(n, var.GetType().GetID(), var.GetPtr(), ctx);
+          InspectRecursively(n, var, ctx);
         ImGui::TreePop();
       }
     }

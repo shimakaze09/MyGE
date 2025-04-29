@@ -7,6 +7,7 @@ void MyDRefl_Register_MyGM_2();
 void MyDRefl_Register_MyGM_3();
 void MyDRefl_Register_MyGM_4();
 void MyDRefl_Register_MyGM_5();
+void MyDRefl_Register_MyGM_6();
 void MyDRefl_Register_MyECS();
 void MyDRefl_Register_Children();
 void MyDRefl_Register_Input();

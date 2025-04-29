@@ -11,6 +11,7 @@ void Smkz::MyGE::MyDRefl_Register_Core() {
   details::MyDRefl_Register_MyGM_3();
   details::MyDRefl_Register_MyGM_4();
   details::MyDRefl_Register_MyGM_5();
+  details::MyDRefl_Register_MyGM_6();
   details::MyDRefl_Register_MyECS();
   details::MyDRefl_Register_Children();
   details::MyDRefl_Register_Input();
