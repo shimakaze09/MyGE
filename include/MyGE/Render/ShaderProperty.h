@@ -42,6 +42,9 @@ using ShaderPropertyVariant =
 
 static_assert(alignof(rgbaf) <= alignof(std::max_align_t));
 static_assert(alignof(val<float, 4>) <= alignof(std::max_align_t));
+static_assert(alignof(val<int, 4>) <= alignof(std::max_align_t));
+static_assert(alignof(SharedVar<Texture2D>) <= alignof(std::max_align_t));
+static_assert(alignof(SharedVar<TextureCube>) <= alignof(std::max_align_t));
 static_assert(alignof(ShaderPropertyVariant) <= alignof(std::max_align_t));
 
 struct ShaderProperty {

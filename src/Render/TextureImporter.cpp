@@ -14,6 +14,9 @@ void TextureImporter::RegisterToMyDRefl() {
   MyDRefl::Mngr.SimpleAddField<TextureImporter::Mode::TextureCube>(
       "TextureCube");
 
+  MyDRefl::Mngr.RegisterType<Texture2D>();
+  MyDRefl::Mngr.RegisterType<TextureCube>();
+
   MyDRefl::Mngr.SimpleAddField<&TextureImporter::mode>("mode");
 }
 

@@ -1,6 +1,6 @@
 #include <MyGE/App/Editor/Components/Hierarchy.h>
 #include <MyGE/App/Editor/Components/Inspector.h>
-#include <MyGE/App/Editor/PlayloadType.h>
+#include <MyGE/App/Editor/InspectorRegistry.h>
 #include <MyGE/App/Editor/Systems/HierarchySystem.h>
 #include <MyGE/Core/Components/Children.h>
 #include <MyGE/Core/Components/Name.h>
@@ -42,7 +42,8 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e,
                                "Entity (%d)", e.index);
 
   if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-    ImGui::SetDragDropPayload(PlayloadType::ENTITY, &e, sizeof(MyECS::Entity));
+    ImGui::SetDragDropPayload(InspectorRegistry::Playload::Entity, &e,
+                              sizeof(MyECS::Entity));
     if (name)
       ImGui::Text("%s (%d)", name->value.c_str(), e.index);
     else
@@ -52,8 +53,8 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e,
   }
 
   if (ImGui::BeginDragDropTarget()) {
-    if (const ImGuiPayload* payload =
-            ImGui::AcceptDragDropPayload(PlayloadType::ENTITY)) {
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+            (InspectorRegistry::Playload::Entity))) {
       IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
       auto payload_e = *(const MyECS::Entity*)payload->Data;
       if (HierarchyMovable(hierarchy->world, e, payload_e)) {
@@ -157,8 +158,8 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
             hierarchy->hover = MyECS::Entity::Invalid();
 
           if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload =
-                    ImGui::AcceptDragDropPayload(PlayloadType::ENTITY)) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+                    InspectorRegistry::Playload::Entity)) {
               IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
               auto payload_e = *(const MyECS::Entity*)payload->Data;
 

@@ -1,6 +1,6 @@
 #include <MyGE/App/Editor/Components/Inspector.h>
 #include <MyGE/App/Editor/Components/ProjectViewer.h>
-#include <MyGE/App/Editor/PlayloadType.h>
+#include <MyGE/App/Editor/InspectorRegistry.h>
 #include <MyGE/App/Editor/Systems/ProjectViewerSystem.h>
 #include <MyGE/Core/AssetMngr.h>
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
@@ -78,9 +78,8 @@ void ProjectViewerSystemPrintDirectoryTree(
     if (IsAncestorDirectory(relpath, selectedDirectoryPath))
       ImGui::SetNextItemOpen(true, ImGuiCond_Always);
 
-    bool nodeOpen =
-        ImGui::TreeNodeEx(AssetMngr::Instance().LoadMainAsset(relpath).GetPtr(),
-                          nodeFlags, "%s", name.string().c_str());
+    bool nodeOpen = ImGui::TreeNodeEx((void*)string_hash(fullpath.string()),
+                                      nodeFlags, "%s", name.string().c_str());
 
     if (ImGui::IsItemClicked()) viewer->selectedFolder = guid;
 
@@ -247,7 +246,11 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
       }
       auto nameStr = name.string();
       if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-        ImGui::SetDragDropPayload(PlayloadType::GUID, &child, sizeof(xg::Guid));
+        InspectorRegistry::Playload::AssetHandle handle{.guid = child};
+
+        ImGui::SetDragDropPayload(
+            InspectorRegistry::Playload::Asset, &handle,
+            sizeof(InspectorRegistry::Playload::AssetHandle));
         ImGui::ImageButton(ImTextureID(id), {32, 32});
         ImGui::Text(nameStr.c_str());
         ImGui::EndDragDropSource();
@@ -276,7 +279,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
 
     float last_x = ImGui::GetItemRectMax().x;
     float next_x = last_x + style.ItemSpacing.x + button_sz.x;
-    if (idx + 1 < childQueue.size() && next_x < window_visible_x2)
+    if (static_cast<std::size_t>(idx) + 1 < childQueue.size() &&
+        next_x < window_visible_x2)
       ImGui::SameLine();
 
     idx++;
@@ -317,28 +321,33 @@ void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
                                    .stem()
                                    .string();
             }
-            /*if (ImGui::MenuItem("Delete")) {
-                    const auto& path =
-            AssetMngr::Instance().GUIDToAssetPath(viewer->selectedAsset);
-                    AssetMngr::Instance().DeleteAsset(path);
-                    viewer->selectedAsset = xg::Guid{};
-            }*/
+            if (ImGui::MenuItem("Delete")) {
+              const auto& path =
+                  AssetMngr::Instance().GUIDToAssetPath(viewer->selectedAsset);
+              AssetMngr::Instance().DeleteAsset(path);
+              viewer->selectedAsset = xg::Guid{};
+            }
             ImGui::EndPopup();
           }
-          /*if (ImGui::BeginPopup("Folder_Popup")) {
-                  if (ImGui::MenuItem("Create Material")) {
-                          const auto& folderPath =
-          AssetMngr::Instance().GUIDToAssetPath(viewer->selectedFolder); auto
-          wstr = folderPath.wstring(); std::filesystem::path newPath; const
-          auto& tree = AssetMngr::Instance().GetAssetTree(); size_t i = 0; do {
-                                  newPath = wstr + LR"(\" + L"new file (" +
-          std::to_wstring(i) + L").mat)"; i++; } while
-          (std::filesystem::exists(newPath));
-                          AssetMngr::Instance().CreateAsset(std::make_shared<Material>(),
-          newPath);
-                  }
-                  ImGui::EndPopup();
-          }*/
+          if (ImGui::BeginPopup("Folder_Popup")) {
+            if (ImGui::MenuItem("Create Material")) {
+              const auto& folderPath = AssetMngr::Instance().GetFullPath(
+                  AssetMngr::Instance().GUIDToAssetPath(
+                      viewer->selectedFolder));
+              auto wstr = folderPath.wstring();
+              std::filesystem::path newPath;
+              size_t i = 0;
+              do {
+                newPath = wstr + L"(" + L"new file (" + std::to_wstring(i) +
+                          L").mat)";
+                i++;
+              } while (std::filesystem::exists(newPath));
+              AssetMngr::Instance().CreateAsset(
+                  std::make_shared<Material>(),
+                  AssetMngr::Instance().GetRelativePath(newPath));
+            }
+            ImGui::EndPopup();
+          }
         }
         ImGui::End();
       },

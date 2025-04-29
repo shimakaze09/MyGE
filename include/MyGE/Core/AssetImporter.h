@@ -179,7 +179,7 @@ class DefaultAssetImporter final : public TAssetImporter<DefaultAssetImporter> {
  public:
   using TAssetImporter<DefaultAssetImporter>::TAssetImporter;
   virtual AssetImportContext ImportAsset() const override;
-  static void RegisterToMyDRefl() { RegisterToMyDReflHelper(); }
+  static void RegisterToMyDRefl();
 };
 
 class DefaultAssetImporterCreator final

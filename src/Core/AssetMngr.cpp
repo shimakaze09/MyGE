@@ -19,8 +19,8 @@ struct AssetMngr::Impl {
   std::unordered_map<xg::Guid, std::filesystem::path>
       guid2path;  // relative path
 
-  std::unordered_map<void*, xg::Guid> assetID2guid;
-  std::unordered_map<void*, std::string> assetID2name;
+  std::unordered_map<const void*, xg::Guid> assetID2guid;
+  std::unordered_map<const void*, std::string> assetID2name;
   std::multimap<xg::Guid, MyDRefl::SharedObject> guid2asset;
 
   std::unordered_map<xg::Guid, std::shared_ptr<AssetImporter>> guid2importer;
@@ -156,8 +156,8 @@ xg::Guid AssetMngr::AssetPathToGUID(const std::filesystem::path& path) const {
   return target == pImpl->path2guid.end() ? xg::Guid{} : target->second;
 }
 
-bool AssetMngr::Contains(MyDRefl::SharedObject obj) const {
-  return pImpl->assetID2guid.contains(obj.GetPtr());
+bool AssetMngr::Contains(const void* obj) const {
+  return pImpl->assetID2guid.contains(obj);
 }
 
 std::vector<xg::Guid> AssetMngr::FindAssets(
@@ -169,13 +169,13 @@ std::vector<xg::Guid> AssetMngr::FindAssets(
   return rst;
 }
 
-xg::Guid AssetMngr::GetAssetGUID(MyDRefl::SharedObject obj) const {
-  auto target = pImpl->assetID2guid.find(obj.GetPtr());
+xg::Guid AssetMngr::GetAssetGUID(const void* obj) const {
+  auto target = pImpl->assetID2guid.find(obj);
   if (target == pImpl->assetID2guid.end()) return {};
   return target->second;
 }
 
-const std::filesystem::path& AssetMngr::GetAssetPath(SharedObject obj) const {
+const std::filesystem::path& AssetMngr::GetAssetPath(const void* obj) const {
   return GUIDToAssetPath(GetAssetGUID(obj));
 }
 
@@ -437,8 +437,8 @@ bool AssetMngr::MoveAsset(const std::filesystem::path& src,
   return true;
 }
 
-std::string_view AssetMngr::NameofAsset(MyDRefl::SharedObject obj) const {
-  auto target = pImpl->assetID2name.find(obj.GetPtr());
+std::string_view AssetMngr::NameofAsset(const void* obj) const {
+  auto target = pImpl->assetID2name.find(obj);
   if (target == pImpl->assetID2name.end()) return {};
 
   return target->second;
@@ -463,6 +463,16 @@ void AssetMngr::SetImporterOverride(const std::filesystem::path& path,
 
   UnloadAsset(path);
   LoadMainAsset(path);
+}
+
+std::shared_ptr<AssetImporter> AssetMngr::GetImporter(
+    const std::filesystem::path& path) {
+  auto guid = ImportAsset(path);
+  if (!guid.isValid()) return {};
+
+  auto target = pImpl->guid2importer.find(guid);
+  if (target == pImpl->guid2importer.end()) return {};
+  return target->second;
 }
 
 void AssetMngr::UnloadAsset(const std::filesystem::path& path) {

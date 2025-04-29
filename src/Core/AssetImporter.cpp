@@ -21,6 +21,11 @@ void AssetImporter::RegisterToMyDRefl() {
   MyDRefl::Mngr.AddField<&AssetImporter::guid>(Serializer::Key::Guid);
 }
 
+void DefaultAssetImporter::RegisterToMyDRefl() {
+  RegisterToMyDReflHelper();
+  MyDRefl::Mngr.RegisterType<DefaultAsset>();
+}
+
 AssetImportContext DefaultAssetImporter::ImportAsset() const {
   AssetImportContext ctx;
 

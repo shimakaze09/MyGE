@@ -39,6 +39,15 @@ static constexpr char range[] = "MyInspector_range";
 namespace Smkz::MyGE {
 class InspectorRegistry {
  public:
+  struct Playload {
+    struct AssetHandle {
+      xg::Guid guid;
+      std::string_view name;
+    };
+    static constexpr const char Asset[] = "__AssetHandle";
+    static constexpr const char Entity[] = "__Entity";
+  };
+
   static InspectorRegistry& Instance() noexcept {
     static InspectorRegistry instance;
     return instance;
