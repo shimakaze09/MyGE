@@ -52,11 +52,12 @@ class Serializer {
   void RegisterSerializeFunction(Func&& func);
 
   std::string Serialize(const MyECS::World*);
+  std::string Serialize(const MyECS::World*, std::span<MyECS::Entity> entities);
   std::string Serialize(size_t ID, const void* obj);
   std::string Serialize(MyDRefl::ObjectView obj);
   template <typename UserType>
   std::string Serialize(const UserType* obj);
-  bool SerializeToWorld(MyECS::World*, std::string_view json);
+  bool DeserializeToWorld(MyECS::World*, std::string_view json);
 
   static void SerializeRecursion(MyDRefl::ObjectView obj,
                                  SerializeContext& ctx);

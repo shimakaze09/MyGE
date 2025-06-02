@@ -486,7 +486,8 @@ void GameStarter::BuildWorld() {
   // OutputDebugStringA(Smkz::MyGE::Serializer::Instance().Serialize(&world).c_str());
   auto scene = Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Scene>(
       L"..\\assets\\scenes\\Game.scene");
-  Smkz::MyGE::Serializer::Instance().SerializeToWorld(&world, scene->GetText());
+  Smkz::MyGE::Serializer::Instance().DeserializeToWorld(&world,
+                                                        scene->GetText());
   cam =
       world.entityMngr
           .GetEntityArray({{Smkz::MyECS::AccessTypeID_of<Smkz::MyGE::Camera>}})

@@ -1,5 +1,6 @@
 #include <MyGE/Render/Components/Components.h>
-#include <MyGE/Render/MyDRefl_Register_Render.h>
+#include <MyGE/Render/Register_Render.h>
+#include <MyGE/Render/Systems/Systems.h>
 
 #include <MyDRefl/MyDRefl.hpp>
 

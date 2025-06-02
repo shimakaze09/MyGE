@@ -78,7 +78,7 @@ class InspectorRegistry {
 
   static void InspectRecursively(std::string_view name, TypeID, void* obj,
                                  InspectContext ctx);
-  static void InspectRecursively(std::string_view name, UDRefl::ObjectView obj,
+  static void InspectRecursively(std::string_view name, MyDRefl::ObjectView obj,
                                  InspectContext ctx);
 
  private:

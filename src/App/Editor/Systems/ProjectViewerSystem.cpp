@@ -17,7 +17,8 @@ bool IsDeepestDirectory(const std::filesystem::path& directory) {
 
   for (const auto& entry : std::filesystem::directory_iterator(directory)) {
     const auto& path = entry.path();
-    if (AssetMngr::Instance()
+    if (entry.is_directory() &&
+        AssetMngr::Instance()
             .AssetPathToGUID(AssetMngr::Instance().GetRelativePath(path))
             .isValid())
       return false;
@@ -48,55 +49,50 @@ void NameShrink(std::string& name, size_t maxlength) {
 
 void ProjectViewerSystemPrintDirectoryTree(
     ProjectViewer* viewer, const std::filesystem::path& parent) {
-  static constexpr ImGuiTreeNodeFlags nodeBaseFlags =
-      ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
-      ImGuiTreeNodeFlags_SpanAvailWidth;
-
   const auto selectedDirectoryPath = AssetMngr::Instance().GetFullPath(
       AssetMngr::Instance().GUIDToAssetPath(viewer->selectedAsset));
+  const auto relpath = AssetMngr::Instance().GetRelativePath(parent);
+  bool isDeepestDirectory = IsDeepestDirectory(parent);
+  auto guid = AssetMngr::Instance().AssetPathToGUID(relpath);
+  auto name = parent.stem();
 
-  for (const auto& directory_entry :
-       std::filesystem::directory_iterator(parent)) {
-    if (!directory_entry.is_directory()) continue;
+  ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow |
+                                 ImGuiTreeNodeFlags_OpenOnDoubleClick |
+                                 ImGuiTreeNodeFlags_SpanAvailWidth;
+  if (viewer->selectedFolder == guid) nodeFlags |= ImGuiTreeNodeFlags_Selected;
+  if (isDeepestDirectory)
+    nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    const auto& fullpath = directory_entry.path();
-    const auto relpath = AssetMngr::Instance().GetRelativePath(fullpath);
-    auto guid = AssetMngr::Instance().AssetPathToGUID(relpath);
+  if (IsAncestorDirectory(relpath, selectedDirectoryPath))
+    ImGui::SetNextItemOpen(true, ImGuiCond_Always);
 
-    if (!guid.isValid()) continue;
+  bool nodeOpen = ImGui::TreeNodeEx((void*)string_hash(parent.string()),
+                                    nodeFlags, "%s", name.string().c_str());
 
-    bool isDeepestDirectory = IsDeepestDirectory(fullpath);
+  if (ImGui::IsItemClicked()) viewer->selectedFolder = guid;
 
-    auto name = relpath.stem();
-
-    ImGuiTreeNodeFlags nodeFlags = nodeBaseFlags;
-    if (viewer->selectedFolder == guid)
-      nodeFlags |= ImGuiTreeNodeFlags_Selected;
-    if (isDeepestDirectory)
-      nodeFlags |=
-          ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-    if (IsAncestorDirectory(relpath, selectedDirectoryPath))
-      ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-
-    bool nodeOpen = ImGui::TreeNodeEx((void*)string_hash(fullpath.string()),
-                                      nodeFlags, "%s", name.string().c_str());
-
-    if (ImGui::IsItemClicked()) viewer->selectedFolder = guid;
-
-    if (nodeOpen && !isDeepestDirectory) {
-      ProjectViewerSystemPrintDirectoryTree(viewer, fullpath);
-      ImGui::TreePop();
+  if (nodeOpen && !isDeepestDirectory) {
+    for (const auto& directory_entry :
+         std::filesystem::directory_iterator(parent)) {
+      if (!directory_entry.is_directory()) continue;
+      const auto& child_fullpath = directory_entry.path();
+      const auto child_relpath =
+          AssetMngr::Instance().GetRelativePath(child_fullpath);
+      auto child_guid = AssetMngr::Instance().AssetPathToGUID(child_relpath);
+      if (!child_guid.isValid()) continue;
+      ProjectViewerSystemPrintDirectoryTree(viewer, child_fullpath);
     }
+    ImGui::TreePop();
   }
 }
 
 void ProjectViewerSystemPrintFolder(Inspector* inspector,
                                     ProjectViewer* viewer) {
-  if (!viewer->selectedFolder.isValid()) return;
-
-  const auto selectedFolderPath =
-      AssetMngr::Instance().GUIDToAssetPath(viewer->selectedFolder);
-  const auto selectedFolderFullPath =
+  const std::filesystem::path selectedFolderPath =
+      viewer->selectedFolder.isValid()
+          ? AssetMngr::Instance().GUIDToAssetPath(viewer->selectedFolder)
+          : LR"()";
+  const std::filesystem::path selectedFolderFullPath =
       AssetMngr::Instance().GetFullPath(selectedFolderPath);
 
   {  // header
@@ -108,20 +104,30 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
         curPath = curPath.parent_path();
       }
     }
-    for (size_t i = 0; i < paths.size(); i++) {
-      size_t idx = paths.size() - 1 - i;
-      const auto& path = paths[idx];
-      if (idx > 0) {
-        if (ImGui::SmallButton(path.stem().string().c_str())) {
-          viewer->selectedFolder = AssetMngr::Instance().AssetPathToGUID(path);
-          viewer->selectedAsset = {};
-        }
+    if (!paths.empty()) {
+      if (ImGui::SmallButton(
+              AssetMngr::Instance().GetRootPath().stem().string().c_str())) {
+        viewer->selectedFolder = {};
+        viewer->selectedAsset = {};
+      }
+      for (size_t i = 0; i < paths.size(); i++) {
         ImGui::SameLine();
         ImGui::Text(">");
         ImGui::SameLine();
-      } else
-        ImGui::Text(path.stem().string().c_str());
-    }
+
+        size_t idx = paths.size() - 1 - i;
+        const auto& path = paths[idx];
+        if (idx > 0) {
+          if (ImGui::SmallButton(path.stem().string().c_str())) {
+            viewer->selectedFolder =
+                AssetMngr::Instance().AssetPathToGUID(path);
+            viewer->selectedAsset = {};
+          }
+        } else
+          ImGui::Text(path.stem().string().c_str());
+      }
+    } else
+      ImGui::Text(AssetMngr::Instance().GetRootPath().stem().string().c_str());
   }
 
   ImGui::Separator();
@@ -140,8 +146,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
       LR"(_internal\FolderViewer\shader.png)");
   auto hlsl = AssetMngr::Instance().LoadAsset<Texture2D>(
       LR"(_internal\FolderViewer\hlsl.png)");
-  // auto scene =
-  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\scene.png)");
+  auto world = AssetMngr::Instance().LoadAsset<Texture2D>(
+      LR"(_internal\FolderViewer\world.png)");
   auto model = AssetMngr::Instance().LoadAsset<Texture2D>(
       LR"(_internal\FolderViewer\model.png)");
   // auto texcube =
@@ -156,8 +162,7 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
       GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*material);
   auto shaderID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*shader);
   auto hlslID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*hlsl);
-  // auto sceneID =
-  // GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*scene);
+  auto worldID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*world);
   auto modelID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*model);
   // auto texcubeID =
   // GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*texcube);
@@ -212,6 +217,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
           id = materialID.ptr;
         else if (ext == ".shader")
           id = shaderID.ptr;
+        else if (ext == ".world")
+          id = worldID.ptr;
         else if (ext == ".hlsl")
           id = hlslID.ptr;
         else if (ext == ".obj" ||

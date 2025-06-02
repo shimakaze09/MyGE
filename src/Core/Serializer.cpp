@@ -569,6 +569,47 @@ string Serializer::Serialize(const World* world) {
   return json;
 }
 
+std::string Serializer::Serialize(const MyECS::World* w,
+                                  std::span<MyECS::Entity> entities) {
+  SerializeContext ctx{pImpl->serializer};
+  ctx.writer.Reset(ctx.sb);
+
+  ctx.writer.StartObject();
+  {  // World
+    ctx.writer.Key(Serializer::Key::EntityMngr);
+    ctx.writer.StartObject();
+    {  // EntityMngr
+      ctx.writer.Key(Serializer::Key::Entities);
+      ctx.writer.StartArray();
+      {  // Entities
+        for (Entity e : entities) {
+          ctx.writer.StartObject();
+          {
+            ctx.writer.Key(Key::Index);
+            ctx.writer.Uint64(e.index);
+            ctx.writer.Key(Key::Components);
+            ctx.writer.StartArray();
+            {  // Components
+              for (const auto& cmpt :
+                   w->entityMngr.Components(e, AccessMode::LATEST))
+                Serializer::SerializeRecursion(
+                    {Mngr.tregistry.Typeof(cmpt.AccessType()), cmpt.Ptr()},
+                    ctx);
+            }
+            ctx.writer.EndArray();  // components
+          }
+          ctx.writer.EndObject();
+        }
+      }
+      ctx.writer.EndArray();  // entities
+    }
+    ctx.writer.EndObject();
+  }
+  ctx.writer.EndObject();
+  auto json = ctx.sb.GetString();
+  return json;
+}
+
 string Serializer::Serialize(size_t ID, const void* obj) {
   return Serialize(ObjectView{MyDRefl::Mngr.tregistry.Typeof(TypeID{ID}),
                               const_cast<void*>(obj)});
@@ -582,7 +623,7 @@ std::string Serializer::Serialize(ObjectView obj) {
   return json;
 }
 
-bool Serializer::SerializeToWorld(MyECS::World* world, string_view json) {
+bool Serializer::DeserializeToWorld(MyECS::World* world, string_view json) {
   Document doc;
   ParseResult rst = doc.Parse(json.data());
 

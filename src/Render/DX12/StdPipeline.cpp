@@ -566,7 +566,7 @@ void StdPipeline::Impl::UpdateRenderContext(
   renderContext.entity2offset.clear();
   renderContext.shaderCBDescMap.clear();
 
-  {  // camera
+  if (cameraData.entity.Valid()) {  // camera
     auto cmptCamera =
         cameraData.world.entityMngr.ReadComponent<Camera>(cameraData.entity);
     auto cmptW2L = cameraData.world.entityMngr.ReadComponent<WorldToLocal>(

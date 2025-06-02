@@ -62,8 +62,13 @@ class AssetImporter {
   const xg::Guid& GetGuid() const noexcept { return guid; }
   std::filesystem::path GetFullPath() const;
 
+  // [Tempalte]
+  // virtual MyDRefl::ObjectView This() const noexcept override
+  // { return TmplThis<Impl>(this); }
   virtual MyDRefl::ObjectView This() const noexcept = 0;
 
+  // serialize self (importer) to ctx
+  // [Template]
   // {
   //   "__TypeID":<uint64>,
   //   "__TypeName":<string>,
@@ -75,15 +80,22 @@ class AssetImporter {
   virtual void Serialize(Serializer::SerializeContext& ctx) const {
     Serializer::SerializeRecursion(This(), ctx);
   }
-  virtual std::string ReserializeAsset() const;
-  virtual AssetImportContext ImportAsset() const = 0;
 
-  static void RegisterToMyDRefl();  // call by AssetMngr
+  // default: use Serilizer to serialize the main asset
+  virtual std::string ReserializeAsset() const;
+
+  // default: use Serilizer to deserialize file at path (<=> guid)
+  virtual AssetImportContext ImportAsset() const;
+
  protected:
-  template <typename T>
-  static MyDRefl::ObjectView TmplThis(const T* ptr) {
-    return {Type_of<T>, const_cast<T*>(ptr)};
+  template <typename Impl>
+  static MyDRefl::ObjectView TmplThis(const Impl* ptr) {
+    return {Type_of<Impl>, const_cast<Impl*>(ptr)};
   }
+
+ private:
+  friend class AssetMngr;
+  static void RegisterToMyDRefl();  // call by AssetMngr
 
   xg::Guid guid;
 };
@@ -102,9 +114,6 @@ class TAssetImporter : public AssetImporter {
     MyDRefl::Mngr.RegisterType<Impl>();
     MyDRefl::Mngr.AddBases<Impl, AssetImporter>();
   }
-
- private:
-  using AssetImporter::RegisterToMyDRefl;
 };
 
 /*
@@ -179,6 +188,9 @@ class DefaultAssetImporter final : public TAssetImporter<DefaultAssetImporter> {
  public:
   using TAssetImporter<DefaultAssetImporter>::TAssetImporter;
   virtual AssetImportContext ImportAsset() const override;
+
+ private:
+  friend class TAssetImporterCreator<DefaultAssetImporter>;
   static void RegisterToMyDRefl();
 };
 

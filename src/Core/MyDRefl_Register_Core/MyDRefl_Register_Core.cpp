@@ -1,4 +1,4 @@
-#include <MyGE/Core/MyDRefl_Register_Core.h>
+#include <MyGE/Core/Register_Core.h>
 
 #include "MyDRefl_Register_Core_impl.h"
 

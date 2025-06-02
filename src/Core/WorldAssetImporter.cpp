@@ -1,0 +1,54 @@
+#include <MyGE/Core/AssetMngr.h>
+#include <MyGE/Core/WorldAssetImporter.h>
+
+#include <filesystem>
+
+using namespace Smkz::MyGE;
+
+WorldAsset::WorldAsset(const MyECS::World* world)
+    : data{Serializer::Instance().Serialize(world)} {}
+
+bool WorldAsset::ToWorld(MyECS::World* world) {
+  return Serializer::Instance().DeserializeToWorld(world, data);
+}
+
+void WorldAssetImporter::RegisterToMyDRefl() { RegisterToMyDReflHelper(); }
+
+std::string WorldAssetImporter::ReserializeAsset() const {
+  auto w = AssetMngr::Instance().GUIDToAsset<WorldAsset>(GetGuid());
+  if (!w.get()) return {};
+  return w->GetData();
+}
+
+AssetImportContext WorldAssetImporter::ImportAsset() const {
+  AssetImportContext ctx;
+  auto path = GetFullPath();
+  if (path.empty()) return {};
+
+  std::string name = path.stem().string();
+
+  std::ifstream ifs(path);
+  assert(ifs.is_open());
+  std::string str;
+
+  ifs.seekg(0, std::ios::end);
+  str.reserve(ifs.tellg());
+  ifs.seekg(0, std::ios::beg);
+
+  str.assign(std::istreambuf_iterator<char>(ifs),
+             std::istreambuf_iterator<char>());
+
+  WorldAsset wa(std::move(str));
+
+  ctx.AddObject(
+      name, MyDRefl::SharedObject{Type_of<WorldAsset>,
+                                  std::make_shared<WorldAsset>(std::move(wa))});
+  ctx.SetMainObjectID(name);
+
+  return ctx;
+}
+
+std::vector<std::string> WorldAssetImporterCreator::SupportedExtentions()
+    const {
+  return {".world"};
+}

@@ -8,6 +8,7 @@
 namespace Smkz::MyGE {
 struct MeshRenderer {
   using allocator_type = std::pmr::vector<SharedVar<Material>>::allocator_type;
+  MeshRenderer() = default;
   MeshRenderer(const allocator_type& alloc) : materials(alloc) {}
   MeshRenderer(const MeshRenderer& other, const allocator_type& alloc)
       : materials(other.materials, alloc) {}

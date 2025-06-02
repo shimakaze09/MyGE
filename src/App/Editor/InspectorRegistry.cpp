@@ -248,7 +248,7 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
         case Smkz::MyDRefl::ContainerType::Span:
         case Smkz::MyDRefl::ContainerType::Vector:
         case Smkz::MyDRefl::ContainerType::Deque:
-        case Smkz::MyDRefl::ContainerType::ForwardList:  // TODO: append
+        case Smkz::MyDRefl::ContainerType::ForwardList:
         case Smkz::MyDRefl::ContainerType::List:
         case Smkz::MyDRefl::ContainerType::MultiSet:
         case Smkz::MyDRefl::ContainerType::Map:
@@ -553,7 +553,7 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
                 ct == Smkz::MyDRefl::ContainerType::List) {
               int s = static_cast<int>(objv.size());
               int origs = s;
-              ImGui::InputInt("resize", &s, 1);
+              ImGui::InputInt("size", &s, 1);
               if (s != origs && s >= 0) objv.resize(static_cast<size_t>(s));
             }
 

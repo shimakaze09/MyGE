@@ -14,10 +14,11 @@
 #include <MyGE/Core/Components/Components.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/ImGUIMngr.h>
-#include <MyGE/Core/MyDRefl_Register_Core.h>
+#include <MyGE/Core/Register_Core.h>
 #include <MyGE/Core/Serializer.h>
 #include <MyGE/Core/StringsSink.h>
 #include <MyGE/Core/Systems/Systems.h>
+#include <MyGE/Core/WorldAssetImporter.h>
 #include <MyGE/Render/Components/Components.h>
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
@@ -27,7 +28,7 @@
 #include <MyGE/Render/MaterialImporter.h>
 #include <MyGE/Render/Mesh.h>
 #include <MyGE/Render/MeshImporter.h>
-#include <MyGE/Render/MyDRefl_Register_Render.h>
+#include <MyGE/Render/Register_Render.h>
 #include <MyGE/Render/Shader.h>
 #include <MyGE/Render/ShaderImporter.h>
 #include <MyGE/Render/ShaderMngr.h>
@@ -227,6 +228,8 @@ bool Editor::Impl::Init() {
                              DX12App::NumFrameResources, 3);
 
   AssetMngr::Instance().SetRootPath(LR"(..\assets)");
+  AssetMngr::Instance().RegisterAssetImporterCreator(
+      std::make_shared<WorldAssetImporterCreator>());
   AssetMngr::Instance().RegisterAssetImporterCreator(
       std::make_shared<HLSLFileImporterCreator>());
   AssetMngr::Instance().RegisterAssetImporterCreator(
@@ -625,8 +628,13 @@ void Editor::Impl::Update() {
           gameCameras.emplace_back(e, *curGameWorld);
         },
         false, camFilter);
-    assert(gameCameras.size() == 1);  // now only support 1 camera
-    gamePipeline->BeginFrame({curGameWorld}, gameCameras.front());
+    assert(gameCameras.empty() ||
+           gameCameras.size() == 1);  // now only support 0/1 camera
+    if (gameCameras.empty())
+      gamePipeline->BeginFrame({curGameWorld},
+                               {Entity::Invalid(), *curGameWorld});
+    else
+      gamePipeline->BeginFrame({curGameWorld}, gameCameras.front());
   }
 
   {
@@ -638,9 +646,14 @@ void Editor::Impl::Update() {
           sceneCameras.emplace_back(e, sceneWorld);
         },
         false, camFilter);
-    assert(sceneCameras.size() == 1);  // now only support 1 camera
-    scenePipeline->BeginFrame({curGameWorld, &sceneWorld},
-                              sceneCameras.front());
+    assert(sceneCameras.empty() ||
+           sceneCameras.size() == 1);  // now only support 0/1 camera
+    if (sceneCameras.empty())
+      gamePipeline->BeginFrame({curGameWorld, &sceneWorld},
+                               {Entity::Invalid(), sceneWorld});
+    else
+      scenePipeline->BeginFrame({curGameWorld, &sceneWorld},
+                                sceneCameras.front());
   }
 
   {

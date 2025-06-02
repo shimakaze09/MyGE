@@ -7,6 +7,7 @@
 namespace Smkz::MyGE {
 struct Children {
   using allocator_type = std::pmr::polymorphic_allocator<MyECS::Entity>;
+  Children() = default;
   Children(const allocator_type& alloc) : value(alloc) {}
   Children(const Children& other, const allocator_type& alloc)
       : value(other.value, alloc) {}

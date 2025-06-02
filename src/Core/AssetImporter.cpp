@@ -14,6 +14,32 @@ std::string AssetImporter::ReserializeAsset() const {
   return Serializer::Instance().Serialize(asset);
 }
 
+AssetImportContext AssetImporter::ImportAsset() const {
+  AssetImportContext ctx;
+
+  auto path = GetFullPath();
+  if (path.empty()) return {};
+  std::string name = path.stem().string();
+
+  std::string str;
+  {  // read file to str
+    std::ifstream ifs(path);
+    assert(ifs.is_open());
+
+    ifs.seekg(0, std::ios::end);
+    str.reserve(ifs.tellg());
+    ifs.seekg(0, std::ios::beg);
+
+    str.assign(std::istreambuf_iterator<char>(ifs),
+               std::istreambuf_iterator<char>());
+  }
+
+  ctx.AddObject(name, Serializer::Instance().Deserialize(str));
+  ctx.SetMainObjectID(name);
+
+  return ctx;
+}
+
 void AssetImporter::RegisterToMyDRefl() {
   if (MyDRefl::Mngr.typeinfos.contains(Type_of<AssetImporter>)) return;
 

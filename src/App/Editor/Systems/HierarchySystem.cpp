@@ -2,10 +2,13 @@
 #include <MyGE/App/Editor/Components/Inspector.h>
 #include <MyGE/App/Editor/InspectorRegistry.h>
 #include <MyGE/App/Editor/Systems/HierarchySystem.h>
+#include <MyGE/Core/AssetMngr.h>
 #include <MyGE/Core/Components/Children.h>
 #include <MyGE/Core/Components/Name.h>
 #include <MyGE/Core/Components/Parent.h>
+#include <MyGE/Core/WorldAssetImporter.h>
 #include <_deps/imgui/imgui.h>
+#include <_deps/imgui/misc/cpp/imgui_stdlib.h>
 
 using namespace Smkz::MyGE;
 
@@ -53,8 +56,8 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e,
   }
 
   if (ImGui::BeginDragDropTarget()) {
-    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
-            (InspectorRegistry::Playload::Entity))) {
+    if (const ImGuiPayload* payload =
+            ImGui::AcceptDragDropPayload(InspectorRegistry::Playload::Entity)) {
       IM_ASSERT(payload->DataSize == sizeof(MyECS::Entity));
       auto payload_e = *(const MyECS::Entity*)payload->Data;
       if (HierarchyMovable(hierarchy->world, e, payload_e)) {
@@ -151,11 +154,19 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
             } else {
               if (ImGui::MenuItem("Create Empty Entity"))
                 hierarchy->world->entityMngr.Create();
+
+              if (ImGui::MenuItem("Save World"))
+                hierarchy->is_saving_world = true;
+
+              if (ImGui::MenuItem("Delete All Entities"))
+                hierarchy->world->entityMngr.Clear();
             }
 
             ImGui::EndPopup();
           } else
             hierarchy->hover = MyECS::Entity::Invalid();
+
+          if (hierarchy->is_saving_world) ImGui::OpenPopup("Input Saved Path");
 
           if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
@@ -173,8 +184,45 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
                 hierarchy->world->entityMngr.Detach(payload_e,
                                                     TypeIDs_of<Parent>);
               }
+            } else if (const ImGuiPayload* payload =
+                           ImGui::AcceptDragDropPayload(
+                               InspectorRegistry::Playload::Asset)) {
+              IM_ASSERT(payload->DataSize ==
+                        sizeof(InspectorRegistry::Playload::AssetHandle));
+              auto asset_handle =
+                  *(const InspectorRegistry::Playload::AssetHandle*)
+                       payload->Data;
+              MyDRefl::SharedObject asset =
+                  asset_handle.name.empty()
+                      ? AssetMngr::Instance().GUIDToAsset(asset_handle.guid)
+                      : AssetMngr::Instance().GUIDToAsset(asset_handle.guid,
+                                                          asset_handle.name);
+              if (asset.GetType().Is<WorldAsset>()) {
+                if (hierarchy->world)
+                  asset.As<WorldAsset>().ToWorld(hierarchy->world);
+              }
             }
             ImGui::EndDragDropTarget();
+          }
+
+          if (ImGui::BeginPopupModal("Input Saved Path", NULL,
+                                     ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::InputText("path", &hierarchy->saved_path);
+            if (ImGui::Button("OK", ImVec2(120, 0))) {
+              std::filesystem::path path{hierarchy->saved_path};
+              if (path.extension() != LR"(.world)") path += LR"(.world)";
+              AssetMngr::Instance().CreateAsset(
+                  std::make_shared<WorldAsset>(hierarchy->world), path);
+              hierarchy->saved_path.clear();
+              hierarchy->is_saving_world = false;
+              ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+              hierarchy->is_saving_world = false;
+              ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
           }
 
           auto inspector = w->entityMngr.WriteSingleton<Inspector>();
