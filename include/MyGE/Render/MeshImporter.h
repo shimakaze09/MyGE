@@ -2,7 +2,7 @@
 
 #include "../Core/AssetImporter.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class MeshImporter final : public TAssetImporter<MeshImporter> {
  public:
   using TAssetImporter<MeshImporter>::TAssetImporter;
@@ -15,4 +15,5 @@ class MeshImporterCreator final : public TAssetImporterCreator<MeshImporter> {
  public:
   virtual std::vector<std::string> SupportedExtentions() const override;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

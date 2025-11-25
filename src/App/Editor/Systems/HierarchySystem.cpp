@@ -10,9 +10,9 @@
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/misc/cpp/imgui_stdlib.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
-namespace Smkz::MyGE::detail {
+namespace My::MyGE::detail {
 bool HierarchyMovable(const MyECS::World* w, MyECS::Entity dst,
                       MyECS::Entity src) {
   if (dst == src)
@@ -115,7 +115,7 @@ void HierarchyDeleteEntity(MyECS::World* w, MyECS::Entity e) {
   }
   detail::HierarchyDeleteEntityRecursively(w, e);
 }
-}  // namespace Smkz::MyGE::detail
+}  // namespace My::MyGE::detail
 
 void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.GetWorld()->AddCommand(
@@ -238,3 +238,4 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
       },
       0);
 }
+

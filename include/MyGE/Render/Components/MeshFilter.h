@@ -3,8 +3,9 @@
 #include "../../Core/SharedVar.h"
 #include "../Mesh.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct MeshFilter {
   SharedVar<Mesh> mesh;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

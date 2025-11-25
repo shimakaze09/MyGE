@@ -4,6 +4,4 @@ ADD_TARGET(
         "${PROJECT_SOURCE_DIR}/include/MyGE/App/Editor"
         LIB
         My::MyGE_App_DX12App
-        C_OPTION
-        /bigobj
 )

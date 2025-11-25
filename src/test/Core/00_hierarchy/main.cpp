@@ -3,9 +3,9 @@
 
 #include <iostream>
 
-using namespace Smkz::MyECS;
-using namespace Smkz::MyGE;
-using namespace Smkz;
+using namespace My::MyECS;
+using namespace My::MyGE;
+using namespace My;
 using namespace std;
 
 struct PrintSystem {
@@ -50,3 +50,4 @@ int main() {
   cout << w.GenUpdateFrameGraph().Dump() << endl;
   cout << w.DumpUpdateJobGraph() << endl;
 }
+

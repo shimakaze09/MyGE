@@ -5,7 +5,7 @@
 #include <MyGE/Core/AssetMngr.h>
 #include <_deps/imgui/imgui.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.GetWorld()->AddCommand(
@@ -180,3 +180,4 @@ void InspectorSystem::OnUpdate(MyECS::Schedule& schedule) {
       },
       0);
 }
+

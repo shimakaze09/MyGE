@@ -2,16 +2,17 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_DescriptorRange() {
+void My::MyGE::details::ShaderImporterRegister_DescriptorRange() {
   MyDRefl::Mngr.RegisterType<DescriptorRange>();
-  MyDRefl::Mngr.SimpleAddField<&DescriptorRange::RangeType>("RangeType");
-  MyDRefl::Mngr.SimpleAddField<&DescriptorRange::NumDescriptors>(
+  MyDRefl::Mngr.AddField<&DescriptorRange::RangeType>("RangeType");
+  MyDRefl::Mngr.AddField<&DescriptorRange::NumDescriptors>(
       "NumDescriptors");
-  MyDRefl::Mngr.SimpleAddField<&DescriptorRange::BaseShaderRegister>(
+  MyDRefl::Mngr.AddField<&DescriptorRange::BaseShaderRegister>(
       "BaseShaderRegister");
-  MyDRefl::Mngr.SimpleAddField<&DescriptorRange::RegisterSpace>(
+  MyDRefl::Mngr.AddField<&DescriptorRange::RegisterSpace>(
       "RegisterSpace");
 }
+

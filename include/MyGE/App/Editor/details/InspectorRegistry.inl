@@ -16,7 +16,7 @@
 //
 // #include <variant>
 //
-// namespace Smkz::MyGE::detail {
+// namespace My::MyGE::detail {
 //	template<typename T>
 //	struct ValNTraits {
 //		static constexpr bool isValN = false;
@@ -971,7 +971,7 @@
 //	}
 // }
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 template <typename Func>
 void InspectorRegistry::Register(Func&& func) {
   using ArgList = FuncTraits_ArgList<Func>;
@@ -986,4 +986,5 @@ void InspectorRegistry::Register(Func&& func) {
     f(reinterpret_cast<Asset*>(asset), ctx);
   });
 }
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

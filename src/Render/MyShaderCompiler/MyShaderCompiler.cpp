@@ -9,7 +9,7 @@
 #include "_deps/MyShaderLexer.h"
 #include "_deps/MyShaderParser.h"
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 struct MyShaderCompiler::Impl {
   class MyShaderCompilerInstance : private details::MyShaderBaseVisitor {
@@ -23,7 +23,7 @@ struct MyShaderCompiler::Impl {
       antlr4::CommonTokenStream tokens(&lexer);
       details::MyShaderParser parser(&tokens);
 
-      Shader shader = visitShader(parser.shader());
+      Shader shader = std::any_cast<Shader>(visitShader(parser.shader()));
 
       return {success, shader};
     }
@@ -90,21 +90,21 @@ struct MyShaderCompiler::Impl {
 
       // root parameters
       std::vector<RootParameter> rootParams =
-          visitRoot_signature(ctx->root_signature());
+          std::any_cast<std::vector<RootParameter>>(visitRoot_signature(ctx->root_signature()));
       if (!success || rootParams.empty()) return ERROR;
       shader.rootParameters = std::move(rootParams);
 
       // properties
       if (ctx->property_block()) {
         std::map<std::string, ShaderProperty, std::less<>> properties =
-            visitProperty_block(ctx->property_block());
+            std::any_cast<std::map<std::string, ShaderProperty, std::less<>>>(visitProperty_block(ctx->property_block()));
         if (!success) return ERROR;
         shader.properties = std::move(properties);
       }
 
       // passes
       for (auto passCtx : ctx->pass()) {
-        ShaderPass pass = visitPass(passCtx);
+        ShaderPass pass = std::any_cast<ShaderPass>(visitPass(passCtx));
         if (!success) return ERROR;
         shader.passes.push_back(std::move(pass));
       }
@@ -169,7 +169,7 @@ struct MyShaderCompiler::Impl {
       std::map<std::string, ShaderProperty, std::less<>> rst;
       for (auto propertyCtx : ctx->property()) {
         std::pair<std::string, ShaderProperty> property =
-            visitProperty(propertyCtx);
+            std::any_cast<std::pair<std::string, ShaderProperty>>(visitProperty(propertyCtx));
         if (!success) return ERROR;
         rst.insert(property);
       }
@@ -213,21 +213,21 @@ struct MyShaderCompiler::Impl {
     virtual antlrcpp::Any visitProperty_bool(
         details::MyShaderParser::Property_boolContext* ctx) override {
       auto name = ctx->property_name()->getText();
-      bool rst = ctx->val_bool()->accept(this);
+      bool rst = std::any_cast<bool>(ctx->val_bool()->accept(this));
       return std::pair{name, ShaderProperty{rst}};
     }
 
     virtual antlrcpp::Any visitProperty_int(
         details::MyShaderParser::Property_intContext* ctx) override {
       auto name = ctx->property_name()->getText();
-      int rst = ctx->val_int()->accept(this);
+      int rst = std::any_cast<int>(ctx->val_int()->accept(this));
       return std::pair{name, ShaderProperty{rst}};
     }
 
     virtual antlrcpp::Any visitProperty_uint(
         details::MyShaderParser::Property_uintContext* ctx) override {
       auto name = ctx->property_name()->getText();
-      unsigned rst = ctx->val_uint()->accept(this);
+      unsigned rst = std::any_cast<unsigned>(ctx->val_uint()->accept(this));
       return std::pair{name, ShaderProperty{rst}};
     }
 
@@ -241,7 +241,7 @@ struct MyShaderCompiler::Impl {
     virtual antlrcpp::Any visitProperty_double(
         details::MyShaderParser::Property_doubleContext* ctx) override {
       auto name = ctx->property_name()->getText();
-      double rst = ctx->val_double()->accept(this);
+      double rst = std::any_cast<double>(ctx->val_double()->accept(this));
       return std::pair{name, ShaderProperty{rst}};
     }
 
@@ -249,8 +249,8 @@ struct MyShaderCompiler::Impl {
         details::MyShaderParser::Property_bool2Context* ctx) override {
       auto name = ctx->property_name()->getText();
       val<bool, 2> rst{
-          ctx->val_bool2()->val_bool(0)->accept(this).as<bool>(),
-          ctx->val_bool2()->val_bool(1)->accept(this).as<bool>(),
+          std::any_cast<bool>(ctx->val_bool2()->val_bool(0)->accept(this)),
+          std::any_cast<bool>(ctx->val_bool2()->val_bool(1)->accept(this)),
       };
       return std::pair{name, rst};
     }
@@ -259,9 +259,9 @@ struct MyShaderCompiler::Impl {
         details::MyShaderParser::Property_bool3Context* ctx) override {
       auto name = ctx->property_name()->getText();
       val<bool, 3> rst{
-          ctx->val_bool3()->val_bool(0)->accept(this).as<bool>(),
-          ctx->val_bool3()->val_bool(1)->accept(this).as<bool>(),
-          ctx->val_bool3()->val_bool(2)->accept(this).as<bool>(),
+          std::any_cast<bool>(ctx->val_bool3()->val_bool(0)->accept(this)),
+          std::any_cast<bool>(ctx->val_bool3()->val_bool(1)->accept(this)),
+          std::any_cast<bool>(ctx->val_bool3()->val_bool(2)->accept(this)),
       };
       return std::pair{name, rst};
     }
@@ -270,10 +270,10 @@ struct MyShaderCompiler::Impl {
         details::MyShaderParser::Property_bool4Context* ctx) override {
       auto name = ctx->property_name()->getText();
       val<bool, 4> rst{
-          ctx->val_bool4()->val_bool(0)->accept(this).as<bool>(),
-          ctx->val_bool4()->val_bool(1)->accept(this).as<bool>(),
-          ctx->val_bool4()->val_bool(2)->accept(this).as<bool>(),
-          ctx->val_bool4()->val_bool(3)->accept(this).as<bool>(),
+          std::any_cast<bool>(ctx->val_bool4()->val_bool(0)->accept(this)),
+          std::any_cast<bool>(ctx->val_bool4()->val_bool(1)->accept(this)),
+          std::any_cast<bool>(ctx->val_bool4()->val_bool(2)->accept(this)),
+          std::any_cast<bool>(ctx->val_bool4()->val_bool(3)->accept(this)),
       };
       return std::pair{name, rst};
     }
@@ -282,8 +282,8 @@ struct MyShaderCompiler::Impl {
         details::MyShaderParser::Property_int2Context* ctx) override {
       auto name = ctx->property_name()->getText();
       vali2 rst{
-          ctx->val_int2()->val_int(0)->accept(this).as<int>(),
-          ctx->val_int2()->val_int(1)->accept(this).as<int>(),
+          std::any_cast<int>(ctx->val_int2()->val_int(0)->accept(this)),
+          std::any_cast<int>(ctx->val_int2()->val_int(1)->accept(this)),
       };
       return std::pair{name, ShaderProperty{rst}};
     }
@@ -292,9 +292,9 @@ struct MyShaderCompiler::Impl {
         details::MyShaderParser::Property_int3Context* ctx) override {
       auto name = ctx->property_name()->getText();
       vali3 rst{
-          ctx->val_int3()->val_int(0)->accept(this).as<int>(),
-          ctx->val_int3()->val_int(1)->accept(this).as<int>(),
-          ctx->val_int3()->val_int(2)->accept(this).as<int>(),
+          std::any_cast<int>(ctx->val_int3()->val_int(0)->accept(this)),
+          std::any_cast<int>(ctx->val_int3()->val_int(1)->accept(this)),
+          std::any_cast<int>(ctx->val_int3()->val_int(2)->accept(this)),
       };
       return std::pair{name, ShaderProperty{rst}};
     }
@@ -303,10 +303,10 @@ struct MyShaderCompiler::Impl {
         details::MyShaderParser::Property_int4Context* ctx) override {
       auto name = ctx->property_name()->getText();
       vali4 rst{
-          ctx->val_int4()->val_int(0)->accept(this).as<int>(),
-          ctx->val_int4()->val_int(1)->accept(this).as<int>(),
-          ctx->val_int4()->val_int(2)->accept(this).as<int>(),
-          ctx->val_int4()->val_int(3)->accept(this).as<int>(),
+          std::any_cast<int>(ctx->val_int4()->val_int(0)->accept(this)),
+          std::any_cast<int>(ctx->val_int4()->val_int(1)->accept(this)),
+          std::any_cast<int>(ctx->val_int4()->val_int(2)->accept(this)),
+          std::any_cast<int>(ctx->val_int4()->val_int(3)->accept(this)),
       };
       return std::pair{name, ShaderProperty{rst}};
     }
@@ -315,8 +315,8 @@ struct MyShaderCompiler::Impl {
         details::MyShaderParser::Property_uint2Context* ctx) override {
       auto name = ctx->property_name()->getText();
       vali2 rst{
-          ctx->val_uint2()->val_uint(0)->accept(this).as<unsigned>(),
-          ctx->val_uint2()->val_uint(1)->accept(this).as<unsigned>(),
+          std::any_cast<unsigned>(ctx->val_uint2()->val_uint(0)->accept(this)),
+          std::any_cast<unsigned>(ctx->val_uint2()->val_uint(1)->accept(this)),
       };
       return std::pair{name, ShaderProperty{rst}};
     }
@@ -325,9 +325,9 @@ struct MyShaderCompiler::Impl {
         details::MyShaderParser::Property_uint3Context* ctx) override {
       auto name = ctx->property_name()->getText();
       vali3 rst{
-          ctx->val_uint3()->val_uint(0)->accept(this).as<unsigned>(),
-          ctx->val_uint3()->val_uint(1)->accept(this).as<unsigned>(),
-          ctx->val_uint3()->val_uint(2)->accept(this).as<unsigned>(),
+          std::any_cast<unsigned>(ctx->val_uint3()->val_uint(0)->accept(this)),
+          std::any_cast<unsigned>(ctx->val_uint3()->val_uint(1)->accept(this)),
+          std::any_cast<unsigned>(ctx->val_uint3()->val_uint(2)->accept(this)),
       };
       return std::pair{name, ShaderProperty{rst}};
     }
@@ -336,10 +336,10 @@ struct MyShaderCompiler::Impl {
         details::MyShaderParser::Property_uint4Context* ctx) override {
       auto name = ctx->property_name()->getText();
       vali4 rst{
-          ctx->val_uint4()->val_uint(0)->accept(this).as<unsigned>(),
-          ctx->val_uint4()->val_uint(1)->accept(this).as<unsigned>(),
-          ctx->val_uint4()->val_uint(2)->accept(this).as<unsigned>(),
-          ctx->val_uint4()->val_uint(3)->accept(this).as<unsigned>(),
+          std::any_cast<unsigned>(ctx->val_uint4()->val_uint(0)->accept(this)),
+          std::any_cast<unsigned>(ctx->val_uint4()->val_uint(1)->accept(this)),
+          std::any_cast<unsigned>(ctx->val_uint4()->val_uint(2)->accept(this)),
+          std::any_cast<unsigned>(ctx->val_uint4()->val_uint(3)->accept(this)),
       };
       return std::pair{name, ShaderProperty{rst}};
     }
@@ -412,7 +412,8 @@ struct MyShaderCompiler::Impl {
 
     virtual antlrcpp::Any visitProperty_2D(
         details::MyShaderParser::Property_2DContext* ctx) override {
-      SharedVar<Texture2D> tex2d = ctx->val_tex2d()->accept(this);
+      SharedVar<Texture2D> tex2d =
+          std::any_cast<SharedVar<Texture2D>>(ctx->val_tex2d()->accept(this));
       if (!success)
         return std::pair{std::string{}, ShaderProperty{SharedVar<Texture2D>{}}};
       auto name = ctx->property_name()->getText();
@@ -461,7 +462,8 @@ struct MyShaderCompiler::Impl {
 
     virtual antlrcpp::Any visitProperty_cube(
         details::MyShaderParser::Property_cubeContext* ctx) override {
-      SharedVar<TextureCube> texcube = ctx->val_texcube()->accept(this);
+      SharedVar<TextureCube> texcube = std::any_cast<SharedVar<TextureCube>>(
+          ctx->val_texcube()->accept(this));
       if (!success)
         return std::pair{std::string{},
                          ShaderProperty{SharedVar<TextureCube>{}}};
@@ -510,23 +512,23 @@ struct MyShaderCompiler::Impl {
     virtual antlrcpp::Any visitProperty_rgb(
         details::MyShaderParser::Property_rgbContext* ctx) override {
       auto name = ctx->property_name()->getText();
-      valf3 f3 = ctx->val_float3()->accept(this);
+      valf3 f3 = std::any_cast<valf3>(ctx->val_float3()->accept(this));
       return std::pair{name, ShaderProperty{f3.as<rgbf>()}};
     }
 
     virtual antlrcpp::Any visitProperty_rgba(
         details::MyShaderParser::Property_rgbaContext* ctx) override {
       auto name = ctx->property_name()->getText();
-      valf4 f4 = ctx->val_float4()->accept(this);
+      valf4 f4 = std::any_cast<valf4>(ctx->val_float4()->accept(this));
       return std::pair{name, ShaderProperty{f4.cast_to<rgbaf>()}};
     }
 
     virtual antlrcpp::Any visitVal_float3(
         details::MyShaderParser::Val_float3Context* ctx) override {
       valf3 rst{
-          ctx->val_float(0)->accept(this).as<float>(),
-          ctx->val_float(1)->accept(this).as<float>(),
-          ctx->val_float(2)->accept(this).as<float>(),
+          std::any_cast<float>(ctx->val_float(0)->accept(this)),
+          std::any_cast<float>(ctx->val_float(1)->accept(this)),
+          std::any_cast<float>(ctx->val_float(2)->accept(this)),
       };
       return rst;
     }
@@ -534,10 +536,10 @@ struct MyShaderCompiler::Impl {
     virtual antlrcpp::Any visitVal_float4(
         details::MyShaderParser::Val_float4Context* ctx) override {
       valf4 rst{
-          ctx->val_float(0)->accept(this).as<float>(),
-          ctx->val_float(1)->accept(this).as<float>(),
-          ctx->val_float(2)->accept(this).as<float>(),
-          ctx->val_float(3)->accept(this).as<float>(),
+          std::any_cast<float>(ctx->val_float(0)->accept(this)),
+          std::any_cast<float>(ctx->val_float(1)->accept(this)),
+          std::any_cast<float>(ctx->val_float(2)->accept(this)),
+          std::any_cast<float>(ctx->val_float(3)->accept(this)),
       };
       return rst;
     }
@@ -886,3 +888,4 @@ std::tuple<bool, Shader> MyShaderCompiler::Compile(std::string_view myshader) {
   Impl::MyShaderCompilerInstance compiler;
   return compiler.Compile(myshader);
 }
+

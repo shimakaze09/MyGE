@@ -3,7 +3,7 @@
 #include <MyECS/Entity.hpp>
 #include <_deps/crossguid/guid.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Inspector {
   enum class Mode { Entity, Asset };
 
@@ -12,4 +12,5 @@ struct Inspector {
   MyECS::Entity entity{MyECS::Entity::Invalid()};
   xg::Guid asset;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

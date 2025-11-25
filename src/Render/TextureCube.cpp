@@ -5,8 +5,8 @@
 #include <cassert>
 #include <thread>
 
-using namespace Smkz::MyGE;
-using namespace Smkz;
+using namespace My::MyGE;
+using namespace My;
 
 TextureCube::TextureCube(const std::array<Image, 6>& images) { Init(images); }
 
@@ -95,3 +95,4 @@ void TextureCube::Clear() {
   for (auto& img : images) img.Clear();
   equirectangularMap.Clear();
 }
+

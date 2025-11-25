@@ -2,11 +2,12 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_Shader() {
+void My::MyGE::details::ShaderImporterRegister_Shader() {
   MyDRefl::Mngr.RegisterType<Shader>();
   MyDRefl::Mngr.AddField<&Shader::hlslFile>("hlslFile");
-  MyDRefl::Mngr.SimpleAddField<&Shader::name>("name");
+  MyDRefl::Mngr.AddField<&Shader::name>("name");
 }
+

@@ -6,7 +6,7 @@
 
 #include "ShaderImporter/ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 void MaterialImporter::RegisterToMyDRefl() {
   RegisterToMyDReflHelper();
@@ -16,7 +16,7 @@ void MaterialImporter::RegisterToMyDRefl() {
 
   MyDRefl::Mngr.RegisterType<Material>();
   MyDRefl::Mngr.AddField<&Material::shader>("shader");
-  MyDRefl::Mngr.SimpleAddField<&Material::properties>("properties");
+  MyDRefl::Mngr.AddField<&Material::properties>("properties");
 }
 
 AssetImportContext MaterialImporter::ImportAsset() const {
@@ -37,7 +37,7 @@ AssetImportContext MaterialImporter::ImportAsset() const {
   str.assign(std::istreambuf_iterator<char>(ifs),
              std::istreambuf_iterator<char>());
 
-  auto material = Serializer::Instance().Deserialize(str).AsShared<Material>();
+  auto material = std::static_pointer_cast<Material>(Serializer::Instance().Deserialize(str).GetBuffer());
 
   if (material->shader) {
     for (const auto& [n, prop] : material->shader->properties) {
@@ -57,3 +57,4 @@ AssetImportContext MaterialImporter::ImportAsset() const {
 std::vector<std::string> MaterialImporterCreator::SupportedExtentions() const {
   return {".mat"};
 }
+

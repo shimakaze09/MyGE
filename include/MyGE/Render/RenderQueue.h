@@ -4,7 +4,7 @@
 #include <MyGM/point.hpp>
 #include <vector>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class Mesh;
 struct Material;
 
@@ -36,4 +36,5 @@ class RenderQueue {
   std::vector<RenderObject> opaques;
   std::vector<RenderObject> transparents;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

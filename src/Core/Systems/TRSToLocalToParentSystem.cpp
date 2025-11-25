@@ -6,8 +6,8 @@
 #include <MyGE/Core/Components/Translation.h>
 #include <MyGE/Core/Systems/TRSToLocalToParentSystem.h>
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyECS;
+using namespace My::MyGE;
+using namespace My::MyECS;
 
 void TRSToLocalToParentSystem::OnUpdate(Schedule& schedule) {
   schedule.RegisterChunkJob(
@@ -51,3 +51,4 @@ void TRSToLocalToParentSystem::OnUpdate(Schedule& schedule) {
                                   AccessTypeID_of<Latest<NonUniformScale>>,
                               }}});
 }
+

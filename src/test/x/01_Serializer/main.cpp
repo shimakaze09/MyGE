@@ -7,8 +7,8 @@
 #include <_deps/crossguid/guid.hpp>
 #include <iostream>
 
-using namespace Smkz;
-using namespace Smkz::MyGE;
+using namespace My;
+using namespace My::MyGE;
 
 struct A {
   bool v_b;
@@ -77,17 +77,17 @@ int main() {
 
   {
     MyDRefl::Mngr.RegisterType<A>();
-    MyDRefl::Mngr.SimpleAddField<&A::v_b>("v_b");
-    MyDRefl::Mngr.SimpleAddField<&A::v_u8>("v_u8");
-    MyDRefl::Mngr.SimpleAddField<&A::v_u16>("v_u16");
-    MyDRefl::Mngr.SimpleAddField<&A::v_u32>("v_u32");
-    MyDRefl::Mngr.SimpleAddField<&A::v_u64>("v_u64");
-    MyDRefl::Mngr.SimpleAddField<&A::v_8>("v_8");
-    MyDRefl::Mngr.SimpleAddField<&A::v_16>("v_16");
-    MyDRefl::Mngr.SimpleAddField<&A::v_32>("v_32");
-    MyDRefl::Mngr.SimpleAddField<&A::v_64>("v_64");
-    MyDRefl::Mngr.SimpleAddField<&A::v_f32>("v_f32");
-    MyDRefl::Mngr.SimpleAddField<&A::v_f64>("v_f64");
+    MyDRefl::Mngr.AddField<&A::v_b>("v_b");
+    MyDRefl::Mngr.AddField<&A::v_u8>("v_u8");
+    MyDRefl::Mngr.AddField<&A::v_u16>("v_u16");
+    MyDRefl::Mngr.AddField<&A::v_u32>("v_u32");
+    MyDRefl::Mngr.AddField<&A::v_u64>("v_u64");
+    MyDRefl::Mngr.AddField<&A::v_8>("v_8");
+    MyDRefl::Mngr.AddField<&A::v_16>("v_16");
+    MyDRefl::Mngr.AddField<&A::v_32>("v_32");
+    MyDRefl::Mngr.AddField<&A::v_64>("v_64");
+    MyDRefl::Mngr.AddField<&A::v_f32>("v_f32");
+    MyDRefl::Mngr.AddField<&A::v_f64>("v_f64");
     A a{
         .v_b = true,
         .v_u8 = 32,
@@ -108,9 +108,9 @@ int main() {
   }
   {
     MyDRefl::Mngr.RegisterType<B>();
-    MyDRefl::Mngr.SimpleAddField<&B::v_str>("v_str");
-    MyDRefl::Mngr.SimpleAddField<&B::v_pmr_str>("v_pmr_str");
-    MyDRefl::Mngr.SimpleAddField<&B::v_guid>("v_guid");
+    MyDRefl::Mngr.AddField<&B::v_str>("v_str");
+    MyDRefl::Mngr.AddField<&B::v_pmr_str>("v_pmr_str");
+    MyDRefl::Mngr.AddField<&B::v_guid>("v_guid");
     B b{.v_str = "abc", .v_pmr_str = "def", .v_guid = xg::newGuid()};
     std::string json = Serializer::Instance().Serialize(&b);
     std::cout << json << std::endl;
@@ -175,3 +175,4 @@ int main() {
     assert(f2 == f);
   }
 }
+

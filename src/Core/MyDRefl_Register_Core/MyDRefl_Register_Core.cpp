@@ -2,9 +2,9 @@
 
 #include "MyDRefl_Register_Core_impl.h"
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
-void Smkz::MyGE::MyDRefl_Register_Core() {
+void My::MyGE::MyDRefl_Register_Core() {
   details::MyDRefl_Register_MyGM_0();
   details::MyDRefl_Register_MyGM_1();
   details::MyDRefl_Register_MyGM_2();
@@ -28,3 +28,4 @@ void Smkz::MyGE::MyDRefl_Register_Core() {
   details::MyDRefl_Register_WorldTime();
   details::MyDRefl_Register_WorldToLocal();
 }
+

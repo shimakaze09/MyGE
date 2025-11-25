@@ -9,7 +9,7 @@
 
 #include "../Core/SharedVar.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Texture2D;
 class TextureCube;
 
@@ -50,9 +50,10 @@ static_assert(alignof(ShaderPropertyVariant) <= alignof(std::max_align_t));
 struct ShaderProperty {
   ShaderPropertyVariant value;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
 
 template <>
-constexpr auto Smkz::type_name<Smkz::MyGE::ShaderPropertyVariant>() noexcept {
-  return TSTR("Smkz::MyGE::ShaderPropertyVariant");
+constexpr auto My::type_name<My::MyGE::ShaderPropertyVariant>() noexcept {
+  return TSTR("My::MyGE::ShaderPropertyVariant");
 }
+

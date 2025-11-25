@@ -2,7 +2,7 @@
 
 #include <MyVisitor/ncVisitor.h>
 
-#include <MyDRefl/Object.hpp>
+#include <MyDRefl/MyDRefl.hpp>
 #include <MyECS/MyECS.hpp>
 #include <_deps/crossguid/guid.hpp>
 #include <functional>
@@ -37,7 +37,7 @@ static constexpr char step[] = "MyInspector_step";
 static constexpr char range[] = "MyInspector_range";
 }  // namespace MyInspector
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class InspectorRegistry {
  public:
   struct Playload {
@@ -87,6 +87,7 @@ class InspectorRegistry {
   struct Impl;
   Impl* pImpl;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
 
 #include "details/InspectorRegistry.inl"
+

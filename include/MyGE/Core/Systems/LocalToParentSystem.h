@@ -3,7 +3,7 @@
 #include <MyECS/MyECS.hpp>
 #include <MyGM/transform.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct LocalToParentSystem {
   static constexpr char SystemFuncName[] = "LocalToParentSystem";
 
@@ -13,4 +13,5 @@ struct LocalToParentSystem {
 
   static void OnUpdate(MyECS::Schedule& schedule);
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

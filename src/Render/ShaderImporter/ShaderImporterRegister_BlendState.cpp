@@ -2,16 +2,17 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_BlendState() {
+void My::MyGE::details::ShaderImporterRegister_BlendState() {
   MyDRefl::Mngr.RegisterType<BlendState>();
-  MyDRefl::Mngr.SimpleAddField<&BlendState::enable>("enable");
-  MyDRefl::Mngr.SimpleAddField<&BlendState::src>("src");
-  MyDRefl::Mngr.SimpleAddField<&BlendState::dest>("dest");
-  MyDRefl::Mngr.SimpleAddField<&BlendState::op>("op");
-  MyDRefl::Mngr.SimpleAddField<&BlendState::srcAlpha>("srcAlpha");
-  MyDRefl::Mngr.SimpleAddField<&BlendState::destAlpha>("destAlpha");
-  MyDRefl::Mngr.SimpleAddField<&BlendState::opAlpha>("opAlpha");
+  MyDRefl::Mngr.AddField<&BlendState::enable>("enable");
+  MyDRefl::Mngr.AddField<&BlendState::src>("src");
+  MyDRefl::Mngr.AddField<&BlendState::dest>("dest");
+  MyDRefl::Mngr.AddField<&BlendState::op>("op");
+  MyDRefl::Mngr.AddField<&BlendState::srcAlpha>("srcAlpha");
+  MyDRefl::Mngr.AddField<&BlendState::destAlpha>("destAlpha");
+  MyDRefl::Mngr.AddField<&BlendState::opAlpha>("opAlpha");
 }
+

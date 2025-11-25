@@ -3,7 +3,7 @@
 #include <MyGM/point.hpp>
 #include <MyGM/val.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Input {
   // ============================
   //           [Basic]
@@ -80,4 +80,5 @@ struct Input {
   // Duration the keyboard key has been down (0.0f == just pressed)
   float KeysDownDuration[512];
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

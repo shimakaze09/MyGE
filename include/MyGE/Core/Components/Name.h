@@ -3,7 +3,7 @@
 #include <memory_resource>
 #include <string>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Name {
   using allocator_type = std::pmr::string::allocator_type;
   Name() = default;
@@ -15,4 +15,5 @@ struct Name {
 
   std::pmr::string value;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

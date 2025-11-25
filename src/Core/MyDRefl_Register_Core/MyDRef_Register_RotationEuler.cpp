@@ -4,10 +4,11 @@
 
 #include "MyDRefl_Register_Core_impl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::MyDRefl_Register_RotationEuler() {
+void My::MyGE::details::MyDRefl_Register_RotationEuler() {
   Mngr.RegisterType<RotationEuler>();
-  Mngr.SimpleAddField<&RotationEuler::value>("value");
+  Mngr.AddField<&RotationEuler::value>("value");
 }
+

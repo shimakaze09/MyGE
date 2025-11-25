@@ -2,7 +2,7 @@
 
 #include <MyGM/rgb.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Light {
   enum class Mode { Directional, Point, Spot, Rect, Disk };
 
@@ -15,4 +15,5 @@ struct Light {
   float innerSpotAngle{21.802f};
   float outerSpotAngle{30.f};
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

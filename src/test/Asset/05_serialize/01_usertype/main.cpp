@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 using namespace std;
 
 struct Type {
@@ -10,7 +10,7 @@ struct Type {
 };
 
 template <>
-struct Smkz::USRefl::TypeInfo<Type> : TypeInfoBase<Type> {
+struct My::USRefl::TypeInfo<Type> : TypeInfoBase<Type> {
 #ifdef UBPA_USREFL_NOT_USE_NAMEOF
   static constexpr char name[5] = "Type";
 #endif
@@ -42,3 +42,4 @@ int main() {
 
   return 0;
 }
+

@@ -29,9 +29,9 @@
 
 #include "../_deps/LTCTex.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyECS;
-using namespace Smkz;
+using namespace My::MyGE;
+using namespace My::MyECS;
+using namespace My;
 
 struct StdPipeline::Impl {
   Impl(InitDesc initDesc)
@@ -1432,16 +1432,16 @@ void StdPipeline::Impl::DrawObjects(ID3D12GraphicsCommandList* cmdList,
     // submesh.topology
     D3D12_PRIMITIVE_TOPOLOGY d3d12Topology;
     switch (submesh.topology) {
-      case Smkz::MyGE::MeshTopology::Triangles:
+      case My::MyGE::MeshTopology::Triangles:
         d3d12Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         break;
-      case Smkz::MyGE::MeshTopology::Lines:
+      case My::MyGE::MeshTopology::Lines:
         d3d12Topology = D3D_PRIMITIVE_TOPOLOGY_LINELIST;
         break;
-      case Smkz::MyGE::MeshTopology::LineStrip:
+      case My::MyGE::MeshTopology::LineStrip:
         d3d12Topology = D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
         break;
-      case Smkz::MyGE::MeshTopology::Points:
+      case My::MyGE::MeshTopology::Points:
         d3d12Topology = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
         break;
       default:
@@ -1511,3 +1511,4 @@ void StdPipeline::Impl_Resize() {
         });
   }
 }
+

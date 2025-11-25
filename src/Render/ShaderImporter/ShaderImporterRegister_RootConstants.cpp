@@ -2,14 +2,15 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_RootConstants() {
+void My::MyGE::details::ShaderImporterRegister_RootConstants() {
   MyDRefl::Mngr.RegisterType<RootConstants>();
-  MyDRefl::Mngr.SimpleAddField<&RootConstants::ShaderRegister>(
+  MyDRefl::Mngr.AddField<&RootConstants::ShaderRegister>(
       "ShaderRegister");
-  MyDRefl::Mngr.SimpleAddField<&RootConstants::RegisterSpace>("RegisterSpace");
-  MyDRefl::Mngr.SimpleAddField<&RootConstants::Num32BitValues>(
+  MyDRefl::Mngr.AddField<&RootConstants::RegisterSpace>("RegisterSpace");
+  MyDRefl::Mngr.AddField<&RootConstants::Num32BitValues>(
       "Num32BitValues");
 }
+

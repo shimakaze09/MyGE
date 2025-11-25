@@ -9,15 +9,16 @@
 #include <iostream>
 #include <unordered_map>
 
-using namespace Smkz::MyGE;
-using namespace Smkz;
+using namespace My::MyGE;
+using namespace My;
 using namespace std;
 
 struct GPURsrcMngrDX12::Impl {
   struct Texture2DGPUData {
     Texture2DGPUData() = default;
-    Texture2DGPUData(const Texture2DGPUData&) = default;
+    Texture2DGPUData(const Texture2DGPUData&) = delete;
     Texture2DGPUData(Texture2DGPUData&&) noexcept = default;
+
     ~Texture2DGPUData() {
       if (!allocationSRV.IsNull())
         MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
@@ -27,10 +28,12 @@ struct GPURsrcMngrDX12::Impl {
     Microsoft::WRL::ComPtr<ID3D12Resource> resource;
     MyDX12::DescriptorHeapAllocation allocationSRV;
   };
+
   struct TextureCubeGPUData {
     TextureCubeGPUData() = default;
-    TextureCubeGPUData(const TextureCubeGPUData&) = default;
+    TextureCubeGPUData(const TextureCubeGPUData&) = delete;
     TextureCubeGPUData(TextureCubeGPUData&&) noexcept = default;
+
     ~TextureCubeGPUData() {
       if (!allocationSRV.IsNull())
         MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
@@ -40,10 +43,12 @@ struct GPURsrcMngrDX12::Impl {
     Microsoft::WRL::ComPtr<ID3D12Resource> resource;
     MyDX12::DescriptorHeapAllocation allocationSRV;
   };
+
   struct RenderTargetGPUData {
     RenderTargetGPUData() = default;
-    RenderTargetGPUData(const RenderTargetGPUData&) = default;
+    RenderTargetGPUData(const RenderTargetGPUData&) = delete;
     RenderTargetGPUData(RenderTargetGPUData&&) noexcept = default;
+
     ~RenderTargetGPUData() {
       if (!allocationSRV.IsNull())
         MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
@@ -57,6 +62,7 @@ struct GPURsrcMngrDX12::Impl {
     MyDX12::DescriptorHeapAllocation allocationSRV;
     MyDX12::DescriptorHeapAllocation allocationRTV;
   };
+
   struct ShaderCompileData {
     struct PassData {
       Microsoft::WRL::ComPtr<ID3DBlob> vsByteCode;
@@ -64,9 +70,12 @@ struct GPURsrcMngrDX12::Impl {
       Microsoft::WRL::ComPtr<ID3D12ShaderReflection> vsRefl;
       Microsoft::WRL::ComPtr<ID3D12ShaderReflection> psRefl;
     };
+
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
     std::vector<PassData> passes;
   };
+
+  ~Impl() { delete upload; }
 
   bool isInit{false};
   ID3D12Device* device{nullptr};
@@ -158,7 +167,8 @@ void GPURsrcMngrDX12::Clear(ID3D12CommandQueue* cmdQueue) {
   pImpl->upload->End(cmdQueue);
   pImpl->deleteBatch.Commit(pImpl->device, cmdQueue);
 
-  for (auto PSO : pImpl->PSOs) PSO->Release();
+  for (auto PSO : pImpl->PSOs)
+    PSO->Release();
 
   pImpl->device = nullptr;
   delete pImpl->upload;
@@ -183,10 +193,12 @@ void GPURsrcMngrDX12::CommitUploadAndDelete(ID3D12CommandQueue* cmdQueue) {
 }
 
 GPURsrcMngrDX12& GPURsrcMngrDX12::RegisterTexture2D(Texture2D& tex2D) {
-  if (tex2D.IsDirty()) pImpl->texture2DMap.erase(tex2D.GetInstanceID());
+  if (tex2D.IsDirty())
+    pImpl->texture2DMap.erase(tex2D.GetInstanceID());
 
   auto target = pImpl->texture2DMap.find(tex2D.GetInstanceID());
-  if (target != pImpl->texture2DMap.end()) return *this;
+  if (target != pImpl->texture2DMap.end())
+    return *this;
 
   Impl::Texture2DGPUData tex;
 
@@ -240,10 +252,12 @@ GPURsrcMngrDX12& GPURsrcMngrDX12::UnregisterTexture2D(std::size_t ID) {
 }
 
 GPURsrcMngrDX12& GPURsrcMngrDX12::RegisterTextureCube(TextureCube& texcube) {
-  if (texcube.IsDirty()) pImpl->textureCubeMap.erase(texcube.GetInstanceID());
+  if (texcube.IsDirty())
+    pImpl->textureCubeMap.erase(texcube.GetInstanceID());
 
   auto target = pImpl->textureCubeMap.find(texcube.GetInstanceID());
-  if (target != pImpl->textureCubeMap.end()) return *this;
+  if (target != pImpl->textureCubeMap.end())
+    return *this;
 
   Impl::TextureCubeGPUData tex;
 
@@ -308,25 +322,30 @@ D3D12_CPU_DESCRIPTOR_HANDLE GPURsrcMngrDX12::GetTexture2DSrvCpuHandle(
   return pImpl->texture2DMap.find(tex2D.GetInstanceID())
       ->second.allocationSRV.GetCpuHandle(0);
 }
+
 D3D12_GPU_DESCRIPTOR_HANDLE GPURsrcMngrDX12::GetTexture2DSrvGpuHandle(
     const Texture2D& tex2D) const {
   return pImpl->texture2DMap.find(tex2D.GetInstanceID())
       ->second.allocationSRV.GetGpuHandle(0);
 }
+
 ID3D12Resource* GPURsrcMngrDX12::GetTexture2DResource(
     const Texture2D& tex2D) const {
   return pImpl->texture2DMap.find(tex2D.GetInstanceID())->second.resource.Get();
 }
+
 D3D12_CPU_DESCRIPTOR_HANDLE GPURsrcMngrDX12::GetTextureCubeSrvCpuHandle(
     const TextureCube& texCube) const {
   return pImpl->textureCubeMap.find(texCube.GetInstanceID())
       ->second.allocationSRV.GetCpuHandle(0);
 }
+
 D3D12_GPU_DESCRIPTOR_HANDLE GPURsrcMngrDX12::GetTextureCubeSrvGpuHandle(
     const TextureCube& texCube) const {
   return pImpl->textureCubeMap.find(texCube.GetInstanceID())
       ->second.allocationSRV.GetGpuHandle(0);
 }
+
 ID3D12Resource* GPURsrcMngrDX12::GetTextureCubeResource(
     const TextureCube& texCube) const {
   return pImpl->textureCubeMap.find(texCube.GetInstanceID())
@@ -430,13 +449,15 @@ MyDX12::MeshGPUBuffer& GPURsrcMngrDX12::GetMeshGPUBuffer(
 }
 
 bool GPURsrcMngrDX12::RegisterShader(Shader& shader) {
-  if (shader.IsDirty()) pImpl->shaderMap.erase(shader.GetInstanceID());
+  if (shader.IsDirty())
+    pImpl->shaderMap.erase(shader.GetInstanceID());
 
   auto target = pImpl->shaderMap.find(shader.GetInstanceID());
-  if (target != pImpl->shaderMap.end()) return true;
+  if (target != pImpl->shaderMap.end())
+    return true;
 
   D3D_SHADER_MACRO macros[] = {{nullptr, nullptr}};
-  Smkz::MyDX12::D3DInclude d3dInclude{shader.hlslFile->GetLocalDir(), "../"};
+  My::MyDX12::D3DInclude d3dInclude{shader.hlslFile->GetLocalDir(), "../"};
   auto& shaderCompileData = pImpl->shaderMap[shader.GetInstanceID()];
   shaderCompileData.passes.resize(shader.passes.size());
   for (size_t i = 0; i < shader.passes.size(); i++) {
@@ -468,11 +489,11 @@ bool GPURsrcMngrDX12::RegisterShader(Shader& shader) {
 
   auto RangeTypeMap = [](RootDescriptorType type) {
     switch (type) {
-      case Smkz::MyGE::RootDescriptorType::CBV:
+      case My::MyGE::RootDescriptorType::CBV:
         return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-      case Smkz::MyGE::RootDescriptorType::SRV:
+      case My::MyGE::RootDescriptorType::SRV:
         return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-      case Smkz::MyGE::RootDescriptorType::UAV:
+      case My::MyGE::RootDescriptorType::UAV:
         return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
       default:
         assert(false);
@@ -481,7 +502,8 @@ bool GPURsrcMngrDX12::RegisterShader(Shader& shader) {
   };
 
   size_t N = shader.rootParameters.size();
-  if (N == 0) return true;
+  if (N == 0)
+    return true;
   std::vector<CD3DX12_ROOT_PARAMETER> rootParamters(N);
   std::vector<std::vector<CD3DX12_DESCRIPTOR_RANGE>> rangesVec;
   for (size_t i = 0; i < N; i++) {
@@ -504,15 +526,15 @@ bool GPURsrcMngrDX12::RegisterShader(Shader& shader) {
           } else if constexpr (std::is_same_v<Type, RootDescriptor>) {
             const RootDescriptor& descriptor = parameter;
             switch (descriptor.DescriptorType) {
-              case Smkz::MyGE::RootDescriptorType::CBV:
+              case My::MyGE::RootDescriptorType::CBV:
                 rootParamters[i].InitAsConstantBufferView(
                     descriptor.ShaderRegister, descriptor.RegisterSpace);
                 break;
-              case Smkz::MyGE::RootDescriptorType::SRV:
+              case My::MyGE::RootDescriptorType::SRV:
                 rootParamters[i].InitAsShaderResourceView(
                     descriptor.ShaderRegister, descriptor.RegisterSpace);
                 break;
-              case Smkz::MyGE::RootDescriptorType::UAV:
+              case My::MyGE::RootDescriptorType::UAV:
                 rootParamters[i].InitAsUnorderedAccessView(
                     descriptor.ShaderRegister, descriptor.RegisterSpace);
                 break;

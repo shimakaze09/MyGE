@@ -2,10 +2,11 @@
 
 #include <MyECS/MyECS.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct RoamerSystem {
   static constexpr char SystemFuncName[] = "RoamerSystem";
 
   static void OnUpdate(MyECS::Schedule& schedule);
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

@@ -6,7 +6,7 @@
 #include <dxgidebug.h>
 #endif
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
                    int showCmd) {
@@ -20,7 +20,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
     if (!app.Init()) return 1;
 
     rst = app.Run();
-  } catch (Smkz::MyDX12::Util::Exception& e) {
+  } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     rst = 1;
   }
@@ -33,3 +33,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   return rst;
 }
+

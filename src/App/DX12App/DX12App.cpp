@@ -3,7 +3,7 @@
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
 
 using Microsoft::WRL::ComPtr;
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 using namespace DirectX;
 using namespace std;
 
@@ -14,14 +14,14 @@ DX12App::DX12App(HINSTANCE hInstance) : mhAppInst(hInstance) {
 }
 
 DX12App::~DX12App() {
-  Smkz::MyGE::GPURsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
+  My::MyGE::GPURsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
 
   if (!myDevice.IsNull()) FlushCommandQueue();
   if (!swapchainRTVCpuDH.IsNull())
-    Smkz::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
+    My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         std::move(swapchainRTVCpuDH));
 
-  Smkz::MyDX12::DescriptorHeapMngr::Instance().Clear();
+  My::MyDX12::DescriptorHeapMngr::Instance().Clear();
 
   mApp = nullptr;
 }
@@ -148,7 +148,7 @@ LRESULT DX12App::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 int DX12App::Run() {
   MSG msg = {0};
 
-  Smkz::MyGE::GameTimer::Instance().Reset();
+  My::MyGE::GameTimer::Instance().Reset();
 
   while (msg.message != WM_QUIT) {
     // If there are Window messages then process them.
@@ -156,7 +156,7 @@ int DX12App::Run() {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     } else {  // Otherwise, do animation/game stuff.
-      Smkz::MyGE::GameTimer::Instance().Tick();
+      My::MyGE::GameTimer::Instance().Tick();
 
       if (!mAppPaused) {
         CalculateFrameStats();
@@ -269,11 +269,11 @@ bool DX12App::InitDirect3D() {
   ThrowIfFailed(myDevice->CreateFence(mCurrentFence, D3D12_FENCE_FLAG_NONE,
                                       IID_PPV_ARGS(&mFence)));
 
-  Smkz::MyGE::GPURsrcMngrDX12::Instance().Init(myDevice.raw.Get());
-  Smkz::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.Get(), 16384,
+  My::MyGE::GPURsrcMngrDX12::Instance().Init(myDevice.raw.Get());
+  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.Get(), 16384,
                                                     16384, 16384, 16384, 16384);
 
-  frameRsrcMngr = std::make_unique<Smkz::MyDX12::FrameResourceMngr>(
+  frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
       NumFrameResources, myDevice.Get());
   for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
     ComPtr<ID3D12CommandAllocator> allocator;
@@ -354,7 +354,7 @@ void DX12App::CreateSwapChain() {
 
 void DX12App::CreateSwapChainDH() {
   swapchainRTVCpuDH =
-      Smkz::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(
+      My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(
           NumSwapChainBuffer);
 }
 
@@ -413,7 +413,7 @@ void DX12App::CalculateFrameStats() {
   frameCnt++;
 
   // Compute averages over one second period.
-  if ((Smkz::MyGE::GameTimer::Instance().TotalTime() - timeElapsed) >= 1.0f) {
+  if ((My::MyGE::GameTimer::Instance().TotalTime() - timeElapsed) >= 1.0f) {
     float fps = (float)frameCnt;  // fps = frameCnt / 1
     float mspf = 1000.0f / fps;
 

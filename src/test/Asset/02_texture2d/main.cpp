@@ -4,8 +4,8 @@
 
 #include <iostream>
 
-using namespace Smkz::MyGE;
-using namespace Smkz;
+using namespace My::MyGE;
+using namespace My;
 
 int main() {
   // Enable run-time memory check for debug builds.
@@ -49,3 +49,4 @@ int main() {
 
   return 0;
 }
+

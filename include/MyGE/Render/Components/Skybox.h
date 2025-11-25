@@ -3,9 +3,10 @@
 #include "../../Core/SharedVar.h"
 #include "../Material.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 // singleton
 struct Skybox {
   SharedVar<Material> material;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

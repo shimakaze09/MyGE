@@ -4,7 +4,7 @@
 #include <memory_resource>
 #include <set>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Children {
   using allocator_type = std::pmr::polymorphic_allocator<MyECS::Entity>;
   Children() = default;
@@ -16,4 +16,5 @@ struct Children {
 
   std::pmr::set<MyECS::Entity> value;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

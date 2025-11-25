@@ -1,1 +1,1 @@
-{"__TypeID":1058214209929631646,"__TypeName":"Smkz::MyGE::TextureImporter","__Content":{"mode":{"__TypeID":1873486216655924136,"__TypeName":"enum{Smkz::MyGE::TextureImporter::Mode}","__Content":"Texture2D"},"__Guid":"5f759c69-f54d-4ee8-b566-2e17075a0dee"}}
+{"__TypeID":1058214209929631646,"__TypeName":"My::MyGE::TextureImporter","__Content":{"mode":{"__TypeID":1873486216655924136,"__TypeName":"enum{My::MyGE::TextureImporter::Mode}","__Content":"Texture2D"},"__Guid":"5f759c69-f54d-4ee8-b566-2e17075a0dee"}}

@@ -3,8 +3,8 @@
 
 #include <iostream>
 
-using namespace Smkz;
-using namespace Smkz::MyGE;
+using namespace My;
+using namespace My::MyGE;
 
 struct MyAsset {
   int data;
@@ -136,3 +136,4 @@ int main() {
 
   AssetMngr::Instance().Clear();
 }
+

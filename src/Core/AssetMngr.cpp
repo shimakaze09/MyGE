@@ -3,9 +3,9 @@
 
 #include <fstream>
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
-using namespace Smkz;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
+using namespace My;
 
 struct AssetMngr::Impl {
   // N asset <-> guid <-> path
@@ -179,7 +179,7 @@ const std::filesystem::path& AssetMngr::GetAssetPath(const void* obj) const {
   return GUIDToAssetPath(GetAssetGUID(obj));
 }
 
-Smkz::Type AssetMngr::GetAssetType(const std::filesystem::path& path) const {
+My::Type AssetMngr::GetAssetType(const std::filesystem::path& path) const {
   auto guid = AssetPathToGUID(path);
   if (!guid.isValid()) return {};
   auto target = pImpl->guid2asset.find(guid);
@@ -509,3 +509,4 @@ std::string AssetMngr::Impl::LoadText(const std::filesystem::path& path) {
 
   return str;
 }
+

@@ -11,9 +11,9 @@
 #include <_deps/crossguid/guid.hpp>
 #include <iostream>
 
-using namespace Smkz;
-using namespace Smkz::MyGE;
-using namespace Smkz::MyECS;
+using namespace My;
+using namespace My::MyGE;
+using namespace My::MyECS;
 
 int main() {
   // Enable run-time memory check for debug builds.

@@ -1,7 +1,7 @@
 #include <MyGE/Core/GameTimer.h>
 #include <windows.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 GameTimer::GameTimer()
     : mSecondsPerCount(0.0),
@@ -113,3 +113,4 @@ void GameTimer::Tick() {
     mDeltaTime = 0.0;
   }
 }
+

@@ -2,9 +2,10 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_Shader_1() {
+void My::MyGE::details::ShaderImporterRegister_Shader_1() {
   MyDRefl::Mngr.AddField<&Shader::rootParameters>("rootParameters");
 }
+

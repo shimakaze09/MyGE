@@ -10,7 +10,7 @@
 #include "ShaderPass.h"
 #include "ShaderProperty.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class HLSLFile;
 
 struct Shader : GPURsrc {
@@ -22,4 +22,5 @@ struct Shader : GPURsrc {
   std::map<std::string, ShaderProperty, std::less<>> properties;
   std::vector<ShaderPass> passes;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

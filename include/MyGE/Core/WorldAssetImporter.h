@@ -2,11 +2,11 @@
 
 #include "../Core/AssetImporter.h"
 
-namespace Smkz::MyECS {
+namespace My::MyECS {
 class World;
 }
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class WorldAsset {
  public:
   // use Serializer
@@ -39,4 +39,5 @@ class WorldAssetImporterCreator final
  public:
   virtual std::vector<std::string> SupportedExtentions() const override;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

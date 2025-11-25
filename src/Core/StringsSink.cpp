@@ -1,7 +1,7 @@
 #include <MyGE/Core/StringsSink.h>
 #include <spdlog/details/log_msg_buffer.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 std::vector<std::string> StringsSink::CopyLogs() const noexcept {
   std::lock_guard<std::mutex> lock(
@@ -21,3 +21,4 @@ void StringsSink::sink_it_(const spdlog::details::log_msg& msg) {
   base_sink<std::mutex>::formatter_->format(buffer, formatted);
   logs.push_back(fmt::to_string(formatted));
 }
+

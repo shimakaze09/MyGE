@@ -9,8 +9,8 @@
 #include <functional>
 #include <unordered_map>
 
-using namespace Smkz::MyDRefl;
-using namespace Smkz::MyGE;
+using namespace My::MyDRefl;
+using namespace My::MyGE;
 
 struct InspectorRegistry::Impl {
   Visitor<void(void*, InspectContext)> inspector;
@@ -211,7 +211,7 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
 
       ImGui::SameLine();
       ImGui::Text(name.data());
-    } else if (type.GetName().starts_with("Smkz::MyGE::SharedVar<")) {
+    } else if (type.GetName().starts_with("My::MyGE::SharedVar<")) {
       ImGui::Text("(*)");
       ImGui::SameLine();
 
@@ -234,30 +234,30 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
                attr.GetType().Valid()) {
       ContainerType ct = attr.As<ContainerType>();
       switch (ct) {
-        case Smkz::MyDRefl::ContainerType::Stack:
-        case Smkz::MyDRefl::ContainerType::Queue:
-        case Smkz::MyDRefl::ContainerType::PriorityQueue:
-        case Smkz::MyDRefl::ContainerType::None:
+        case My::MyDRefl::ContainerType::Stack:
+        case My::MyDRefl::ContainerType::Queue:
+        case My::MyDRefl::ContainerType::PriorityQueue:
+        case My::MyDRefl::ContainerType::None:
           break;
-        case Smkz::MyDRefl::ContainerType::Array:
-        case Smkz::MyDRefl::ContainerType::RawArray: {  // valf1, valf2, valf3,
+        case My::MyDRefl::ContainerType::Array:
+        case My::MyDRefl::ContainerType::RawArray: {  // valf1, valf2, valf3,
                                                         // valf4, ...
                                                         // TODO
         }
           [[fallthrough]];
-        case Smkz::MyDRefl::ContainerType::Span:
-        case Smkz::MyDRefl::ContainerType::Vector:
-        case Smkz::MyDRefl::ContainerType::Deque:
-        case Smkz::MyDRefl::ContainerType::ForwardList:
-        case Smkz::MyDRefl::ContainerType::List:
-        case Smkz::MyDRefl::ContainerType::MultiSet:
-        case Smkz::MyDRefl::ContainerType::Map:
-        case Smkz::MyDRefl::ContainerType::MultiMap:
-        case Smkz::MyDRefl::ContainerType::Set:
-        case Smkz::MyDRefl::ContainerType::UnorderedMap:
-        case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
-        case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
-        case Smkz::MyDRefl::ContainerType::UnorderedSet: {
+        case My::MyDRefl::ContainerType::Span:
+        case My::MyDRefl::ContainerType::Vector:
+        case My::MyDRefl::ContainerType::Deque:
+        case My::MyDRefl::ContainerType::ForwardList:
+        case My::MyDRefl::ContainerType::List:
+        case My::MyDRefl::ContainerType::MultiSet:
+        case My::MyDRefl::ContainerType::Map:
+        case My::MyDRefl::ContainerType::MultiMap:
+        case My::MyDRefl::ContainerType::Set:
+        case My::MyDRefl::ContainerType::UnorderedMap:
+        case My::MyDRefl::ContainerType::UnorderedMultiSet:
+        case My::MyDRefl::ContainerType::UnorderedMultiMap:
+        case My::MyDRefl::ContainerType::UnorderedSet: {
           if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
             std::size_t i = 0;
             auto e = objv.end();
@@ -269,8 +269,8 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
             ImGui::TreePop();
           }
         } break;
-        case Smkz::MyDRefl::ContainerType::Pair:
-        case Smkz::MyDRefl::ContainerType::Tuple: {
+        case My::MyDRefl::ContainerType::Pair:
+        case My::MyDRefl::ContainerType::Tuple: {
           if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
             std::size_t size = objv.tuple_size();
             std::size_t i = 0;
@@ -282,11 +282,11 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
             ImGui::TreePop();
           }
         } break;
-        case Smkz::MyDRefl::ContainerType::Variant: {
+        case My::MyDRefl::ContainerType::Variant: {
           auto v = objv.variant_visit_get().RemoveReference().AddConst();
           InspectRecursively(name, v, ctx);
         } break;
-        case Smkz::MyDRefl::ContainerType::Optional: {
+        case My::MyDRefl::ContainerType::Optional: {
           if (objv.has_value()) {
             auto v = objv.value().RemoveReference().AddConst();
             InspectRecursively(name, v, ctx);
@@ -426,7 +426,7 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
       }
       ImGui::SameLine();
       ImGui::Text(name.data());
-    } else if (type.GetName().starts_with("Smkz::MyGE::SharedVar<")) {
+    } else if (type.GetName().starts_with("My::MyGE::SharedVar<")) {
       ImGui::Text("(*)");
       ImGui::SameLine();
 
@@ -471,13 +471,13 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
                attr.GetType().Valid()) {
       ContainerType ct = attr.As<ContainerType>();
       switch (ct) {
-        case Smkz::MyDRefl::ContainerType::Stack:
-        case Smkz::MyDRefl::ContainerType::Queue:
-        case Smkz::MyDRefl::ContainerType::PriorityQueue:
-        case Smkz::MyDRefl::ContainerType::None:
+        case My::MyDRefl::ContainerType::Stack:
+        case My::MyDRefl::ContainerType::Queue:
+        case My::MyDRefl::ContainerType::PriorityQueue:
+        case My::MyDRefl::ContainerType::None:
           break;
-        case Smkz::MyDRefl::ContainerType::Array:
-        case Smkz::MyDRefl::ContainerType::RawArray: {  // valf1, valf2, valf3,
+        case My::MyDRefl::ContainerType::Array:
+        case My::MyDRefl::ContainerType::RawArray: {  // valf1, valf2, valf3,
                                                         // valf4, ...
           auto N = static_cast<int>(objv.size());
           if (N >= 1 && N <= 4) {
@@ -533,24 +533,24 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
           }
         }
           [[fallthrough]];
-        case Smkz::MyDRefl::ContainerType::Vector:
-        case Smkz::MyDRefl::ContainerType::Deque:
-        case Smkz::MyDRefl::ContainerType::ForwardList:  // TODO: append
-        case Smkz::MyDRefl::ContainerType::List:
-        case Smkz::MyDRefl::ContainerType::Span:
-        case Smkz::MyDRefl::ContainerType::MultiSet:
-        case Smkz::MyDRefl::ContainerType::Map:
-        case Smkz::MyDRefl::ContainerType::MultiMap:
-        case Smkz::MyDRefl::ContainerType::Set:
-        case Smkz::MyDRefl::ContainerType::UnorderedMap:
-        case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
-        case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
-        case Smkz::MyDRefl::ContainerType::UnorderedSet: {
+        case My::MyDRefl::ContainerType::Vector:
+        case My::MyDRefl::ContainerType::Deque:
+        case My::MyDRefl::ContainerType::ForwardList:  // TODO: append
+        case My::MyDRefl::ContainerType::List:
+        case My::MyDRefl::ContainerType::Span:
+        case My::MyDRefl::ContainerType::MultiSet:
+        case My::MyDRefl::ContainerType::Map:
+        case My::MyDRefl::ContainerType::MultiMap:
+        case My::MyDRefl::ContainerType::Set:
+        case My::MyDRefl::ContainerType::UnorderedMap:
+        case My::MyDRefl::ContainerType::UnorderedMultiSet:
+        case My::MyDRefl::ContainerType::UnorderedMultiMap:
+        case My::MyDRefl::ContainerType::UnorderedSet: {
           if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
-            if (ct == Smkz::MyDRefl::ContainerType::Vector ||
-                ct == Smkz::MyDRefl::ContainerType::Deque ||
-                ct == Smkz::MyDRefl::ContainerType::ForwardList ||
-                ct == Smkz::MyDRefl::ContainerType::List) {
+            if (ct == My::MyDRefl::ContainerType::Vector ||
+                ct == My::MyDRefl::ContainerType::Deque ||
+                ct == My::MyDRefl::ContainerType::ForwardList ||
+                ct == My::MyDRefl::ContainerType::List) {
               int s = static_cast<int>(objv.size());
               int origs = s;
               ImGui::InputInt("size", &s, 1);
@@ -567,8 +567,8 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
             ImGui::TreePop();
           }
         } break;
-        case Smkz::MyDRefl::ContainerType::Pair:
-        case Smkz::MyDRefl::ContainerType::Tuple: {
+        case My::MyDRefl::ContainerType::Pair:
+        case My::MyDRefl::ContainerType::Tuple: {
           if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_DefaultOpen)) {
             std::size_t size = objv.tuple_size();
             std::size_t i = 0;
@@ -580,11 +580,11 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
             ImGui::TreePop();
           }
         } break;
-        case Smkz::MyDRefl::ContainerType::Variant: {
+        case My::MyDRefl::ContainerType::Variant: {
           auto v = objv.variant_visit_get().RemoveReference();
           InspectRecursively(name, v, ctx);
         } break;
-        case Smkz::MyDRefl::ContainerType::Optional: {
+        case My::MyDRefl::ContainerType::Optional: {
           if (objv.has_value()) {
             auto v = objv.value().RemoveReference();
             InspectRecursively(name, v, ctx);
@@ -604,3 +604,4 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
     }
   }
 }
+

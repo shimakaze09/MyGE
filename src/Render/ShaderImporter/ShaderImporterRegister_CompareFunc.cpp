@@ -2,17 +2,18 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_CompareFunc() {
+void My::MyGE::details::ShaderImporterRegister_CompareFunc() {
   MyDRefl::Mngr.RegisterType<CompareFunc>();
-  MyDRefl::Mngr.SimpleAddField<CompareFunc::NEVER>("NEVER");
-  MyDRefl::Mngr.SimpleAddField<CompareFunc::LESS>("LESS");
-  MyDRefl::Mngr.SimpleAddField<CompareFunc::EQUAL>("EQUAL");
-  MyDRefl::Mngr.SimpleAddField<CompareFunc::LESS_EQUAL>("LESS_EQUAL");
-  MyDRefl::Mngr.SimpleAddField<CompareFunc::GREATER>("GREATER");
-  MyDRefl::Mngr.SimpleAddField<CompareFunc::NOT_EQUAL>("NOT_EQUAL");
-  MyDRefl::Mngr.SimpleAddField<CompareFunc::GREATER_EQUAL>("GREATER_EQUAL");
-  MyDRefl::Mngr.SimpleAddField<CompareFunc::ALWAYS>("ALWAYS");
+  MyDRefl::Mngr.AddField<CompareFunc::NEVER>("NEVER");
+  MyDRefl::Mngr.AddField<CompareFunc::LESS>("LESS");
+  MyDRefl::Mngr.AddField<CompareFunc::EQUAL>("EQUAL");
+  MyDRefl::Mngr.AddField<CompareFunc::LESS_EQUAL>("LESS_EQUAL");
+  MyDRefl::Mngr.AddField<CompareFunc::GREATER>("GREATER");
+  MyDRefl::Mngr.AddField<CompareFunc::NOT_EQUAL>("NOT_EQUAL");
+  MyDRefl::Mngr.AddField<CompareFunc::GREATER_EQUAL>("GREATER_EQUAL");
+  MyDRefl::Mngr.AddField<CompareFunc::ALWAYS>("ALWAYS");
 }
+

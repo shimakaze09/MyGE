@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 int main() {
   std::filesystem::path path = "../assets/models/cube.obj";
@@ -15,3 +15,4 @@ int main() {
 
   AssetMngr::Instance().Clear();
 }
+

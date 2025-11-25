@@ -6,7 +6,7 @@
 #include "../Core/Image.h"
 #include "Texture.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class TextureCube : public Texture {
  public:
   enum class SourceMode { SixSidedImages, EquirectangularMap };
@@ -29,4 +29,5 @@ class TextureCube : public Texture {
   std::array<Image, 6> images;
   Image equirectangularMap;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

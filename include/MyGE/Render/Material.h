@@ -8,11 +8,12 @@
 #include "GPURsrc.h"
 #include "ShaderProperty.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Shader;
 
 struct Material : GPURsrc {
   SharedVar<Shader> shader;
   std::map<std::string, ShaderProperty, std::less<>> properties;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

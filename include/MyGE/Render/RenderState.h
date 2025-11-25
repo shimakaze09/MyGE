@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 enum class FillMode { WIREFRAME = 2, SOLID = 3 };
 
 enum class CullMode { NONE = 1, FRONT = 2, BACK = 3 };
@@ -93,4 +93,5 @@ struct RenderState {
 
   std::uint8_t colorMask[8] = {0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f};
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

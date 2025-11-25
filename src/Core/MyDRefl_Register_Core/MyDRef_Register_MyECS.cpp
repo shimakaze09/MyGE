@@ -3,11 +3,12 @@
 
 #include "MyDRefl_Register_Core_impl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::MyDRefl_Register_MyECS() {
+void My::MyGE::details::MyDRefl_Register_MyECS() {
   Mngr.RegisterType<MyECS::Entity>();
-  Mngr.SimpleAddField<&MyECS::Entity::index>("index");
-  Mngr.SimpleAddField<&MyECS::Entity::version>("version");
+  Mngr.AddField<&MyECS::Entity::index>("index");
+  Mngr.AddField<&MyECS::Entity::version>("version");
 }
+

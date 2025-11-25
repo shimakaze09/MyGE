@@ -2,7 +2,7 @@
 
 #include "../Core/AssetImporter.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class TextureImporter final : public TAssetImporter<TextureImporter> {
  public:
   using TAssetImporter<TextureImporter>::TAssetImporter;
@@ -20,4 +20,5 @@ class TextureImporterCreator final
  public:
   virtual std::vector<std::string> SupportedExtentions() const override;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

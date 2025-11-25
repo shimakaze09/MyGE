@@ -41,9 +41,9 @@
 #include <_deps/imgui/imgui_impl_win32.h>
 #include <spdlog/spdlog.h>
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyECS;
-using namespace Smkz;
+using namespace My::MyGE;
+using namespace My::MyECS;
+using namespace My;
 using Microsoft::WRL::ComPtr;
 
 struct Editor::Impl {
@@ -58,24 +58,24 @@ struct Editor::Impl {
 
   void BuildWorld();
 
-  static void InitWorld(Smkz::MyECS::World&);
+  static void InitWorld(My::MyECS::World&);
   // static void InitInspectorRegistry();
   static void LoadTextures();
   static void BuildShaders();
 
-  std::unique_ptr<Smkz::MyECS::World> runningGameWorld;
-  Smkz::MyECS::World* curGameWorld;
-  Smkz::MyECS::World gameWorld;
-  Smkz::MyECS::World sceneWorld;
-  Smkz::MyECS::World editorWorld;
+  std::unique_ptr<My::MyECS::World> runningGameWorld;
+  My::MyECS::World* curGameWorld;
+  My::MyECS::World gameWorld;
+  My::MyECS::World sceneWorld;
+  My::MyECS::World editorWorld;
 
   void OnGameResize();
   size_t gameWidth{0}, gameHeight{0};
   ImVec2 gamePos{0, 0};
   ComPtr<ID3D12Resource> gameRT;
   const DXGI_FORMAT gameRTFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-  Smkz::MyDX12::DescriptorHeapAllocation gameRT_SRV;
-  Smkz::MyDX12::DescriptorHeapAllocation gameRT_RTV;
+  My::MyDX12::DescriptorHeapAllocation gameRT_SRV;
+  My::MyDX12::DescriptorHeapAllocation gameRT_RTV;
   std::unique_ptr<PipelineBase> gamePipeline;
 
   void OnSceneResize();
@@ -83,8 +83,8 @@ struct Editor::Impl {
   ImVec2 scenePos{0, 0};
   ComPtr<ID3D12Resource> sceneRT;
   const DXGI_FORMAT sceneRTFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-  Smkz::MyDX12::DescriptorHeapAllocation sceneRT_SRV;
-  Smkz::MyDX12::DescriptorHeapAllocation sceneRT_RTV;
+  My::MyDX12::DescriptorHeapAllocation sceneRT_SRV;
+  My::MyDX12::DescriptorHeapAllocation sceneRT_RTV;
   std::unique_ptr<PipelineBase> scenePipeline;
 
   bool show_demo_window = true;
@@ -210,16 +210,16 @@ void Editor::Draw() { pImpl->Draw(); }
 
 Editor::Impl::~Impl() {
   if (!gameRT_SRV.IsNull())
-    Smkz::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
+    My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
         std::move(gameRT_SRV));
   if (!gameRT_RTV.IsNull())
-    Smkz::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
+    My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         std::move(gameRT_RTV));
   if (!sceneRT_SRV.IsNull())
-    Smkz::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
+    My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
         std::move(sceneRT_SRV));
   if (!sceneRT_RTV.IsNull())
-    Smkz::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
+    My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Free(
         std::move(sceneRT_RTV));
 }
 
@@ -259,13 +259,13 @@ bool Editor::Impl::Init() {
   GPURsrcMngrDX12::Instance().CommitUploadAndDelete(pEditor->myCmdQueue.Get());
 
   gameRT_SRV =
-      Smkz::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+      My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
   gameRT_RTV =
-      Smkz::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
+      My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
   sceneRT_SRV =
-      Smkz::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+      My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
   sceneRT_RTV =
-      Smkz::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
+      My::MyDX12::DescriptorHeapMngr::Instance().GetRTVCpuDH()->Allocate(1);
 
   editorImGuiCtx = ImGUIMngr::Instance().GetContexts().at(0);
   gameImGuiCtx = ImGUIMngr::Instance().GetContexts().at(1);
@@ -288,8 +288,8 @@ bool Editor::Impl::Init() {
 }
 
 void Editor::Impl::OnGameResize() {
-  Smkz::rgbaf background = {0.f, 0.f, 0.f, 1.f};
-  auto rtType = Smkz::MyDX12::FG::RsrcType::RT2D(
+  My::rgbaf background = {0.f, 0.f, 0.f, 1.f};
+  auto rtType = My::MyDX12::FG::RsrcType::RT2D(
       gameRTFormat, gameWidth, (UINT)gameHeight, background.data());
   const auto defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
   ThrowIfFailed(pEditor->myDevice->CreateCommittedResource(
@@ -314,8 +314,8 @@ void Editor::Impl::OnGameResize() {
 }
 
 void Editor::Impl::OnSceneResize() {
-  Smkz::rgbaf background = {0.f, 0.f, 0.f, 1.f};
-  auto rtType = Smkz::MyDX12::FG::RsrcType::RT2D(
+  My::rgbaf background = {0.f, 0.f, 0.f, 1.f};
+  auto rtType = My::MyDX12::FG::RsrcType::RT2D(
       sceneRTFormat, sceneWidth, (UINT)sceneHeight, background.data());
   const auto defaultHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
   ThrowIfFailed(pEditor->myDevice->CreateCommittedResource(
@@ -515,7 +515,7 @@ void Editor::Impl::Update() {
         gameWorld.Update();
         break;
       case Impl::GameState::Starting: {
-        runningGameWorld = std::make_unique<Smkz::MyECS::World>(gameWorld);
+        runningGameWorld = std::make_unique<My::MyECS::World>(gameWorld);
         if (auto hierarchy = editorWorld.entityMngr.WriteSingleton<Hierarchy>())
           hierarchy->world = runningGameWorld.get();
         if (auto ctrl =
@@ -572,7 +572,7 @@ void Editor::Impl::Update() {
 
   ThrowIfFailed(pEditor->myGCmdList->Reset(cmdAlloc, nullptr));
 
-  auto UpdateRenderResource = [&](Smkz::MyECS::World* w) {
+  auto UpdateRenderResource = [&](My::MyECS::World* w) {
     w->RunEntityJob(
         [&](MeshFilter* meshFilter, MeshRenderer* meshRenderer) {
           if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
@@ -621,10 +621,10 @@ void Editor::Impl::Update() {
 
   {
     std::vector<PipelineBase::CameraData> gameCameras;
-    Smkz::MyECS::ArchetypeFilter camFilter{
-        {Smkz::MyECS::AccessTypeID_of<Camera>}};
+    My::MyECS::ArchetypeFilter camFilter{
+        {My::MyECS::AccessTypeID_of<Camera>}};
     curGameWorld->RunEntityJob(
-        [&](Smkz::MyECS::Entity e) {
+        [&](My::MyECS::Entity e) {
           gameCameras.emplace_back(e, *curGameWorld);
         },
         false, camFilter);
@@ -639,10 +639,10 @@ void Editor::Impl::Update() {
 
   {
     std::vector<PipelineBase::CameraData> sceneCameras;
-    Smkz::MyECS::ArchetypeFilter camFilter{
-        {Smkz::MyECS::AccessTypeID_of<Camera>}};
+    My::MyECS::ArchetypeFilter camFilter{
+        {My::MyECS::AccessTypeID_of<Camera>}};
     sceneWorld.RunEntityJob(
-        [&](Smkz::MyECS::Entity e) {
+        [&](My::MyECS::Entity e) {
           sceneCameras.emplace_back(e, sceneWorld);
         },
         false, camFilter);
@@ -679,7 +679,7 @@ void Editor::Impl::Draw() {
       const auto gameRTHandle = gameRT_RTV.GetCpuHandle();
       pEditor->myGCmdList->OMSetRenderTargets(1, &gameRTHandle, FALSE, NULL);
       pEditor->myGCmdList.SetDescriptorHeaps(
-          Smkz::MyDX12::DescriptorHeapMngr::Instance()
+          My::MyDX12::DescriptorHeapMngr::Instance()
               .GetCSUGpuDH()
               ->GetDescriptorHeap());
       ImGui::Render();
@@ -702,7 +702,7 @@ void Editor::Impl::Draw() {
       const auto sceneRTHandle = sceneRT_RTV.GetCpuHandle();
       pEditor->myGCmdList->OMSetRenderTargets(1, &sceneRTHandle, FALSE, NULL);
       pEditor->myGCmdList.SetDescriptorHeaps(
-          Smkz::MyDX12::DescriptorHeapMngr::Instance()
+          My::MyDX12::DescriptorHeapMngr::Instance()
               .GetCSUGpuDH()
               ->GetDescriptorHeap());
       ImGui::Render();
@@ -726,7 +726,7 @@ void Editor::Impl::Draw() {
     const auto curBack = pEditor->CurrentBackBufferView();
     pEditor->myGCmdList->OMSetRenderTargets(1, &curBack, FALSE, NULL);
     pEditor->myGCmdList.SetDescriptorHeaps(
-        Smkz::MyDX12::DescriptorHeapMngr::Instance()
+        My::MyDX12::DescriptorHeapMngr::Instance()
             .GetCSUGpuDH()
             ->GetDescriptorHeap());
     ImGui::Render();
@@ -748,7 +748,7 @@ void Editor::Impl::Draw() {
   ImGui_ImplWin32_EndFrame();
 }
 
-void Editor::Impl::InitWorld(Smkz::MyECS::World& w) {
+void Editor::Impl::InitWorld(My::MyECS::World& w) {
   auto indices = w.systemMngr.systemTraits.Register<
       // transform
       LocalToParentSystem, RotationEulerSystem, TRSToLocalToParentSystem,
@@ -837,10 +837,10 @@ void Editor::Impl::LoadTextures() {
     auto asset = AssetMngr::Instance().LoadMainAsset(path);
     if (asset.GetType().Is<Texture2D>())
       GPURsrcMngrDX12::Instance().RegisterTexture2D(
-          *asset.AsShared<Texture2D>());
+          *asset.AsPtr<Texture2D>());
     else if (asset.GetType().Is<TextureCube>())
       GPURsrcMngrDX12::Instance().RegisterTextureCube(
-          *asset.AsShared<TextureCube>());
+          *asset.AsPtr<TextureCube>());
   }
 }
 
@@ -929,3 +929,4 @@ void Editor::Impl::BuildShaders() {
 //		AssetMngr::Instance().ReserializeAsset(path);
 //	}
 // }
+

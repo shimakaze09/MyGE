@@ -1,10 +1,11 @@
 #pragma once
 
-namespace Smkz::MyECS {
+namespace My::MyECS {
 class World;
 }
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 void MyDRefl_Register_Core();
 void World_Register_Core(MyECS::World* w);
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

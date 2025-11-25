@@ -10,11 +10,11 @@
 #include <unordered_set>
 #include <vector>
 
-namespace Smkz::MyECS {
+namespace My::MyECS {
 class World;
 }
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Material;
 struct Shader;
 class ShaderCBMngrDX12;
@@ -94,4 +94,5 @@ class PipelineBase {
  private:
   ResizeData resizeData;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

@@ -3,8 +3,8 @@
 #include <imgui/imgui.h>
 #include <spdlog/spdlog.h>
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyECS;
+using namespace My::MyGE;
+using namespace My::MyECS;
 
 void LoggerSystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.GetWorld()->AddCommand(
@@ -71,3 +71,4 @@ void LoggerSystem::OnUpdate(MyECS::Schedule& schedule) {
       },
       0);
 }
+

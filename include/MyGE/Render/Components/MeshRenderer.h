@@ -5,7 +5,7 @@
 #include "../../Core/SharedVar.h"
 #include "../Material.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct MeshRenderer {
   using allocator_type = std::pmr::vector<SharedVar<Material>>::allocator_type;
   MeshRenderer() = default;
@@ -17,4 +17,5 @@ struct MeshRenderer {
 
   std::pmr::vector<SharedVar<Material>> materials;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

@@ -1,7 +1,7 @@
 #include <MyGE/Render/DX12/MeshLayoutMngr.h>
 #include <MyGE/Render/Mesh.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 std::vector<D3D12_INPUT_ELEMENT_DESC> MeshLayoutMngr::GenerateDesc(bool uv,
                                                                    bool normal,
@@ -76,3 +76,4 @@ size_t MeshLayoutMngr::GetMeshLayoutID(const Mesh& mesh) noexcept {
                          !mesh.GetTangents().empty(),
                          !mesh.GetColors().empty());
 }
+

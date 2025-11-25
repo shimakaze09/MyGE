@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Smkz::MyGE::details {
+namespace My::MyGE::details {
 void MyDRefl_Register_MyGM_0();
 void MyDRefl_Register_MyGM_1();
 void MyDRefl_Register_MyGM_2();
@@ -23,4 +23,5 @@ void MyDRefl_Register_Scale();
 void MyDRefl_Register_Translation();
 void MyDRefl_Register_WorldTime();
 void MyDRefl_Register_WorldToLocal();
-}  // namespace Smkz::MyGE::details
+}  // namespace My::MyGE::details
+

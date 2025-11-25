@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Shader;
 
 class ShaderMngr {
@@ -27,4 +27,5 @@ class ShaderMngr {
   ShaderMngr() = default;
   std::map<std::string, std::weak_ptr<Shader>, std::less<>> shaderMap;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

@@ -2,7 +2,7 @@
 
 #include "../Core/AssetImporter.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class HLSLFileImporter final : public TAssetImporter<HLSLFileImporter> {
  public:
   using TAssetImporter<HLSLFileImporter>::TAssetImporter;
@@ -16,4 +16,5 @@ class HLSLFileImporterCreator final
  public:
   virtual std::vector<std::string> SupportedExtentions() const override;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

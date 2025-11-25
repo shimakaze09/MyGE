@@ -14,7 +14,7 @@
 #include <MyDX12/MyDX12.h>
 #include <MyDX12/_deps/DirectXTK12/ResourceUploadBatch.h>
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
-#include <UFG/UFG.h>
+#include <MyFG/MyFG.hpp>
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <windows.h>
@@ -118,7 +118,7 @@ struct Texture {
 //{                                                                     \
 //    HRESULT hr__ = (x);                                               \
 //    std::wstring wfn = AnsiToWString(__FILE__);                       \
-//    if(FAILED(hr__)) { throw Smkz::DX12::Util::Exception(hr__, L#x, wfn,
+//    if(FAILED(hr__)) { throw My::DX12::Util::Exception(hr__, L#x, wfn,
 //     __LINE__); } \
 //}
 // #endif

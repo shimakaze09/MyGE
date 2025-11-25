@@ -2,10 +2,11 @@
 
 #include <MyECS/MyECS.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct InputSystem {
   static constexpr char SystemFuncName[] = "InputSystem";
 
   static void OnUpdate(MyECS::Schedule& schedule);
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

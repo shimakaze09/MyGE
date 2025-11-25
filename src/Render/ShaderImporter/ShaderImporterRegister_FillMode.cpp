@@ -2,11 +2,12 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_FillMode() {
+void My::MyGE::details::ShaderImporterRegister_FillMode() {
   MyDRefl::Mngr.RegisterType<FillMode>();
-  MyDRefl::Mngr.SimpleAddField<FillMode::WIREFRAME>("WIREFRAME");
-  MyDRefl::Mngr.SimpleAddField<FillMode::SOLID>("SOLID");
+  MyDRefl::Mngr.AddField<FillMode::WIREFRAME>("WIREFRAME");
+  MyDRefl::Mngr.AddField<FillMode::SOLID>("SOLID");
 }
+

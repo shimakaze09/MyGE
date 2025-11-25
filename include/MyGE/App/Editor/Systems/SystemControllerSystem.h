@@ -2,8 +2,9 @@
 
 #include <MyECS/MyECS.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct SystemControllerSystem {
   static void OnUpdate(MyECS::Schedule&);
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

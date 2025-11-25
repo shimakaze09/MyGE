@@ -1,7 +1,7 @@
 #include <MyGE/Core/AssetImporter.h>
 #include <MyGE/Core/AssetMngr.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 std::filesystem::path AssetImporter::GetFullPath() const {
   return AssetMngr::Instance().GetFullPath(
@@ -63,3 +63,4 @@ AssetImportContext DefaultAssetImporter::ImportAsset() const {
   ctx.SetMainObjectID(name);
   return ctx;
 }
+

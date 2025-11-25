@@ -9,9 +9,9 @@
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/misc/cpp/imgui_stdlib.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
-namespace Smkz::MyGE::details {
+namespace My::MyGE::details {
 bool IsDeepestDirectory(const std::filesystem::path& directory) {
   assert(std::filesystem::is_directory(directory));
 
@@ -207,7 +207,7 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
             ext == ".tga") {
           auto tex2d = AssetMngr::Instance().LoadAsset<Texture2D>(path);
           if (tex2d.get()) {
-            Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(*tex2d);
+            My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(*tex2d);
             id = GPURsrcMngrDX12::Instance()
                      .GetTexture2DSrvGpuHandle(*tex2d)
                      .ptr;
@@ -294,7 +294,7 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
     ImGui::PopID();
   }
 }
-}  // namespace Smkz::MyGE::details
+}  // namespace My::MyGE::details
 
 void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.GetWorld()->AddCommand(
@@ -360,3 +360,4 @@ void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
       },
       0);
 }
+

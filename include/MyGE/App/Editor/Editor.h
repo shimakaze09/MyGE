@@ -1,11 +1,11 @@
 #include "../DX12App/DX12App.h"
 
-namespace Smkz::MyECS {
+namespace My::MyECS {
 class World;
 }
 
-namespace Smkz::MyGE {
-class Editor : public Smkz::MyGE::DX12App {
+namespace My::MyGE {
+class Editor : public My::MyGE::DX12App {
  public:
   Editor(HINSTANCE hInstance);
   ~Editor();
@@ -28,4 +28,5 @@ class Editor : public Smkz::MyGE::DX12App {
   friend struct Impl;
   Impl* pImpl;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

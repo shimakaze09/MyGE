@@ -4,10 +4,11 @@
 
 #include "MyDRefl_Register_Core_impl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::MyDRefl_Register_NonUniformScale() {
+void My::MyGE::details::MyDRefl_Register_NonUniformScale() {
   Mngr.RegisterType<NonUniformScale>();
-  Mngr.SimpleAddField<&NonUniformScale::value>("value");
+  Mngr.AddField<&NonUniformScale::value>("value");
 }
+

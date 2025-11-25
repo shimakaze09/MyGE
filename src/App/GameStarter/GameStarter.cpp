@@ -1,10 +1,10 @@
 #include <MyGE/App/DX12App/DX12App.h>
-#include <MyGE/Asset/AssetMngr.h>
-#include <MyGE/Asset/Serializer.h>
+#include <MyGE/Core/AssetMngr.h>
+#include <MyGE/Core/Serializer.h>
 #include <MyGE/Core/Components/Components.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/ImGUIMngr.h>
-#include <MyGE/Core/Scene.h>
+#include <MyGE/Core/WorldAssetImporter.h>
 #include <MyGE/Core/Systems/Systems.h>
 #include <MyGE/Render/Components/Components.h>
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
@@ -16,12 +16,12 @@
 #include <MyGE/Render/Systems/Systems.h>
 #include <MyGE/Render/Texture2D.h>
 #include <MyGE/Render/TextureCube.h>
-#include <MyGE/ScriptSystem/LuaContext.h>
-#include <MyGE/ScriptSystem/LuaCtxMngr.h>
-#include <MyGE/ScriptSystem/LuaScript.h>
-#include <MyGE/ScriptSystem/LuaScriptQueue.h>
-#include <MyGE/ScriptSystem/LuaScriptQueueSystem.h>
-#include <MyLuaPP/MyLuaPP.h>
+// #include <MyGE/ScriptSystem/LuaContext.h>
+// #include <MyGE/ScriptSystem/LuaCtxMngr.h>
+// #include <MyGE/ScriptSystem/LuaScript.h>
+// #include <MyGE/ScriptSystem/LuaScriptQueue.h>
+// #include <MyGE/ScriptSystem/LuaScriptQueueSystem.h>
+// #include <MyLuaPP/MyLuaPP.h>
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/imgui_impl_dx12.h>
 #include <_deps/imgui/imgui_impl_win32.h>
@@ -29,7 +29,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-class GameStarter : public Smkz::MyGE::DX12App {
+class GameStarter : public My::MyGE::DX12App {
  public:
   GameStarter(HINSTANCE hInstance);
   ~GameStarter();
@@ -55,16 +55,16 @@ class GameStarter : public Smkz::MyGE::DX12App {
   void BuildShaders();
 
  private:
-  float mTheta = 0.4f * Smkz::PI<float>;
-  float mPhi = 1.3f * Smkz::PI<float>;
+  float mTheta = 0.4f * My::PI<float>;
+  float mPhi = 1.3f * My::PI<float>;
   float mRadius = 5.0f;
 
   POINT mLastMousePos;
 
-  Smkz::MyECS::World world;
-  Smkz::MyECS::Entity cam{Smkz::MyECS::Entity::Invalid()};
+  My::MyECS::World world;
+  My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
 
-  std::unique_ptr<Smkz::MyGE::PipelineBase> pipeline;
+  std::unique_ptr<My::MyGE::PipelineBase> pipeline;
 
   bool show_demo_window = true;
   bool show_another_window = false;
@@ -147,7 +147,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
     if (!theApp.Init()) return 1;
 
     rst = theApp.Run();
-  } catch (Smkz::MyDX12::Util::Exception& e) {
+  } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     return 1;
   }
@@ -166,7 +166,7 @@ GameStarter::GameStarter(HINSTANCE hInstance) : DX12App(hInstance) {}
 GameStarter::~GameStarter() {
   if (!myDevice.IsNull()) FlushCommandQueue();
 
-  Smkz::MyGE::ImGUIMngr::Instance().Clear();
+  My::MyGE::ImGUIMngr::Instance().Clear();
 }
 
 bool GameStarter::Init() {
@@ -174,25 +174,25 @@ bool GameStarter::Init() {
 
   if (!InitDirect3D()) return false;
 
-  Smkz::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
+  My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
                                          NumFrameResources, 1);
-  gameImGuiCtx = Smkz::MyGE::ImGUIMngr::Instance().GetContexts().at(0);
+  gameImGuiCtx = My::MyGE::ImGUIMngr::Instance().GetContexts().at(0);
 
-  Smkz::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
 
   BuildWorld();
 
   LoadTextures();
   BuildShaders();
 
-  Smkz::MyGE::PipelineBase::InitDesc initDesc;
+  My::MyGE::PipelineBase::InitDesc initDesc;
   initDesc.device = myDevice.Get();
   initDesc.rtFormat = GetBackBufferFormat();
   initDesc.cmdQueue = myCmdQueue.Get();
   initDesc.numFrame = NumFrameResources;
-  pipeline = std::make_unique<Smkz::MyGE::StdPipeline>(initDesc);
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
 
-  Smkz::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
+  My::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
       myCmdQueue.Get());
 
   // Do the initial resize code.
@@ -286,46 +286,46 @@ void GameStarter::Update() {
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc, nullptr));
 
   world.RunEntityJob(
-      [&](Smkz::MyGE::MeshFilter* meshFilter,
-          const Smkz::MyGE::MeshRenderer* meshRenderer) {
+      [&](My::MyGE::MeshFilter* meshFilter,
+          const My::MyGE::MeshRenderer* meshRenderer) {
         if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
 
-        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
+        My::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
                                                              *meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
           if (!material) continue;
           for (const auto& [name, property] : material->properties) {
             if (std::holds_alternative<
-                    std::shared_ptr<const Smkz::MyGE::Texture2D>>(property)) {
-              Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-                  *std::get<std::shared_ptr<const Smkz::MyGE::Texture2D>>(
-                      property));
+                    My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)) {
+              My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
+                  const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+                      property.value)));
             } else if (std::holds_alternative<
-                           std::shared_ptr<const Smkz::MyGE::TextureCube>>(
-                           property)) {
-              Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-                  *std::get<std::shared_ptr<const Smkz::MyGE::TextureCube>>(
-                      property));
+                           My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                           property.value)) {
+              My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
+                  const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                      property.value)));
             }
           }
         }
       },
       false);
 
-  if (auto skybox = world.entityMngr.GetSingleton<Smkz::MyGE::Skybox>();
+  if (auto skybox = world.entityMngr.ReadSingleton<My::MyGE::Skybox>();
       skybox && skybox->material) {
     for (const auto& [name, property] : skybox->material->properties) {
-      if (std::holds_alternative<std::shared_ptr<const Smkz::MyGE::Texture2D>>(
-              property)) {
-        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-            *std::get<std::shared_ptr<const Smkz::MyGE::Texture2D>>(property));
+      if (std::holds_alternative<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+              property.value)) {
+        My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
+            const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)));
       } else if (std::holds_alternative<
-                     std::shared_ptr<const Smkz::MyGE::TextureCube>>(
-                     property)) {
-        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-            *std::get<std::shared_ptr<const Smkz::MyGE::TextureCube>>(
-                property));
+                     My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                     property.value)) {
+        My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
+            const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                property.value)));
       }
     }
   }
@@ -333,14 +333,14 @@ void GameStarter::Update() {
   // commit upload, delete ...
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.Get());
-  Smkz::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
+  My::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
       myCmdQueue.Get());
 
-  std::vector<Smkz::MyGE::PipelineBase::CameraData> gameCameras;
-  Smkz::MyECS::ArchetypeFilter camFilter{
-      {Smkz::MyECS::AccessTypeID_of<Smkz::MyGE::Camera>}};
+  std::vector<My::MyGE::PipelineBase::CameraData> gameCameras;
+  My::MyECS::ArchetypeFilter camFilter{
+      {My::MyECS::AccessTypeID_of<My::MyGE::Camera>}};
   world.RunEntityJob(
-      [&](Smkz::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
+      [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
       camFilter);
   assert(gameCameras.size() == 1);  // now only support 1 camera
   pipeline->BeginFrame({&world}, gameCameras.front());
@@ -359,7 +359,7 @@ void GameStarter::Draw() {
                                        D3D12_RESOURCE_STATE_PRESENT,
                                        D3D12_RESOURCE_STATE_RENDER_TARGET);
   myGCmdList->OMSetRenderTargets(1, &curBack, FALSE, NULL);
-  myGCmdList.SetDescriptorHeaps(Smkz::MyDX12::DescriptorHeapMngr::Instance()
+  myGCmdList.SetDescriptorHeaps(My::MyDX12::DescriptorHeapMngr::Instance()
                                     .GetCSUGpuDH()
                                     ->GetDescriptorHeap());
   ImGui::Render();
@@ -390,15 +390,15 @@ void GameStarter::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
 void GameStarter::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
     // Make each pixel correspond to a quarter of a degree.
-    float dx = Smkz::to_radian(0.25f * static_cast<float>(x - mLastMousePos.x));
-    float dy = Smkz::to_radian(0.25f * static_cast<float>(y - mLastMousePos.y));
+    float dx = My::to_radian(0.25f * static_cast<float>(x - mLastMousePos.x));
+    float dy = My::to_radian(0.25f * static_cast<float>(y - mLastMousePos.y));
 
     // Update angles based on input to orbit camera around box.
     mTheta -= dy;
     mPhi -= dx;
 
     // Restrict the angle mPhi.
-    mTheta = std::clamp(mTheta, 0.1f, Smkz::PI<float> - 0.1f);
+    mTheta = std::clamp(mTheta, 0.1f, My::PI<float> - 0.1f);
   } else if ((btnState & MK_RBUTTON) != 0) {
     // Make each pixel correspond to 0.2 unit in the scene.
     float dx = 0.05f * static_cast<float>(x - mLastMousePos.x);
@@ -416,121 +416,125 @@ void GameStarter::OnMouseMove(WPARAM btnState, int x, int y) {
 }
 
 void GameStarter::UpdateCamera() {
-  Smkz::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi),
+  My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi),
                      mRadius * cosf(mTheta),
                      mRadius * sinf(mTheta) * cosf(mPhi)};
-  auto camera = world.entityMngr.Get<Smkz::MyGE::Camera>(cam);
+  auto camera = world.entityMngr.WriteComponent<My::MyGE::Camera>(cam);
   camera->aspect = AspectRatio();
-  auto view = Smkz::transformf::look_at(eye.as<Smkz::pointf3>(),
+  auto view = My::transformf::look_at(eye.as<My::pointf3>(),
                                         {0.f});  // world to camera
   auto c2w = view.inverse();
-  world.entityMngr.Get<Smkz::MyGE::Translation>(cam)->value = eye;
-  world.entityMngr.Get<Smkz::MyGE::Rotation>(cam)->value =
+  world.entityMngr.WriteComponent<My::MyGE::Translation>(cam)->value = eye;
+  world.entityMngr.WriteComponent<My::MyGE::Rotation>(cam)->value =
       c2w.decompose_quatenion();
 }
 
 void GameStarter::BuildWorld() {
   auto systemIDs = world.systemMngr.systemTraits.Register<
-      Smkz::MyGE::CameraSystem, Smkz::MyGE::LocalToParentSystem,
-      Smkz::MyGE::RotationEulerSystem, Smkz::MyGE::TRSToLocalToParentSystem,
-      Smkz::MyGE::TRSToLocalToWorldSystem, Smkz::MyGE::WorldToLocalSystem,
-      Smkz::MyGE::WorldTimeSystem>();
+      My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
+      My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
+      My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
+      My::MyGE::WorldTimeSystem>();
   for (auto ID : systemIDs) world.systemMngr.Activate(ID);
 
   world.entityMngr.cmptTraits.Register<
       // core
-      Smkz::MyGE::Camera, Smkz::MyGE::MeshFilter, Smkz::MyGE::MeshRenderer,
-      Smkz::MyGE::WorldTime, Smkz::MyGE::Name, Smkz::MyGE::Skybox,
+      My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
+      My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
 
       // transform
-      Smkz::MyGE::Children, Smkz::MyGE::LocalToParent, Smkz::MyGE::LocalToWorld,
-      Smkz::MyGE::Parent, Smkz::MyGE::Rotation, Smkz::MyGE::RotationEuler,
-      Smkz::MyGE::Scale, Smkz::MyGE::NonUniformScale, Smkz::MyGE::Translation,
-      Smkz::MyGE::WorldToLocal>();
+      My::MyGE::Children, My::MyGE::LocalToParent, My::MyGE::LocalToWorld,
+      My::MyGE::Parent, My::MyGE::Rotation, My::MyGE::RotationEuler,
+      My::MyGE::Scale, My::MyGE::NonUniformScale, My::MyGE::Translation,
+      My::MyGE::WorldToLocal>();
 
-  /*world.entityMngr.Create<Smkz::MyGE::WorldTime>();
+  /*world.entityMngr.Create<My::MyGE::WorldTime>();
 
   auto e0 = world.entityMngr.Create<
-          Smkz::MyGE::LocalToWorld,
-          Smkz::MyGE::WorldToLocal,
-          Smkz::MyGE::Camera,
-          Smkz::MyGE::Translation,
-          Smkz::MyGE::Rotation
+          My::MyGE::LocalToWorld,
+          My::MyGE::WorldToLocal,
+          My::MyGE::Camera,
+          My::MyGE::Translation,
+          My::MyGE::Rotation
   >();
-  cam = std::get<Smkz::MyECS::Entity>(e0);
+  cam = std::get<My::MyECS::Entity>(e0);
 
   auto quadMesh =
-  Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Mesh>("../assets/models/quad.obj");
+  My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>("../assets/models/quad.obj");
   auto dynamicCube = world.entityMngr.Create<
-          Smkz::MyGE::LocalToWorld,
-          Smkz::MyGE::MeshFilter,
-          Smkz::MyGE::MeshRenderer,
-          Smkz::MyGE::Translation,
-          Smkz::MyGE::Rotation,
-          Smkz::MyGE::Scale
+          My::MyGE::LocalToWorld,
+          My::MyGE::MeshFilter,
+          My::MyGE::MeshRenderer,
+          My::MyGE::Translation,
+          My::MyGE::Rotation,
+          My::MyGE::Scale
   >();
-  std::get<Smkz::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;*/
+  std::get<My::MyGE::MeshFilter*>(dynamicCube)->mesh = quadMesh;*/
 
-  Smkz::MyGE::Serializer::Instance()
-      .RegisterComponents<
-          // core
-          Smkz::MyGE::Camera, Smkz::MyGE::MeshFilter, Smkz::MyGE::MeshRenderer,
-          Smkz::MyGE::WorldTime, Smkz::MyGE::Name, Smkz::MyGE::Skybox,
+  // My::MyGE::Serializer::Instance()
+  //     .RegisterComponents<
+  //         // core
+  //         My::MyGE::Camera, My::MyGE::MeshFilter, My::MyGE::MeshRenderer,
+  //         My::MyGE::WorldTime, My::MyGE::Name, My::MyGE::Skybox,
 
-          // transform
-          Smkz::MyGE::Children, Smkz::MyGE::LocalToParent,
-          Smkz::MyGE::LocalToWorld, Smkz::MyGE::Parent, Smkz::MyGE::Rotation,
-          Smkz::MyGE::RotationEuler, Smkz::MyGE::Scale,
-          Smkz::MyGE::NonUniformScale, Smkz::MyGE::Translation,
-          Smkz::MyGE::WorldToLocal>();
-  // OutputDebugStringA(Smkz::MyGE::Serializer::Instance().Serialize(&world).c_str());
-  auto scene = Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Scene>(
+  //         // transform
+  //         My::MyGE::Children, My::MyGE::LocalToParent,
+  //         My::MyGE::LocalToWorld, My::MyGE::Parent, My::MyGE::Rotation,
+  //         My::MyGE::RotationEuler, My::MyGE::Scale,
+  //         My::MyGE::NonUniformScale, My::MyGE::Translation,
+  //         My::MyGE::WorldToLocal>();
+  // OutputDebugStringA(My::MyGE::Serializer::Instance().Serialize(&world).c_str());
+  auto scene = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::WorldAsset>(
       L"..\\assets\\scenes\\Game.scene");
-  Smkz::MyGE::Serializer::Instance().DeserializeToWorld(&world,
-                                                        scene->GetText());
-  cam =
-      world.entityMngr
-          .GetEntityArray({{Smkz::MyECS::AccessTypeID_of<Smkz::MyGE::Camera>}})
-          .front();
+  scene->ToWorld(&world);
+  world.RunEntityJob(
+      [&](My::MyECS::Entity e, const My::MyGE::Camera*) {
+        if (cam == My::MyECS::Entity::Invalid())
+            cam = e;
+      },
+      false,
+      {{My::MyECS::AccessTypeID_of<My::MyGE::Camera>}, {}, {}}
+  );
   OutputDebugStringA(
-      Smkz::MyGE::Serializer::Instance().Serialize(&world).c_str());
+      My::MyGE::Serializer::Instance().Serialize(&world).c_str());
 
-  auto mainLua = Smkz::MyGE::LuaCtxMngr::Instance().Register(&world)->Main();
-  sol::state_view solLua(mainLua);
-  auto gameLuaScript =
-      Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::LuaScript>(
-          L"..\\assets\\scripts\\MoveRoot.lua");
-  solLua["world"] = &world;
-  solLua.script(gameLuaScript->GetText());
+  // auto mainLua = My::MyGE::LuaCtxMngr::Instance().Register(&world)->Main();
+  // sol::state_view solLua(mainLua);
+  // auto gameLuaScript =
+  //     My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::LuaScript>(
+  //         L"..\\assets\\scripts\\MoveRoot.lua");
+  // solLua["world"] = &world;
+  // solLua.script(gameLuaScript->GetText());
 }
 
 void GameStarter::LoadTextures() {
-  auto tex2dGUIDs = Smkz::MyGE::AssetMngr::Instance().FindAssets(
+  auto tex2dGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
       std::wregex{LR"(\.\.\\assets\\_internal\\.*\.tex2d)"});
   for (const auto& guid : tex2dGUIDs) {
-    const auto& path = Smkz::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
-    Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-        *Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Texture2D>(
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
+        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
             path));
   }
 
-  auto texcubeGUIDs = Smkz::MyGE::AssetMngr::Instance().FindAssets(
+  auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
       std::wregex{LR"(\.\.\\assets\\_internal\\.*\.texcube)"});
   for (const auto& guid : texcubeGUIDs) {
-    const auto& path = Smkz::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
-    Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-        *Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::TextureCube>(
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
+        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(
             path));
   }
 }
 
 void GameStarter::BuildShaders() {
-  auto& assetMngr = Smkz::MyGE::AssetMngr::Instance();
+  auto& assetMngr = My::MyGE::AssetMngr::Instance();
   auto shaderGUIDs = assetMngr.FindAssets(std::wregex{LR"(.*\.shader)"});
   for (const auto& guid : shaderGUIDs) {
     const auto& path = assetMngr.GUIDToAssetPath(guid);
-    auto shader = assetMngr.LoadAsset<Smkz::MyGE::Shader>(path);
-    Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterShader(*shader);
-    Smkz::MyGE::ShaderMngr::Instance().Register(shader);
+    auto shader = assetMngr.LoadAsset<My::MyGE::Shader>(path);
+    My::MyGE::GPURsrcMngrDX12::Instance().RegisterShader(*shader);
+    My::MyGE::ShaderMngr::Instance().Register(shader);
   }
 }
+

@@ -1,7 +1,6 @@
-#include <MyGE/Asset/AssetMngr.h>
+#include <MyGE/Core/AssetMngr.h>
 #include <MyGE/Core/Components/Components.h>
 #include <MyGE/Core/GameTimer.h>
-#include <MyGE/Core/Scene.h>
 #include <MyGE/Core/Systems/Systems.h>
 #include <MyGE/Render/Components/Components.h>
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
@@ -26,17 +25,17 @@ using namespace DirectX;
 const int gNumFrameResources = 3;
 
 struct RotateSystem {
-  static void OnUpdate(Smkz::MyECS::Schedule& schedule) {
-    Smkz::MyECS::ArchetypeFilter filter;
-    filter.all = {Smkz::MyECS::AccessTypeID_of<Smkz::MyGE::MeshFilter>};
+  static void OnUpdate(My::MyECS::Schedule& schedule) {
+    My::MyECS::ArchetypeFilter filter;
+    filter.all = {My::MyECS::AccessTypeID_of<My::MyGE::MeshFilter>};
     schedule.RegisterEntityJob(
-        [](Smkz::MyGE::Rotation* rot, Smkz::MyGE::Translation* trans) {
+        [](My::MyGE::Rotation* rot, My::MyGE::Translation* trans) {
           rot->value = rot->value *
-                       Smkz::quatf{Smkz::vecf3{0, 1, 0}, Smkz::to_radian(2.f)};
+                       My::quatf{My::vecf3{0, 1, 0}, My::to_radian(2.f)};
           trans->value +=
-              0.2f * (Smkz::vecf3{Smkz::rand01<float>(), Smkz::rand01<float>(),
-                                  Smkz::rand01<float>()} -
-                      Smkz::vecf3{0.5f});
+              0.2f * (My::vecf3{My::rand01<float>(), My::rand01<float>(),
+                                  My::rand01<float>()} -
+                      My::vecf3{0.5f});
         },
         "rotate", true, filter);
   }
@@ -74,16 +73,16 @@ class WorldApp : public D3DApp {
 
   POINT mLastMousePos;
 
-  Smkz::MyGE::Texture2D* albedoTex2D;
-  Smkz::MyGE::Texture2D* roughnessTex2D;
-  Smkz::MyGE::Texture2D* metalnessTex2D;
+  My::MyGE::Texture2D* albedoTex2D;
+  My::MyGE::Texture2D* roughnessTex2D;
+  My::MyGE::Texture2D* metalnessTex2D;
 
-  Smkz::MyECS::World world;
-  Smkz::MyECS::Entity cam{Smkz::MyECS::Entity::Invalid()};
+  My::MyECS::World world;
+  My::MyECS::Entity cam{My::MyECS::Entity::Invalid()};
 
-  std::unique_ptr<Smkz::MyGE::PipelineBase> pipeline;
+  std::unique_ptr<My::MyGE::PipelineBase> pipeline;
 
-  std::unique_ptr<Smkz::MyDX12::FrameResourceMngr> frameRsrcMngr;
+  std::unique_ptr<My::MyDX12::FrameResourceMngr> frameRsrcMngr;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
@@ -99,7 +98,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
     if (!theApp.Initialize()) return 0;
 
     rst = theApp.Run();
-  } catch (Smkz::MyDX12::Util::Exception& e) {
+  } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     rst = 1;
   }
@@ -116,7 +115,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 WorldApp::WorldApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 WorldApp::~WorldApp() {
-  Smkz::MyGE::GPURsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
+  My::MyGE::GPURsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
   if (!myDevice.IsNull()) FlushCommandQueue();
 }
 
@@ -125,12 +124,12 @@ bool WorldApp::Initialize() {
 
   if (!InitDirect3D()) return false;
 
-  Smkz::MyGE::GPURsrcMngrDX12::Instance().Init(myDevice.raw.Get());
+  My::MyGE::GPURsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
-  Smkz::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
+  My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
                                                     1024, 1024, 1024, 1024);
 
-  frameRsrcMngr = std::make_unique<Smkz::MyDX12::FrameResourceMngr>(
+  frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
       gNumFrameResources, myDevice.raw.Get());
   for (const auto& fr : frameRsrcMngr->GetFrameResources()) {
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
@@ -139,7 +138,7 @@ bool WorldApp::Initialize() {
     fr->RegisterResource("CommandAllocator", allocator);
   }
 
-  Smkz::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
+  My::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
 
   BuildWorld();
 
@@ -151,24 +150,24 @@ bool WorldApp::Initialize() {
 
   // update mesh
   world.RunEntityJob(
-      [&](Smkz::MyGE::MeshFilter* meshFilter) {
-        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
+      [&](My::MyGE::MeshFilter* meshFilter) {
+        My::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
                                                              *meshFilter->mesh);
       },
       false);
 
-  Smkz::MyGE::PipelineBase::InitDesc initDesc;
+  My::MyGE::PipelineBase::InitDesc initDesc;
   initDesc.device = myDevice.raw.Get();
   initDesc.rtFormat = mBackBufferFormat;
   initDesc.cmdQueue = myCmdQueue.raw.Get();
   initDesc.numFrame = gNumFrameResources;
-  pipeline = std::make_unique<Smkz::MyGE::StdPipeline>(initDesc);
+  pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
 
   // commit upload, delete ...
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.raw.Get());
 
-  Smkz::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
+  My::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
       myCmdQueue.raw.Get());
 
   // Do the initial resize code.
@@ -204,46 +203,46 @@ void WorldApp::Update() {
   ThrowIfFailed(myGCmdList->Reset(cmdAlloc.Get(), nullptr));
 
   world.RunEntityJob(
-      [&](Smkz::MyGE::MeshFilter* meshFilter,
-          const Smkz::MyGE::MeshRenderer* meshRenderer) {
+      [&](My::MyGE::MeshFilter* meshFilter,
+          const My::MyGE::MeshRenderer* meshRenderer) {
         if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
 
-        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
+        My::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
                                                              *meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
           if (!material) continue;
           for (const auto& [name, property] : material->properties) {
             if (std::holds_alternative<
-                    std::shared_ptr<const Smkz::MyGE::Texture2D>>(property)) {
-              Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-                  *std::get<std::shared_ptr<const Smkz::MyGE::Texture2D>>(
-                      property));
+                    My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)) {
+              My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
+                  const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+                      property.value)));
             } else if (std::holds_alternative<
-                           std::shared_ptr<const Smkz::MyGE::TextureCube>>(
-                           property)) {
-              Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-                  *std::get<std::shared_ptr<const Smkz::MyGE::TextureCube>>(
-                      property));
+                           My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                           property.value)) {
+              My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
+                  const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                      property.value)));
             }
           }
         }
       },
       false);
 
-  if (auto skybox = world.entityMngr.GetSingleton<Smkz::MyGE::Skybox>();
+  if (auto skybox = world.entityMngr.ReadSingleton<My::MyGE::Skybox>();
       skybox && skybox->material) {
     for (const auto& [name, property] : skybox->material->properties) {
-      if (std::holds_alternative<std::shared_ptr<const Smkz::MyGE::Texture2D>>(
-              property)) {
-        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-            *std::get<std::shared_ptr<const Smkz::MyGE::Texture2D>>(property));
+      if (std::holds_alternative<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+              property.value)) {
+        My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
+            const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)));
       } else if (std::holds_alternative<
-                     std::shared_ptr<const Smkz::MyGE::TextureCube>>(
-                     property)) {
-        Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-            *std::get<std::shared_ptr<const Smkz::MyGE::TextureCube>>(
-                property));
+                     My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                     property.value)) {
+        My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
+            const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                property.value)));
       }
     }
   }
@@ -251,15 +250,15 @@ void WorldApp::Update() {
   // commit upload, delete ...
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.raw.Get());
-  Smkz::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
+  My::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
       myCmdQueue.raw.Get());
   frameRsrcMngr->EndFrame(myCmdQueue.raw.Get());
 
-  std::vector<Smkz::MyGE::PipelineBase::CameraData> gameCameras;
-  Smkz::MyECS::ArchetypeFilter camFilter{
-      {Smkz::MyECS::AccessTypeID_of<Smkz::MyGE::Camera>}};
+  std::vector<My::MyGE::PipelineBase::CameraData> gameCameras;
+  My::MyECS::ArchetypeFilter camFilter{
+      {My::MyECS::AccessTypeID_of<My::MyGE::Camera>}};
   world.RunEntityJob(
-      [&](Smkz::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
+      [&](My::MyECS::Entity e) { gameCameras.emplace_back(e, world); }, false,
       camFilter);
   assert(gameCameras.size() == 1);  // now only support 1 camera
   pipeline->BeginFrame({&world}, gameCameras.front());
@@ -295,7 +294,7 @@ void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
     mPhi -= dx;
 
     // Restrict the angle mPhi.
-    mTheta = std::clamp(mTheta, 0.1f, Smkz::PI<float> - 0.1f);
+    mTheta = std::clamp(mTheta, 0.1f, My::PI<float> - 0.1f);
   } else if ((btnState & MK_RBUTTON) != 0) {
     // Make each pixel correspond to 0.2 unit in the scene.
     float dx = 0.05f * static_cast<float>(x - mLastMousePos.x);
@@ -313,98 +312,107 @@ void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
 }
 
 void WorldApp::UpdateCamera() {
-  Smkz::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi),
+  My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi),
                      mRadius * cosf(mTheta),
                      mRadius * sinf(mTheta) * cosf(mPhi)};
-  auto camera = world.entityMngr.Get<Smkz::MyGE::Camera>(cam);
+  auto camera = world.entityMngr.WriteComponent<My::MyGE::Camera>(cam);
   camera->fov = 60.f;
   camera->aspect = AspectRatio();
   camera->clippingPlaneMin = 1.0f;
   camera->clippingPlaneMax = 1000.0f;
-  auto view = Smkz::transformf::look_at(eye.as<Smkz::pointf3>(),
+  auto view = My::transformf::look_at(eye.as<My::pointf3>(),
                                         {0.f});  // world to camera
   auto c2w = view.inverse();
-  world.entityMngr.Get<Smkz::MyGE::Translation>(cam)->value = eye;
-  world.entityMngr.Get<Smkz::MyGE::Rotation>(cam)->value =
+  world.entityMngr.WriteComponent<My::MyGE::Translation>(cam)->value = eye;
+  world.entityMngr.WriteComponent<My::MyGE::Rotation>(cam)->value =
       c2w.decompose_quatenion();
 }
 
 void WorldApp::BuildWorld() {
   auto systemIDs = world.systemMngr.systemTraits.Register<
-      Smkz::MyGE::CameraSystem, Smkz::MyGE::LocalToParentSystem,
-      Smkz::MyGE::RotationEulerSystem, Smkz::MyGE::TRSToLocalToParentSystem,
-      Smkz::MyGE::TRSToLocalToWorldSystem, Smkz::MyGE::WorldToLocalSystem,
+      My::MyGE::CameraSystem, My::MyGE::LocalToParentSystem,
+      My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
+      My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       RotateSystem>();
   for (auto ID : systemIDs) world.systemMngr.Activate(ID);
 
   {  // skybox
-    auto [e, skybox] = world.entityMngr.Create<Smkz::MyGE::Skybox>();
-    const auto& path = Smkz::MyGE::AssetMngr::Instance().GUIDToAssetPath(
+    std::vector<My::TypeID> types = {My::TypeID_of<My::MyGE::Skybox>};
+    auto e = world.entityMngr.Create(types);
+    auto skybox = world.entityMngr.WriteComponent<My::MyGE::Skybox>(e);
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(
         xg::Guid{"bba13c3e-87d1-463a-974b-324d997349e3"});
     skybox->material =
-        Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Material>(path);
+        My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(path);
   }
 
-  auto e0 =
-      world.entityMngr.Create<Smkz::MyGE::LocalToWorld,
-                              Smkz::MyGE::WorldToLocal, Smkz::MyGE::Camera,
-                              Smkz::MyGE::Translation, Smkz::MyGE::Rotation>();
-  cam = std::get<Smkz::MyECS::Entity>(e0);
+  std::vector<My::TypeID> camTypes = {
+      My::TypeID_of<My::MyGE::LocalToWorld>,
+      My::TypeID_of<My::MyGE::WorldToLocal>,
+      My::TypeID_of<My::MyGE::Camera>,
+      My::TypeID_of<My::MyGE::Translation>,
+      My::TypeID_of<My::MyGE::Rotation>};
+  cam = world.entityMngr.Create(camTypes);
 
   int num = 11;
-  auto cubeMesh = Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Mesh>(
+  auto cubeMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
       L"..\\assets\\models\\cube.obj");
+  std::vector<My::TypeID> cubeTypes = {
+      My::TypeID_of<My::MyGE::LocalToWorld>,
+      My::TypeID_of<My::MyGE::MeshFilter>,
+      My::TypeID_of<My::MyGE::MeshRenderer>,
+      My::TypeID_of<My::MyGE::Translation>,
+      My::TypeID_of<My::MyGE::Rotation>,
+      My::TypeID_of<My::MyGE::Scale>};
   for (int i = 0; i < num; i++) {
     for (int j = 0; j < num; j++) {
-      auto cube = world.entityMngr
-                      .Create<Smkz::MyGE::LocalToWorld, Smkz::MyGE::MeshFilter,
-                              Smkz::MyGE::MeshRenderer, Smkz::MyGE::Translation,
-                              Smkz::MyGE::Rotation, Smkz::MyGE::Scale>();
-      auto t = std::get<Smkz::MyGE::Translation*>(cube);
-      auto s = std::get<Smkz::MyGE::Scale*>(cube);
+      auto cube = world.entityMngr.Create(cubeTypes);
+      auto t = world.entityMngr.WriteComponent<My::MyGE::Translation>(cube);
+      auto s = world.entityMngr.WriteComponent<My::MyGE::Scale>(cube);
       s->value = 0.2f;
       t->value = {0.5f * (i - num / 2), 0.5f * (j - num / 2), 0};
-      std::get<Smkz::MyGE::MeshFilter*>(cube)->mesh = cubeMesh;
+      world.entityMngr.WriteComponent<My::MyGE::MeshFilter>(cube)->mesh = cubeMesh;
     }
   }
 }
 
 void WorldApp::LoadTextures() {
-  auto tex2dGUIDs = Smkz::MyGE::AssetMngr::Instance().FindAssets(
+  auto tex2dGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
       std::wregex{LR"(\.\.\\assets\\_internal\\.*\.tex2d)"});
   for (const auto& guid : tex2dGUIDs) {
-    const auto& path = Smkz::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
-    Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-        *Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Texture2D>(
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
+        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
             path));
   }
 
-  auto texcubeGUIDs = Smkz::MyGE::AssetMngr::Instance().FindAssets(
+  auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
       std::wregex{LR"(\.\.\\assets\\_internal\\.*\.texcube)"});
   for (const auto& guid : texcubeGUIDs) {
-    const auto& path = Smkz::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
-    Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-        *Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::TextureCube>(
+    const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
+    My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
+        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(
             path));
   }
 }
 
 void WorldApp::BuildShaders() {
-  auto& assetMngr = Smkz::MyGE::AssetMngr::Instance();
+  auto& assetMngr = My::MyGE::AssetMngr::Instance();
   auto shaderGUIDs = assetMngr.FindAssets(std::wregex{LR"(.*\.shader)"});
   for (const auto& guid : shaderGUIDs) {
     const auto& path = assetMngr.GUIDToAssetPath(guid);
-    auto shader = assetMngr.LoadAsset<Smkz::MyGE::Shader>(path);
-    Smkz::MyGE::GPURsrcMngrDX12::Instance().RegisterShader(*shader);
-    Smkz::MyGE::ShaderMngr::Instance().Register(shader);
+    auto shader = assetMngr.LoadAsset<My::MyGE::Shader>(path);
+    My::MyGE::GPURsrcMngrDX12::Instance().RegisterShader(*shader);
+    My::MyGE::ShaderMngr::Instance().Register(shader);
   }
 }
 
 void WorldApp::BuildMaterials() {
   auto material =
-      Smkz::MyGE::AssetMngr::Instance().LoadAsset<Smkz::MyGE::Material>(
+      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
           L"..\\assets\\materials\\iron.mat");
-  world.RunEntityJob([=](Smkz::MyGE::MeshRenderer* meshRenderer) {
+  world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
     meshRenderer->materials.push_back(material);
   });
 }
+

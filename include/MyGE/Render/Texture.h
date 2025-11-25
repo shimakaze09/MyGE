@@ -2,7 +2,7 @@
 
 #include "GPURsrc.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class Texture : public GPURsrc {
  public:
   virtual ~Texture() = default;
@@ -10,4 +10,5 @@ class Texture : public GPURsrc {
  protected:
   Texture() = default;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

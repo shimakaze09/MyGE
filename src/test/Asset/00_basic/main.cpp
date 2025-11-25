@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 int main() {
   // Enable run-time memory check for debug builds.
@@ -14,3 +14,4 @@ int main() {
 
   AssetMngr::Instance().Clear();
 }
+

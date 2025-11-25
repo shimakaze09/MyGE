@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class GPURsrcMngrDX12;
 
 class GPURsrc {
@@ -49,4 +49,5 @@ class GPURsrc {
   bool editable{true};
   inline static std::atomic<size_t> curID{0};
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

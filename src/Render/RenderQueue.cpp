@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 void RenderQueue::Add(RenderObject object) {
   if (object.material->shader->passes[object.passIdx].queue <
@@ -62,3 +62,4 @@ void RenderQueue::Clear() {
   opaques.clear();
   transparents.clear();
 }
+

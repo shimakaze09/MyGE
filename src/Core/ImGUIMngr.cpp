@@ -3,10 +3,10 @@
 #include <_deps/imgui/imgui_impl_dx12.h>
 #include <_deps/imgui/imgui_impl_win32.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 struct ImGUIMngr::Impl {
-  Smkz::MyDX12::DescriptorHeapAllocation fontDH;
+  My::MyDX12::DescriptorHeapAllocation fontDH;
   std::vector<ImGuiContext*> contexts;
   ImFontAtlas sharedFontAtlas;
   StyleColors style;
@@ -26,10 +26,10 @@ void ImGUIMngr::Init(void* hwnd, ID3D12Device* device, size_t numFrames,
   ImGui_ImplWin32_Init_Shared(hwnd);
 
   pImpl->fontDH =
-      Smkz::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
+      My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Allocate(1);
   ImGui_ImplDX12_Init_Shared(
       device, static_cast<int>(numFrames), DXGI_FORMAT_R8G8B8A8_UNORM,
-      Smkz::MyDX12::DescriptorHeapMngr::Instance()
+      My::MyDX12::DescriptorHeapMngr::Instance()
           .GetCSUGpuDH()
           ->GetDescriptorHeap(),
       pImpl->fontDH.GetCpuHandle(), pImpl->fontDH.GetGpuHandle());
@@ -73,6 +73,7 @@ void ImGUIMngr::Clear() {
   pImpl->contexts.clear();
 
   if (!pImpl->fontDH.IsNull())
-    Smkz::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
+    My::MyDX12::DescriptorHeapMngr::Instance().GetCSUGpuDH()->Free(
         std::move(pImpl->fontDH));
 }
+

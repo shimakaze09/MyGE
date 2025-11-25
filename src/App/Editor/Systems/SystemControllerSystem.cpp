@@ -2,8 +2,8 @@
 #include <MyGE/App/Editor/Systems/SystemControllerSystem.h>
 #include <_deps/imgui/imgui.h>
 
-using namespace Smkz::MyECS;
-using namespace Smkz::MyGE;
+using namespace My::MyECS;
+using namespace My::MyGE;
 
 void SystemControllerSystem::OnUpdate(Schedule& schedule) {
   schedule.GetWorld()->AddCommand(
@@ -121,3 +121,4 @@ void SystemControllerSystem::OnUpdate(Schedule& schedule) {
       },
       0);
 }
+

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 template <typename Func>
 void Serializer::RegisterSerializeFunction(Func&& func) {
   using ArgList = FuncTraits_ArgList<Func>;
@@ -41,4 +41,5 @@ std::string Serializer::Serialize(const UserType* obj) {
   static_assert(!std::is_void_v<UserType>);
   return Serialize(TypeID_of<UserType>.GetValue(), obj);
 }
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

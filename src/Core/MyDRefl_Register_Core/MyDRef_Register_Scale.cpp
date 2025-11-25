@@ -4,10 +4,11 @@
 
 #include "MyDRefl_Register_Core_impl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::MyDRefl_Register_Scale() {
+void My::MyGE::details::MyDRefl_Register_Scale() {
   Mngr.RegisterType<Scale>();
-  Mngr.SimpleAddField<&Scale::value>("value");
+  Mngr.AddField<&Scale::value>("value");
 }
+

@@ -3,7 +3,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-class TestApp : public Smkz::MyGE::DX12App {
+class TestApp : public My::MyGE::DX12App {
  public:
   TestApp(HINSTANCE hInstance);
 
@@ -42,7 +42,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
     int rst = theApp.Run();
     return rst;
-  } catch (Smkz::MyDX12::Util::Exception& e) {
+  } catch (My::MyDX12::Util::Exception& e) {
     MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
     return 1;
   }
@@ -60,3 +60,4 @@ bool TestApp::Init() {
 
   return true;
 }
+

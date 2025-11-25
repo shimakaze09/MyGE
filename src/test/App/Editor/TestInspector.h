@@ -6,7 +6,7 @@
 
 #include <variant>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 enum class TestEnum { A, B, C };
 
 struct TestInspector {
@@ -77,7 +77,7 @@ struct TestInspector {
     tooltip("[attrs] tooltip"), step(2.f), min_value(1.5f)]]
   float v_attrs{1};
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
 
 template <>
 struct My::MySRefl::TypeInfo<My::MyGE::TestEnum>
@@ -226,3 +226,4 @@ struct My::MySRefl::TypeInfo<My::MyGE::TestInspector>
             }},
   };
 };
+

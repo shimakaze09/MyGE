@@ -2,8 +2,8 @@
 #include <MyGE/Core/Systems/InputSystem.h>
 #include <_deps/imgui/imgui.h>
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyECS;
+using namespace My::MyGE;
+using namespace My::MyECS;
 
 void InputSystem::OnUpdate(Schedule& schedule) {
   if (!ImGui::GetCurrentContext()) return;
@@ -49,3 +49,4 @@ void InputSystem::OnUpdate(Schedule& schedule) {
       },
       SystemFuncName);
 }
+

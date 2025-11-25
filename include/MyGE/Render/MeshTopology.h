@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 // Topology of Mesh faces.
 enum class MeshTopology {
   Triangles,  // Mesh is made from triangles.
@@ -9,4 +9,5 @@ enum class MeshTopology {
   LineStrip,  // Mesh is a line strip.
   Points      // Mesh is made from points.
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

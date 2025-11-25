@@ -3,7 +3,7 @@
 
 #include <filesystem>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 WorldAsset::WorldAsset(const MyECS::World* world)
     : data{Serializer::Instance().Serialize(world)} {}
@@ -52,3 +52,4 @@ std::vector<std::string> WorldAssetImporterCreator::SupportedExtentions()
     const {
   return {".world"};
 }
+

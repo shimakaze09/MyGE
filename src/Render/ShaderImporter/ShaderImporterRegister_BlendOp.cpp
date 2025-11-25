@@ -2,14 +2,15 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_BlendOp() {
+void My::MyGE::details::ShaderImporterRegister_BlendOp() {
   MyDRefl::Mngr.RegisterType<BlendOp>();
-  MyDRefl::Mngr.SimpleAddField<BlendOp::ADD>("ADD");
-  MyDRefl::Mngr.SimpleAddField<BlendOp::SUBTRACT>("SUBTRACT");
-  MyDRefl::Mngr.SimpleAddField<BlendOp::REV_SUBTRACT>("REV_SUBTRACT");
-  MyDRefl::Mngr.SimpleAddField<BlendOp::MIN>("MIN");
-  MyDRefl::Mngr.SimpleAddField<BlendOp::MAX>("MAX");
+  MyDRefl::Mngr.AddField<BlendOp::ADD>("ADD");
+  MyDRefl::Mngr.AddField<BlendOp::SUBTRACT>("SUBTRACT");
+  MyDRefl::Mngr.AddField<BlendOp::REV_SUBTRACT>("REV_SUBTRACT");
+  MyDRefl::Mngr.AddField<BlendOp::MIN>("MIN");
+  MyDRefl::Mngr.AddField<BlendOp::MAX>("MAX");
 }
+

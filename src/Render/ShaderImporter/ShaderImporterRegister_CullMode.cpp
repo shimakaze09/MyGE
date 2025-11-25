@@ -2,12 +2,13 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_CullMode() {
+void My::MyGE::details::ShaderImporterRegister_CullMode() {
   MyDRefl::Mngr.RegisterType<CullMode>();
-  MyDRefl::Mngr.SimpleAddField<CullMode::NONE>("NONE");
-  MyDRefl::Mngr.SimpleAddField<CullMode::FRONT>("FRONT");
-  MyDRefl::Mngr.SimpleAddField<CullMode::BACK>("BACK");
+  MyDRefl::Mngr.AddField<CullMode::NONE>("NONE");
+  MyDRefl::Mngr.AddField<CullMode::FRONT>("FRONT");
+  MyDRefl::Mngr.AddField<CullMode::BACK>("BACK");
 }
+

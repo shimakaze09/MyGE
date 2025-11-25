@@ -2,7 +2,7 @@
 
 #include <MyGE/Render/Shader.h>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class MyShaderCompiler {
  public:
   static MyShaderCompiler& Instance() noexcept {
@@ -19,4 +19,5 @@ class MyShaderCompiler {
   struct Impl;
   Impl* pImpl;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

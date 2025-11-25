@@ -2,17 +2,18 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_StencilState() {
+void My::MyGE::details::ShaderImporterRegister_StencilState() {
   MyDRefl::Mngr.RegisterType<StencilState>();
-  MyDRefl::Mngr.SimpleAddField<&StencilState::enable>("enable");
-  MyDRefl::Mngr.SimpleAddField<&StencilState::ref>("ref");
-  MyDRefl::Mngr.SimpleAddField<&StencilState::readMask>("readMask");
-  MyDRefl::Mngr.SimpleAddField<&StencilState::writeMask>("writeMask");
-  MyDRefl::Mngr.SimpleAddField<&StencilState::failOp>("failOp");
-  MyDRefl::Mngr.SimpleAddField<&StencilState::depthFailOp>("depthFailOp");
-  MyDRefl::Mngr.SimpleAddField<&StencilState::passOp>("passOp");
-  MyDRefl::Mngr.SimpleAddField<&StencilState::func>("func");
+  MyDRefl::Mngr.AddField<&StencilState::enable>("enable");
+  MyDRefl::Mngr.AddField<&StencilState::ref>("ref");
+  MyDRefl::Mngr.AddField<&StencilState::readMask>("readMask");
+  MyDRefl::Mngr.AddField<&StencilState::writeMask>("writeMask");
+  MyDRefl::Mngr.AddField<&StencilState::failOp>("failOp");
+  MyDRefl::Mngr.AddField<&StencilState::depthFailOp>("depthFailOp");
+  MyDRefl::Mngr.AddField<&StencilState::passOp>("passOp");
+  MyDRefl::Mngr.AddField<&StencilState::func>("func");
 }
+

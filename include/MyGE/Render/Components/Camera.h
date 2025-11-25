@@ -2,7 +2,7 @@
 
 #include <MyGM/transform.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Camera {
   float aspect{16.f / 9.f};
   [[interval(std::pair{1.f, 179.f})]]
@@ -14,4 +14,5 @@ struct Camera {
 
   transformf prjectionMatrix;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

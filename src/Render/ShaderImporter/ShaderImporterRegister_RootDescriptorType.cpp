@@ -2,12 +2,13 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::ShaderImporterRegister_RootDescriptorType() {
+void My::MyGE::details::ShaderImporterRegister_RootDescriptorType() {
   MyDRefl::Mngr.RegisterType<RootDescriptorType>();
-  MyDRefl::Mngr.SimpleAddField<RootDescriptorType::SRV>("SRV");
-  MyDRefl::Mngr.SimpleAddField<RootDescriptorType::UAV>("UAV");
-  MyDRefl::Mngr.SimpleAddField<RootDescriptorType::CBV>("CBV");
+  MyDRefl::Mngr.AddField<RootDescriptorType::SRV>("SRV");
+  MyDRefl::Mngr.AddField<RootDescriptorType::UAV>("UAV");
+  MyDRefl::Mngr.AddField<RootDescriptorType::CBV>("CBV");
 }
+

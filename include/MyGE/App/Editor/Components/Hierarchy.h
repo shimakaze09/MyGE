@@ -3,7 +3,7 @@
 #include <MyECS/MyECS.hpp>
 #include <string>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Hierarchy {
   MyECS::World* world{nullptr};
   MyECS::Entity select{MyECS::Entity::Invalid()};
@@ -12,4 +12,5 @@ struct Hierarchy {
   bool is_saving_world{false};
   std::string saved_path;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 constexpr size_t MeshLayoutMngr::GetMeshLayoutID(bool uv, bool normal,
                                                  bool tangent,
                                                  bool color) noexcept {
@@ -20,4 +20,5 @@ constexpr std::array<bool, 4> MeshLayoutMngr::DecodeMeshLayoutID(
   bool color = static_cast<bool>(ID & (1 << 3));
   return {uv, normal, tangent, color};
 }
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

@@ -4,11 +4,12 @@
 
 #include "MyDRefl_Register_Core_impl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::MyDRefl_Register_WorldTime() {
+void My::MyGE::details::MyDRefl_Register_WorldTime() {
   Mngr.RegisterType<WorldTime>();
-  Mngr.SimpleAddField<&WorldTime::deltaTime>("deltaTime");
-  Mngr.SimpleAddField<&WorldTime::elapsedTime>("elapsedTime");
+  Mngr.AddField<&WorldTime::deltaTime>("deltaTime");
+  Mngr.AddField<&WorldTime::elapsedTime>("elapsedTime");
 }
+

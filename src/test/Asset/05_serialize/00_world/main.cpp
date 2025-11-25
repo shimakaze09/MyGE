@@ -4,9 +4,9 @@
 #include <MyECS/MyECS.hpp>
 #include <iostream>
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyECS;
-using namespace Smkz;
+using namespace My::MyGE;
+using namespace My::MyECS;
+using namespace My;
 using namespace std;
 
 struct UserType0 {
@@ -62,7 +62,7 @@ struct A {
 };
 
 template <>
-struct Smkz::USRefl::TypeInfo<UserType1> : TypeInfoBase<UserType1> {
+struct My::USRefl::TypeInfo<UserType1> : TypeInfoBase<UserType1> {
 #ifdef UBPA_USREFL_NOT_USE_NAMEOF
   static constexpr char name[10] = "UserType1";
 #endif
@@ -73,7 +73,7 @@ struct Smkz::USRefl::TypeInfo<UserType1> : TypeInfoBase<UserType1> {
 };
 
 template <>
-struct Smkz::USRefl::TypeInfo<A> : TypeInfoBase<A> {
+struct My::USRefl::TypeInfo<A> : TypeInfoBase<A> {
 #ifdef UBPA_USREFL_NOT_USE_NAMEOF
   static constexpr char name[2] = "A";
 #endif
@@ -206,3 +206,4 @@ int main() {
   std::apply([](auto...) {}, p);
   return 0;
 }
+

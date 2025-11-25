@@ -4,36 +4,36 @@
 
 #include <MyDRefl/MyDRefl.hpp>
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::MyDRefl_Register_Render() {
+void My::MyGE::MyDRefl_Register_Render() {
   // Camera
   // TODO: attrs
   Mngr.RegisterType<Camera>();
-  Mngr.SimpleAddField<&Camera::aspect>("aspect");
-  Mngr.SimpleAddField<&Camera::fov>("fov");
-  Mngr.SimpleAddField<&Camera::clippingPlaneMin>("clippingPlaneMin");
-  Mngr.SimpleAddField<&Camera::clippingPlaneMax>("clippingPlaneMax");
-  Mngr.SimpleAddField<&Camera::prjectionMatrix>("prjectionMatrix");
+  Mngr.AddField<&Camera::aspect>("aspect");
+  Mngr.AddField<&Camera::fov>("fov");
+  Mngr.AddField<&Camera::clippingPlaneMin>("clippingPlaneMin");
+  Mngr.AddField<&Camera::clippingPlaneMax>("clippingPlaneMax");
+  Mngr.AddField<&Camera::prjectionMatrix>("prjectionMatrix");
 
   // Light
   Mngr.RegisterType<Light::Mode>();
-  Mngr.SimpleAddField<Light::Mode::Directional>("Directional");
-  Mngr.SimpleAddField<Light::Mode::Point>("Point");
-  Mngr.SimpleAddField<Light::Mode::Spot>("Spot");
-  Mngr.SimpleAddField<Light::Mode::Rect>("Rect");
-  Mngr.SimpleAddField<Light::Mode::Disk>("Disk");
+  Mngr.AddField<Light::Mode::Directional>("Directional");
+  Mngr.AddField<Light::Mode::Point>("Point");
+  Mngr.AddField<Light::Mode::Spot>("Spot");
+  Mngr.AddField<Light::Mode::Rect>("Rect");
+  Mngr.AddField<Light::Mode::Disk>("Disk");
 
   Mngr.RegisterType<Light>();
-  Mngr.SimpleAddField<&Light::mode>("mode");
-  Mngr.SimpleAddField<&Light::color>("color");
-  Mngr.SimpleAddField<&Light::intensity>("intensity");
-  Mngr.SimpleAddField<&Light::range>("range");
-  Mngr.SimpleAddField<&Light::width>("width");
-  Mngr.SimpleAddField<&Light::height>("height");
-  Mngr.SimpleAddField<&Light::innerSpotAngle>("innerSpotAngle");
-  Mngr.SimpleAddField<&Light::outerSpotAngle>("outerSpotAngle");
+  Mngr.AddField<&Light::mode>("mode");
+  Mngr.AddField<&Light::color>("color");
+  Mngr.AddField<&Light::intensity>("intensity");
+  Mngr.AddField<&Light::range>("range");
+  Mngr.AddField<&Light::width>("width");
+  Mngr.AddField<&Light::height>("height");
+  Mngr.AddField<&Light::innerSpotAngle>("innerSpotAngle");
+  Mngr.AddField<&Light::outerSpotAngle>("outerSpotAngle");
 
   // MeshFilter
   Mngr.RegisterType<MeshFilter>();
@@ -47,3 +47,4 @@ void Smkz::MyGE::MyDRefl_Register_Render() {
   Mngr.RegisterType<Skybox>();
   Mngr.AddField<&Skybox::material>("materials");
 }
+

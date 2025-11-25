@@ -2,7 +2,7 @@
 #include <MyGE/Core/Components/WorldToLocal.h>
 #include <MyGE/Core/Systems/WorldToLocalSystem.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 void WorldToLocalSystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.RegisterEntityJob(
@@ -11,3 +11,4 @@ void WorldToLocalSystem::OnUpdate(MyECS::Schedule& schedule) {
       },
       SystemFuncName);
 }
+

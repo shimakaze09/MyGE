@@ -5,7 +5,7 @@
 #include <array>
 #include <string>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Texture2D;
 class TextureCube;
 struct Shader;
@@ -99,4 +99,5 @@ class GPURsrcMngrDX12 {
   GPURsrcMngrDX12();
   ~GPURsrcMngrDX12();
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

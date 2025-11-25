@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 template <typename T>
   requires std::negation_v<std::is_void<T>>
 bool AssetMngr::CreateAsset(std::shared_ptr<T> ptr,
@@ -12,13 +12,14 @@ template <typename T>
 std::shared_ptr<T> AssetMngr::GUIDToAsset(const xg::Guid& guid) {
   auto asset = GUIDToAsset(guid, Type_of<T>);
   if (!asset.GetType()) return {};
-  return asset.AsShared<T>();
+  return std::shared_ptr<T>(asset.GetBuffer(), asset.AsPtr<T>());
 }
 
 template <typename T>
 std::shared_ptr<T> AssetMngr::LoadAsset(const std::filesystem::path& path) {
   auto asset = LoadAsset(path, Type_of<T>);
   if (!asset.GetType()) return {};
-  return asset.AsShared<T>();
+  return std::shared_ptr<T>(asset.GetBuffer(), asset.AsPtr<T>());
 }
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

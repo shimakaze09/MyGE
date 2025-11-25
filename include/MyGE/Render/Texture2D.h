@@ -3,8 +3,9 @@
 #include "../Core/Image.h"
 #include "Texture.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct Texture2D : Texture {
   Image image;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

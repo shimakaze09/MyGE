@@ -4,5 +4,6 @@ ADD_TARGET(
         LIB
         My::MyGE_Render
         L_OPTION_INTERFACE
-        /SUBSYSTEM:WINDOWS
+        $<$<CXX_COMPILER_ID:MSVC>:/SUBSYSTEM:WINDOWS>
+        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wl,/SUBSYSTEM:WINDOWS>
 )

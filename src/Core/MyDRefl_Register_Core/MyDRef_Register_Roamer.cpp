@@ -4,14 +4,15 @@
 
 #include "MyDRefl_Register_Core_impl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::MyDRefl_Register_Roamer() {
+void My::MyGE::details::MyDRefl_Register_Roamer() {
   Mngr.RegisterType<Roamer>();
-  Mngr.SimpleAddField<&Roamer::moveSpeed>("moveSpeed");
-  Mngr.SimpleAddField<&Roamer::rotateSpeed>("rotateSpeed");
-  Mngr.SimpleAddField<&Roamer::reverseUpDown>("reverseUpDown");
-  Mngr.SimpleAddField<&Roamer::reverseLeftRight>("reverseLeftRight");
-  Mngr.SimpleAddField<&Roamer::reverseFrontBack>("reverseFrontBack");
+  Mngr.AddField<&Roamer::moveSpeed>("moveSpeed");
+  Mngr.AddField<&Roamer::rotateSpeed>("rotateSpeed");
+  Mngr.AddField<&Roamer::reverseUpDown>("reverseUpDown");
+  Mngr.AddField<&Roamer::reverseLeftRight>("reverseLeftRight");
+  Mngr.AddField<&Roamer::reverseFrontBack>("reverseFrontBack");
 }
+

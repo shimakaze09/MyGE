@@ -2,7 +2,7 @@
 
 #include "PipelineBase.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class StdPipeline final : public PipelineBase {
  public:
   StdPipeline(InitDesc desc);
@@ -26,4 +26,5 @@ class StdPipeline final : public PipelineBase {
   struct Impl;
   Impl* pImpl;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

@@ -2,7 +2,7 @@
 
 #include <MyDRefl/MyDRefl.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 // Forward
 ////////////
 
@@ -733,23 +733,23 @@ template <typename T>
 WeakVar(SharedVar<T>) -> WeakVar<T>;
 template <typename T>
 WeakVar(std::shared_ptr<T>) -> WeakVar<T>;
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
 
 // Hash
 /////////
 
 template <typename T>
-struct std::hash<Smkz::MyGE::SharedVar<T>> {
+struct std::hash<My::MyGE::SharedVar<T>> {
   constexpr std::size_t operator()(
-      const Smkz::MyGE::SharedVar<T>& obj) noexcept {
+      const My::MyGE::SharedVar<T>& obj) noexcept {
     return std::hash<typename std::shared_ptr<T>::element_type*>()(obj.get());
   }
 };
 
 template <typename T, typename Deleter>
-struct std::hash<Smkz::MyGE::UniqueVar<T, Deleter>> {
+struct std::hash<My::MyGE::UniqueVar<T, Deleter>> {
   constexpr std::size_t operator()(
-      const Smkz::MyGE::UniqueVar<T, Deleter>& obj) noexcept {
+      const My::MyGE::UniqueVar<T, Deleter>& obj) noexcept {
     return std::hash<typename std::unique_ptr<T, Deleter>::pointer>()(
         obj.get());
   }
@@ -759,365 +759,365 @@ struct std::hash<Smkz::MyGE::UniqueVar<T, Deleter>> {
 ////////////
 
 template <typename Ty1, typename Ty2>
-bool operator==(const Smkz::MyGE::SharedVar<Ty1>& left,
-                const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+bool operator==(const My::MyGE::SharedVar<Ty1>& left,
+                const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() == right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator!=(const Smkz::MyGE::SharedVar<Ty1>& left,
-                const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+bool operator!=(const My::MyGE::SharedVar<Ty1>& left,
+                const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() != right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator<(const Smkz::MyGE::SharedVar<Ty1>& left,
-               const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+bool operator<(const My::MyGE::SharedVar<Ty1>& left,
+               const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() < right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator>=(const Smkz::MyGE::SharedVar<Ty1>& left,
-                const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+bool operator>=(const My::MyGE::SharedVar<Ty1>& left,
+                const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() >= right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator>(const Smkz::MyGE::SharedVar<Ty1>& left,
-               const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+bool operator>(const My::MyGE::SharedVar<Ty1>& left,
+               const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() > right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator<=(const Smkz::MyGE::SharedVar<Ty1>& left,
-                const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+bool operator<=(const My::MyGE::SharedVar<Ty1>& left,
+                const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() <= right.get();
 }
 
 template <typename Ty1, typename Ty2>
 bool operator==(const std::shared_ptr<Ty1>& left,
-                const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+                const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() == right.get();
 }
 
 template <typename Ty1, typename Ty2>
 bool operator!=(const std::shared_ptr<Ty1>& left,
-                const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+                const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() != right.get();
 }
 
 template <typename Ty1, typename Ty2>
 bool operator<(const std::shared_ptr<Ty1>& left,
-               const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+               const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() < right.get();
 }
 
 template <typename Ty1, typename Ty2>
 bool operator>=(const std::shared_ptr<Ty1>& left,
-                const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+                const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() >= right.get();
 }
 
 template <typename Ty1, typename Ty2>
 bool operator>(const std::shared_ptr<Ty1>& left,
-               const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+               const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() > right.get();
 }
 
 template <typename Ty1, typename Ty2>
 bool operator<=(const std::shared_ptr<Ty1>& left,
-                const Smkz::MyGE::SharedVar<Ty2>& right) noexcept {
+                const My::MyGE::SharedVar<Ty2>& right) noexcept {
   return left.get() <= right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator==(const Smkz::MyGE::SharedVar<Ty1>& left,
+bool operator==(const My::MyGE::SharedVar<Ty1>& left,
                 const std::shared_ptr<Ty2>& right) noexcept {
   return left.get() == right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator!=(const Smkz::MyGE::SharedVar<Ty1>& left,
+bool operator!=(const My::MyGE::SharedVar<Ty1>& left,
                 const std::shared_ptr<Ty2>& right) noexcept {
   return left.get() != right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator<(const Smkz::MyGE::SharedVar<Ty1>& left,
+bool operator<(const My::MyGE::SharedVar<Ty1>& left,
                const std::shared_ptr<Ty2>& right) noexcept {
   return left.get() < right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator>=(const Smkz::MyGE::SharedVar<Ty1>& left,
+bool operator>=(const My::MyGE::SharedVar<Ty1>& left,
                 const std::shared_ptr<Ty2>& right) noexcept {
   return left.get() >= right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator>(const Smkz::MyGE::SharedVar<Ty1>& left,
+bool operator>(const My::MyGE::SharedVar<Ty1>& left,
                const std::shared_ptr<Ty2>& right) noexcept {
   return left.get() > right.get();
 }
 
 template <typename Ty1, typename Ty2>
-bool operator<=(const Smkz::MyGE::SharedVar<Ty1>& left,
+bool operator<=(const My::MyGE::SharedVar<Ty1>& left,
                 const std::shared_ptr<Ty2>& right) noexcept {
   return left.get() <= right.get();
 }
 
 template <typename T>
-bool operator==(const Smkz::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
+bool operator==(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
   return left.get() == nullptr;
 }
 
 template <typename T>
 bool operator==(std::nullptr_t,
-                const Smkz::MyGE::SharedVar<T>& right) noexcept {
+                const My::MyGE::SharedVar<T>& right) noexcept {
   return nullptr == right.get();
 }
 
 template <typename T>
-bool operator!=(const Smkz::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
+bool operator!=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
   return left.get() != nullptr;
 }
 
 template <typename T>
 bool operator!=(std::nullptr_t,
-                const Smkz::MyGE::SharedVar<T>& right) noexcept {
+                const My::MyGE::SharedVar<T>& right) noexcept {
   return nullptr != right.get();
 }
 
 template <typename T>
-bool operator<(const Smkz::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
+bool operator<(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
   return left.get() <
-         static_cast<typename Smkz::MyGE::SharedVar<T>::element_type*>(nullptr);
+         static_cast<typename My::MyGE::SharedVar<T>::element_type*>(nullptr);
 }
 
 template <typename T>
-bool operator<(std::nullptr_t, const Smkz::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename Smkz::MyGE::SharedVar<T>::element_type*>(
+bool operator<(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(
              nullptr) < right.get();
 }
 
 template <typename T>
-bool operator>=(const Smkz::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
+bool operator>=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
   return left.get() >=
-         static_cast<typename Smkz::MyGE::SharedVar<T>::element_type*>(nullptr);
+         static_cast<typename My::MyGE::SharedVar<T>::element_type*>(nullptr);
 }
 
 template <typename T>
 bool operator>=(std::nullptr_t,
-                const Smkz::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename Smkz::MyGE::SharedVar<T>::element_type*>(
+                const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(
              nullptr) >= right.get();
 }
 
 template <typename T>
-bool operator>(const Smkz::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
+bool operator>(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
   return left.get() >
-         static_cast<typename Smkz::MyGE::SharedVar<T>::element_type*>(nullptr);
+         static_cast<typename My::MyGE::SharedVar<T>::element_type*>(nullptr);
 }
 
 template <typename T>
-bool operator>(std::nullptr_t, const Smkz::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename Smkz::MyGE::SharedVar<T>::element_type*>(
+bool operator>(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(
              nullptr) > right.get();
 }
 
 template <typename T>
-bool operator<=(const Smkz::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
+bool operator<=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
   return left.get() <=
-         static_cast<typename Smkz::MyGE::SharedVar<T>::element_type*>(nullptr);
+         static_cast<typename My::MyGE::SharedVar<T>::element_type*>(nullptr);
 }
 
 template <typename T>
 bool operator<=(std::nullptr_t,
-                const Smkz::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename Smkz::MyGE::SharedVar<T>::element_type*>(
+                const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(
              nullptr) <= right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator==(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
-                const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+bool operator==(const My::MyGE::UniqueVar<Ty1, D1>& left,
+                const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() == right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator!=(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
-                const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+bool operator!=(const My::MyGE::UniqueVar<Ty1, D1>& left,
+                const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() != right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator<(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
-               const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+bool operator<(const My::MyGE::UniqueVar<Ty1, D1>& left,
+               const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() < right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator>=(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
-                const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+bool operator>=(const My::MyGE::UniqueVar<Ty1, D1>& left,
+                const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() >= right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator>(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
-               const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+bool operator>(const My::MyGE::UniqueVar<Ty1, D1>& left,
+               const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() > right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator<=(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
-                const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+bool operator<=(const My::MyGE::UniqueVar<Ty1, D1>& left,
+                const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() <= right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
 bool operator==(const std::unique_ptr<Ty1, D1>& left,
-                const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+                const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() == right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
 bool operator!=(const std::unique_ptr<Ty1, D1>& left,
-                const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+                const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() != right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
 bool operator<(const std::unique_ptr<Ty1, D1>& left,
-               const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+               const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() < right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
 bool operator>=(const std::unique_ptr<Ty1, D1>& left,
-                const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+                const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() >= right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
 bool operator>(const std::unique_ptr<Ty1, D1>& left,
-               const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+               const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() > right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
 bool operator<=(const std::unique_ptr<Ty1, D1>& left,
-                const Smkz::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
+                const My::MyGE::UniqueVar<Ty2, D2>& right) noexcept {
   return left.get() <= right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator==(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
+bool operator==(const My::MyGE::UniqueVar<Ty1, D1>& left,
                 const std::unique_ptr<Ty2, D2>& right) noexcept {
   return left.get() == right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator!=(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
+bool operator!=(const My::MyGE::UniqueVar<Ty1, D1>& left,
                 const std::unique_ptr<Ty2, D2>& right) noexcept {
   return left.get() != right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator<(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
+bool operator<(const My::MyGE::UniqueVar<Ty1, D1>& left,
                const std::unique_ptr<Ty2, D2>& right) noexcept {
   return left.get() < right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator>=(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
+bool operator>=(const My::MyGE::UniqueVar<Ty1, D1>& left,
                 const std::unique_ptr<Ty2, D2>& right) noexcept {
   return left.get() >= right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator>(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
+bool operator>(const My::MyGE::UniqueVar<Ty1, D1>& left,
                const std::unique_ptr<Ty2, D2>& right) noexcept {
   return left.get() > right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
-bool operator<=(const Smkz::MyGE::UniqueVar<Ty1, D1>& left,
+bool operator<=(const My::MyGE::UniqueVar<Ty1, D1>& left,
                 const std::unique_ptr<Ty2, D2>& right) noexcept {
   return left.get() <= right.get();
 }
 
 template <typename T, typename D>
-bool operator==(const Smkz::MyGE::UniqueVar<T, D>& left,
+bool operator==(const My::MyGE::UniqueVar<T, D>& left,
                 std::nullptr_t) noexcept {
   return left.get() == nullptr;
 }
 
 template <typename T, typename D>
 bool operator==(std::nullptr_t,
-                const Smkz::MyGE::UniqueVar<T, D>& right) noexcept {
+                const My::MyGE::UniqueVar<T, D>& right) noexcept {
   return nullptr == right.get();
 }
 
 template <typename T, typename D>
-bool operator!=(const Smkz::MyGE::UniqueVar<T, D>& left,
+bool operator!=(const My::MyGE::UniqueVar<T, D>& left,
                 std::nullptr_t) noexcept {
   return left.get() != nullptr;
 }
 
 template <typename T, typename D>
 bool operator!=(std::nullptr_t,
-                const Smkz::MyGE::UniqueVar<T, D>& right) noexcept {
+                const My::MyGE::UniqueVar<T, D>& right) noexcept {
   return nullptr != right.get();
 }
 
 template <typename T, typename D>
-bool operator<(const Smkz::MyGE::UniqueVar<T, D>& left,
+bool operator<(const My::MyGE::UniqueVar<T, D>& left,
                std::nullptr_t) noexcept {
   return left.get() <
-         static_cast<typename Smkz::MyGE::UniqueVar<T, D>::pointer>(nullptr);
+         static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr);
 }
 
 template <typename T, typename D>
-bool operator<(std::nullptr_t, const Smkz::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename Smkz::MyGE::UniqueVar<T, D>::pointer>(nullptr) <
+bool operator<(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr) <
          right.get();
 }
 
 template <typename T, typename D>
-bool operator>=(const Smkz::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
+bool operator>=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
   return left.get() >=
-         static_cast<typename Smkz::MyGE::UniqueVar<T, D>::pointer>(nullptr);
+         static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr);
 }
 
 template <typename T, typename D>
 bool operator>=(std::nullptr_t,
-                const Smkz::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename Smkz::MyGE::UniqueVar<T, D>::pointer>(nullptr) >=
+                const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr) >=
          right.get();
 }
 
 template <typename T, typename D>
-bool operator>(const Smkz::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
+bool operator>(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
   return left.get() >
-         static_cast<typename Smkz::MyGE::UniqueVar<T, D>::pointer>(nullptr);
+         static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr);
 }
 
 template <typename T, typename D>
-bool operator>(std::nullptr_t, const Smkz::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename Smkz::MyGE::UniqueVar<T, D>::pointer>(nullptr) >
+bool operator>(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr) >
          right.get();
 }
 
 template <typename T, typename D>
-bool operator<=(const Smkz::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
+bool operator<=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
   return left.get() <=
-         static_cast<typename Smkz::MyGE::UniqueVar<T, D>::pointer>(nullptr);
+         static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr);
 }
 
 template <typename T, typename D>
 bool operator<=(std::nullptr_t,
-                const Smkz::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename Smkz::MyGE::UniqueVar<T, D>::pointer>(nullptr) <=
+                const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr) <=
          right.get();
 }
 
@@ -1127,7 +1127,7 @@ bool operator<=(std::nullptr_t,
 template <class Elem, typename Traits, typename T>
 std::basic_ostream<Elem, Traits>& operator<<(
     std::basic_ostream<Elem, Traits>& out,
-    const Smkz::MyGE::SharedVar<T>& obj) {
+    const My::MyGE::SharedVar<T>& obj) {
   return out << obj.get();
 }
 
@@ -1136,52 +1136,52 @@ std::basic_ostream<Elem, Traits>& operator<<(
 
 namespace std {
 template <typename T>
-void swap(Smkz::MyGE::SharedVar<T>& left,
-          Smkz::MyGE::SharedVar<T>& right) noexcept {
+void swap(My::MyGE::SharedVar<T>& left,
+          My::MyGE::SharedVar<T>& right) noexcept {
   left.swap(right);
 }
 
 template <typename T>
-void swap(Smkz::MyGE::SharedVar<T>& left, shared_ptr<T>& right) noexcept {
+void swap(My::MyGE::SharedVar<T>& left, shared_ptr<T>& right) noexcept {
   left.swap(right);
 }
 
 template <typename T>
-void swap(shared_ptr<T>& left, Smkz::MyGE::SharedVar<T>& right) noexcept {
+void swap(shared_ptr<T>& left, My::MyGE::SharedVar<T>& right) noexcept {
   right.swap(left);
 }
 
 template <typename T>
-void swap(Smkz::MyGE::WeakVar<T>& left,
-          Smkz::MyGE::WeakVar<T>& right) noexcept {
+void swap(My::MyGE::WeakVar<T>& left,
+          My::MyGE::WeakVar<T>& right) noexcept {
   left.swap(right);
 }
 
 template <typename T>
-void swap(Smkz::MyGE::WeakVar<T>& left, weak_ptr<T>& right) noexcept {
+void swap(My::MyGE::WeakVar<T>& left, weak_ptr<T>& right) noexcept {
   left.swap(right);
 }
 
 template <typename T>
-void swap(weak_ptr<T>& left, Smkz::MyGE::WeakVar<T>& right) noexcept {
+void swap(weak_ptr<T>& left, My::MyGE::WeakVar<T>& right) noexcept {
   right.swap(left);
 }
 
 template <typename T, typename Deleter>
-void swap(Smkz::MyGE::UniqueVar<T, Deleter>& left,
-          Smkz::MyGE::UniqueVar<T, Deleter>& right) noexcept {
+void swap(My::MyGE::UniqueVar<T, Deleter>& left,
+          My::MyGE::UniqueVar<T, Deleter>& right) noexcept {
   left.swap(right);
 }
 
 template <typename T, typename Deleter>
-void swap(Smkz::MyGE::UniqueVar<T, Deleter>& left,
+void swap(My::MyGE::UniqueVar<T, Deleter>& left,
           unique_ptr<T, Deleter>& right) noexcept {
   left.swap(right);
 }
 
 template <typename T, typename Deleter>
 void swap(unique_ptr<T, Deleter>& left,
-          Smkz::MyGE::UniqueVar<T, Deleter>& right) noexcept {
+          My::MyGE::UniqueVar<T, Deleter>& right) noexcept {
   right.swap(left);
 }
 }  // namespace std
@@ -1190,81 +1190,82 @@ void swap(unique_ptr<T, Deleter>& left,
 ///////////////
 
 template <typename T>
-struct std::owner_less<Smkz::MyGE::SharedVar<T>> {
-  bool operator()(const Smkz::MyGE::SharedVar<T>& left,
-                  const Smkz::MyGE::SharedVar<T>& right) const noexcept {
+struct std::owner_less<My::MyGE::SharedVar<T>> {
+  bool operator()(const My::MyGE::SharedVar<T>& left,
+                  const My::MyGE::SharedVar<T>& right) const noexcept {
     return left.owner_before(right);
   }
 
-  bool operator()(const Smkz::MyGE::SharedVar<T>& left,
+  bool operator()(const My::MyGE::SharedVar<T>& left,
                   const std::shared_ptr<T>& right) const noexcept {
     return left.owner_before(right);
   }
 
   bool operator()(const std::shared_ptr<T>& left,
-                  const Smkz::MyGE::SharedVar<T>& right) const noexcept {
+                  const My::MyGE::SharedVar<T>& right) const noexcept {
     return right.owner_after(left);
   }
 
-  bool operator()(const Smkz::MyGE::SharedVar<T>& left,
-                  const Smkz::MyGE::WeakVar<T>& right) const noexcept {
+  bool operator()(const My::MyGE::SharedVar<T>& left,
+                  const My::MyGE::WeakVar<T>& right) const noexcept {
     return left.owner_before(right);
   }
 
-  bool operator()(const Smkz::MyGE::WeakVar<T>& left,
-                  const Smkz::MyGE::SharedVar<T>& right) const noexcept {
+  bool operator()(const My::MyGE::WeakVar<T>& left,
+                  const My::MyGE::SharedVar<T>& right) const noexcept {
     return left.owner_before(right);
   }
 
-  bool operator()(const Smkz::MyGE::SharedVar<T>& left,
+  bool operator()(const My::MyGE::SharedVar<T>& left,
                   const std::weak_ptr<T>& right) const noexcept {
     return left.owner_before(right);
   }
 
   bool operator()(const std::weak_ptr<T>& left,
-                  const Smkz::MyGE::SharedVar<T>& right) const noexcept {
+                  const My::MyGE::SharedVar<T>& right) const noexcept {
     return right.owner_after(right);
   }
 };
 
 template <typename T>
-struct std::owner_less<Smkz::MyGE::WeakVar<T>> {
-  bool operator()(const Smkz::MyGE::WeakVar<T>& left,
-                  const Smkz::MyGE::WeakVar<T>& right) const noexcept {
+struct std::owner_less<My::MyGE::WeakVar<T>> {
+  bool operator()(const My::MyGE::WeakVar<T>& left,
+                  const My::MyGE::WeakVar<T>& right) const noexcept {
     return left.owner_before(right);
   }
 
-  bool operator()(const Smkz::MyGE::WeakVar<T>& left,
+  bool operator()(const My::MyGE::WeakVar<T>& left,
                   const std::weak_ptr<T>& right) const noexcept {
     return left.owner_before(right);
   }
 
   bool operator()(const std::weak_ptr<T>& left,
-                  const Smkz::MyGE::WeakVar<T>& right) const noexcept {
+                  const My::MyGE::WeakVar<T>& right) const noexcept {
     return right.owner_after(left);
   }
 };
 
 template <typename T>
-struct Smkz::MyDRefl::details::TypeAutoRegister<Smkz::MyGE::SharedVar<T>> {
+struct My::MyDRefl::details::TypeAutoRegister<My::MyGE::SharedVar<T>> {
   static void run(ReflMngr& mngr) {
     mngr.AddMethod<
-        MemFuncOf<Smkz::MyGE::SharedVar<T>,
-                  Smkz::MyGE::SharedVar<T>&(Smkz::MyDRefl::SharedObject)>::
-            template get(&Smkz::MyGE::SharedVar<T>::operator=)>(
-        Smkz::MyDRefl::NameIDRegistry::Meta::operator_assignment);
-    mngr.AddConstructor<Smkz::MyGE::SharedVar<T>,
-                        Smkz::MyDRefl::SharedObject>();
+        MemFuncOf<My::MyGE::SharedVar<T>,
+                  My::MyGE::SharedVar<T>&(My::MyDRefl::SharedObject)>::
+            get(&My::MyGE::SharedVar<T>::operator=)>(
+        My::MyDRefl::NameIDRegistry::Meta::operator_assignment);
+    mngr.AddConstructor<My::MyGE::SharedVar<T>,
+                        My::MyDRefl::SharedObject>();
     mngr.AddMethod<
-        MemFuncOf<Smkz::MyGE::SharedVar<T>, Smkz::MyDRefl::SharedObject()>::
-            template get(&Smkz::MyGE::SharedVar<T>::cast_to_shared_obj)>(
+        MemFuncOf<My::MyGE::SharedVar<T>, My::MyDRefl::SharedObject()>::
+            get(&My::MyGE::SharedVar<T>::cast_to_shared_obj)>(
         "cast_to_shared_obj");
-    mngr.AddMethod<MemFuncOf<Smkz::MyGE::SharedVar<T>,
-                             Smkz::MyDRefl::SharedObject() const>::
-                       template get(
-                           &Smkz::MyGE::SharedVar<T>::cast_to_shared_obj)>(
+    mngr.AddMethod<MemFuncOf<My::MyGE::SharedVar<T>,
+                             My::MyDRefl::SharedObject() const>::
+                       get(
+                           &My::MyGE::SharedVar<T>::cast_to_shared_obj)>(
         "cast_to_shared_obj");
-    Smkz::MyDRefl::details::TypeAutoRegister_Default<
-        Smkz::MyGE::SharedVar<T>>::run(mngr);
+    My::MyDRefl::details::TypeAutoRegister_Default<
+        My::MyGE::SharedVar<T>>::run(mngr);
   }
 };
+

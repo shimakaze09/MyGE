@@ -8,14 +8,14 @@
 #include <_deps/crossguid/guid.hpp>
 #include <iostream>
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyECS;
-using namespace Smkz::MyDRefl;
-using namespace Smkz;
+using namespace My::MyGE;
+using namespace My::MyECS;
+using namespace My::MyDRefl;
+using namespace My;
 using namespace rapidjson;
 using namespace std;
 
-namespace Smkz::MyGE::details {
+namespace My::MyGE::details {
 static bool Traits_BeginEnd(Type t) {
   bool contain_begin = false, contain_end = false;
   for (const auto& [name, info] : MethodRange(t)) {
@@ -40,7 +40,7 @@ static AddMode Traits_AddMode(Type t) {
   }
   return AddMode::None;
 }
-}  // namespace Smkz::MyGE::details
+}  // namespace My::MyGE::details
 
 struct Serializer::Impl {
   Visitor<void(const void*, SerializeContext&)> serializer;
@@ -201,7 +201,7 @@ void Serializer::SerializeRecursion(MyDRefl::ObjectView obj,
     } else
       ctx.writer.String(Key::NotSupport);
   } else if (obj.GetType().GetName().starts_with(
-                 "Smkz::MyGE::SharedVar<")) {  // TODO
+                 "My::MyGE::SharedVar<")) {  // TODO
     auto sobj = obj.Invoke("cast_to_shared_obj");
     if (AssetMngr::Instance().Contains(sobj.GetPtr())) {
       ctx.writer.StartObject();
@@ -219,27 +219,27 @@ void Serializer::SerializeRecursion(MyDRefl::ObjectView obj,
              attr.GetType().Valid()) {
     ContainerType ct = attr.As<ContainerType>();
     switch (ct) {
-      case Smkz::MyDRefl::ContainerType::Span:
-      case Smkz::MyDRefl::ContainerType::Stack:
-      case Smkz::MyDRefl::ContainerType::Queue:
-      case Smkz::MyDRefl::ContainerType::PriorityQueue:
-      case Smkz::MyDRefl::ContainerType::None:
+      case My::MyDRefl::ContainerType::Span:
+      case My::MyDRefl::ContainerType::Stack:
+      case My::MyDRefl::ContainerType::Queue:
+      case My::MyDRefl::ContainerType::PriorityQueue:
+      case My::MyDRefl::ContainerType::None:
         ctx.writer.String(Key::NotSupport);
         break;
-      case Smkz::MyDRefl::ContainerType::Array:
-      case Smkz::MyDRefl::ContainerType::Deque:
-      case Smkz::MyDRefl::ContainerType::ForwardList:
-      case Smkz::MyDRefl::ContainerType::List:
-      case Smkz::MyDRefl::ContainerType::MultiSet:
-      case Smkz::MyDRefl::ContainerType::Map:
-      case Smkz::MyDRefl::ContainerType::MultiMap:
-      case Smkz::MyDRefl::ContainerType::RawArray:
-      case Smkz::MyDRefl::ContainerType::Set:
-      case Smkz::MyDRefl::ContainerType::UnorderedMap:
-      case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
-      case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
-      case Smkz::MyDRefl::ContainerType::UnorderedSet:
-      case Smkz::MyDRefl::ContainerType::Vector:
+      case My::MyDRefl::ContainerType::Array:
+      case My::MyDRefl::ContainerType::Deque:
+      case My::MyDRefl::ContainerType::ForwardList:
+      case My::MyDRefl::ContainerType::List:
+      case My::MyDRefl::ContainerType::MultiSet:
+      case My::MyDRefl::ContainerType::Map:
+      case My::MyDRefl::ContainerType::MultiMap:
+      case My::MyDRefl::ContainerType::RawArray:
+      case My::MyDRefl::ContainerType::Set:
+      case My::MyDRefl::ContainerType::UnorderedMap:
+      case My::MyDRefl::ContainerType::UnorderedMultiSet:
+      case My::MyDRefl::ContainerType::UnorderedMultiMap:
+      case My::MyDRefl::ContainerType::UnorderedSet:
+      case My::MyDRefl::ContainerType::Vector:
         ctx.writer.StartArray();
         {
           auto e = obj.end();
@@ -248,8 +248,8 @@ void Serializer::SerializeRecursion(MyDRefl::ObjectView obj,
         }
         ctx.writer.EndArray();
         break;
-      case Smkz::MyDRefl::ContainerType::Pair:
-      case Smkz::MyDRefl::ContainerType::Tuple:
+      case My::MyDRefl::ContainerType::Pair:
+      case My::MyDRefl::ContainerType::Tuple:
         ctx.writer.StartArray();
         {
           std::size_t size = obj.tuple_size();
@@ -258,10 +258,10 @@ void Serializer::SerializeRecursion(MyDRefl::ObjectView obj,
         }
         ctx.writer.EndArray();
         break;
-      case Smkz::MyDRefl::ContainerType::Variant:
+      case My::MyDRefl::ContainerType::Variant:
         SerializeRecursion(obj.variant_visit_get().RemoveReference(), ctx);
         break;
-      case Smkz::MyDRefl::ContainerType::Optional:
+      case My::MyDRefl::ContainerType::Optional:
         if (obj.has_value())
           SerializeRecursion(obj.value().RemoveReference(), ctx);
         else
@@ -356,7 +356,7 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
     return Mngr.MakeShared(
         Type_of<SharedObject>,
         TempArgsView{ObjectView{Type_of<SharedObject>, &obj}});
-  } else if (type.GetName().starts_with("Smkz::MyGE::SharedVar<")) {  // TODO
+  } else if (type.GetName().starts_with("My::MyGE::SharedVar<")) {  // TODO
     if (!content.IsObject()) return {};  // not support
 
     auto asset = content.GetObject();
@@ -423,14 +423,14 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
              attr.GetType().Valid()) {
     ContainerType ct = attr.As<ContainerType>();
     switch (ct) {
-      case Smkz::MyDRefl::ContainerType::Span:
-      case Smkz::MyDRefl::ContainerType::Stack:
-      case Smkz::MyDRefl::ContainerType::Queue:
-      case Smkz::MyDRefl::ContainerType::PriorityQueue:
-      case Smkz::MyDRefl::ContainerType::None:
+      case My::MyDRefl::ContainerType::Span:
+      case My::MyDRefl::ContainerType::Stack:
+      case My::MyDRefl::ContainerType::Queue:
+      case My::MyDRefl::ContainerType::PriorityQueue:
+      case My::MyDRefl::ContainerType::None:
         return {};
-      case Smkz::MyDRefl::ContainerType::RawArray:
-      case Smkz::MyDRefl::ContainerType::Array: {
+      case My::MyDRefl::ContainerType::RawArray:
+      case My::MyDRefl::ContainerType::Array: {
         auto obj = Mngr.MakeShared(type);
         const auto& arr = content.GetArray();
         std::size_t N = obj.size();
@@ -444,9 +444,9 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
         }
         return obj;
       }
-      case Smkz::MyDRefl::ContainerType::Deque:
-      case Smkz::MyDRefl::ContainerType::Vector:
-      case Smkz::MyDRefl::ContainerType::List: {
+      case My::MyDRefl::ContainerType::Deque:
+      case My::MyDRefl::ContainerType::Vector:
+      case My::MyDRefl::ContainerType::List: {
         auto obj = Mngr.MakeShared(type);
         const auto& arr = content.GetArray();
         std::size_t N = arr.Size();
@@ -455,7 +455,7 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
               arr[static_cast<rapidjson::SizeType>(i)], ctx));
         return obj;
       }
-      case Smkz::MyDRefl::ContainerType::ForwardList: {
+      case My::MyDRefl::ContainerType::ForwardList: {
         auto obj = Mngr.MakeShared(type);
         const auto& arr = content.GetArray();
         std::size_t N = arr.Size();
@@ -464,14 +464,14 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
               arr[static_cast<rapidjson::SizeType>(N - 1 - i)], ctx));
         return obj;
       }
-      case Smkz::MyDRefl::ContainerType::MultiSet:
-      case Smkz::MyDRefl::ContainerType::MultiMap:
-      case Smkz::MyDRefl::ContainerType::Set:
-      case Smkz::MyDRefl::ContainerType::Map:
-      case Smkz::MyDRefl::ContainerType::UnorderedMap:
-      case Smkz::MyDRefl::ContainerType::UnorderedMultiSet:
-      case Smkz::MyDRefl::ContainerType::UnorderedMultiMap:
-      case Smkz::MyDRefl::ContainerType::UnorderedSet: {
+      case My::MyDRefl::ContainerType::MultiSet:
+      case My::MyDRefl::ContainerType::MultiMap:
+      case My::MyDRefl::ContainerType::Set:
+      case My::MyDRefl::ContainerType::Map:
+      case My::MyDRefl::ContainerType::UnorderedMap:
+      case My::MyDRefl::ContainerType::UnorderedMultiSet:
+      case My::MyDRefl::ContainerType::UnorderedMultiMap:
+      case My::MyDRefl::ContainerType::UnorderedSet: {
         auto obj = Mngr.MakeShared(type);
         const auto& arr = content.GetArray();
         std::size_t N = arr.Size();
@@ -480,8 +480,8 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
               arr[static_cast<rapidjson::SizeType>(i)], ctx));
         return obj;
       }
-      case Smkz::MyDRefl::ContainerType::Pair:
-      case Smkz::MyDRefl::ContainerType::Tuple: {
+      case My::MyDRefl::ContainerType::Pair:
+      case My::MyDRefl::ContainerType::Tuple: {
         std::vector<SharedObject> args;
         const auto& arr = content.GetArray();
         std::size_t N = arr.Size();
@@ -497,10 +497,10 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
         ArgsView argsview(argptrs.data(), argtypes);
         return Mngr.MakeShared(type, argsview);
       }
-      case Smkz::MyDRefl::ContainerType::Variant:
+      case My::MyDRefl::ContainerType::Variant:
         return Mngr.MakeShared(
             type, TempArgsView{DeserializeRecursion(content, ctx)});
-      case Smkz::MyDRefl::ContainerType::Optional:
+      case My::MyDRefl::ContainerType::Optional:
         if (content.IsNull())
           return Mngr.MakeShared(type);
         else
@@ -520,16 +520,16 @@ MyDRefl::SharedObject Serializer::DeserializeRecursion(
       auto ele =
           DeserializeRecursion(arr[static_cast<rapidjson::SizeType>(i)], ctx);
       switch (addmode) {
-        case Smkz::MyGE::details::AddMode::PushBack:
+        case My::MyGE::details::AddMode::PushBack:
           obj.push_back(ele);
           break;
-        case Smkz::MyGE::details::AddMode::PushFront:
+        case My::MyGE::details::AddMode::PushFront:
           obj.push_front(ele);
           break;
-        case Smkz::MyGE::details::AddMode::Insert:
+        case My::MyGE::details::AddMode::Insert:
           obj.insert(ele);
           break;
-        case Smkz::MyGE::details::AddMode::Push:
+        case My::MyGE::details::AddMode::Push:
           obj.push(ele);
           break;
         default:
@@ -699,3 +699,4 @@ void Serializer::RegisterSerializeFunction(TypeID id, SerializeFunc func) {
 void Serializer::RegisterDeserializeFunction(TypeID id, DeserializeFunc func) {
   pImpl->deserializer.Register(id.GetValue(), std::move(func));
 }
+

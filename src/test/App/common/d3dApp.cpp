@@ -53,7 +53,7 @@ void D3DApp::Set4xMsaaState(bool value) {
 int D3DApp::Run() {
   MSG msg = {0};
 
-  Smkz::MyGE::GameTimer::Instance().Reset();
+  My::MyGE::GameTimer::Instance().Reset();
 
   while (msg.message != WM_QUIT) {
     // If there are Window messages then process them.
@@ -63,7 +63,7 @@ int D3DApp::Run() {
     }
     // Otherwise, do animation/game stuff.
     else {
-      Smkz::MyGE::GameTimer::Instance().Tick();
+      My::MyGE::GameTimer::Instance().Tick();
 
       if (!mAppPaused) {
         CalculateFrameStats();
@@ -211,10 +211,10 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_ACTIVATE:
       if (LOWORD(wParam) == WA_INACTIVE) {
         mAppPaused = true;
-        Smkz::MyGE::GameTimer::Instance().Stop();
+        My::MyGE::GameTimer::Instance().Stop();
       } else {
         mAppPaused = false;
-        Smkz::MyGE::GameTimer::Instance().Start();
+        My::MyGE::GameTimer::Instance().Start();
       }
       return 0;
 
@@ -268,7 +268,7 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_ENTERSIZEMOVE:
       mAppPaused = true;
       mResizing = true;
-      Smkz::MyGE::GameTimer::Instance().Stop();
+      My::MyGE::GameTimer::Instance().Stop();
       return 0;
 
     // WM_EXITSIZEMOVE is sent when the user releases the resize bars.
@@ -276,7 +276,7 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_EXITSIZEMOVE:
       mAppPaused = false;
       mResizing = false;
-      Smkz::MyGE::GameTimer::Instance().Start();
+      My::MyGE::GameTimer::Instance().Start();
       OnResize();
       return 0;
 
@@ -522,7 +522,7 @@ void D3DApp::CalculateFrameStats() {
   frameCnt++;
 
   // Compute averages over one second period.
-  if ((Smkz::MyGE::GameTimer::Instance().TotalTime() - timeElapsed) >= 1.0f) {
+  if ((My::MyGE::GameTimer::Instance().TotalTime() - timeElapsed) >= 1.0f) {
     float fps = (float)frameCnt;  // fps = frameCnt / 1
     float mspf = 1000.0f / fps;
 

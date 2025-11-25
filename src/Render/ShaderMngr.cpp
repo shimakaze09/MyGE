@@ -1,7 +1,7 @@
 #include <MyGE/Render/Shader.h>
 #include <MyGE/Render/ShaderMngr.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 void ShaderMngr::Register(std::shared_ptr<Shader> shader) {
   shaderMap[shader->name] = shader;
@@ -22,3 +22,4 @@ void ShaderMngr::Refresh() {
     if (iter_copy->second.expired()) shaderMap.erase(iter);
   }
 }
+

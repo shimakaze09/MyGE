@@ -1,18 +1,18 @@
 #include <MyGE/Render/Mesh.h>
 #include <MyGE/Render/MeshImporter.h>
 #include <_deps/tinyobjloader/tiny_obj_loader.h>
-#ifdef SMKZ_MYGE_USE_ASSIMP
+#ifdef My_MYGE_USE_ASSIMP
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
 #include <assimp/Importer.hpp>
-#endif  // SMKZ_MYGE_USE_ASSIMP
+#endif  // My_MYGE_USE_ASSIMP
 
 #include <filesystem>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
-namespace Smkz::MyGE::details {
+namespace My::MyGE::details {
 struct MeshContext {
   std::vector<pointf3> positions;
   std::vector<rgbf> colors;
@@ -25,14 +25,14 @@ struct MeshContext {
 static std::shared_ptr<Mesh> BuildMesh(MeshContext ctx);
 static std::shared_ptr<Mesh> LoadObj(const std::filesystem::path& path);
 
-#ifdef SMKZ_MYGE_USE_ASSIMP
+#ifdef My_MYGE_USE_ASSIMP
 static std::shared_ptr<Mesh> AssimpLoadMesh(const std::filesystem::path& path);
 static void AssimpLoadNode(MeshContext& ctx, const aiNode* node,
                            const aiScene* scene);
 static void AssimpLoadMesh(MeshContext& ctx, const aiMesh* mesh,
                            const aiScene* scene);
-#endif  // SMKZ_MYGE_USE_ASSIMP
-}  // namespace Smkz::MyGE::details
+#endif  // My_MYGE_USE_ASSIMP
+}  // namespace My::MyGE::details
 
 void MeshImporter::RegisterToMyDRefl() { RegisterToMyDReflHelper(); }
 
@@ -45,10 +45,10 @@ AssetImportContext MeshImporter::ImportAsset() const {
   auto ext = path.extension();
   std::shared_ptr<Mesh> mesh;
   if (ext == LR"(.obj)") mesh = details::LoadObj(path);
-#ifdef SMKZ_MYGE_USE_ASSIMP
+#ifdef My_MYGE_USE_ASSIMP
   else if (ext == LR"(.ply)")
     mesh = details::AssimpLoadMesh(path);
-#endif  // SMKZ_MYGE_USE_ASSIMP
+#endif  // My_MYGE_USE_ASSIMP
 
   ctx.AddObject(name, MyDRefl::SharedObject{Type_of<Mesh>, mesh});
   ctx.SetMainObjectID(name);
@@ -59,13 +59,13 @@ AssetImportContext MeshImporter::ImportAsset() const {
 std::vector<std::string> MeshImporterCreator::SupportedExtentions() const {
   return {
       ".obj",
-#ifdef SMKZ_MYGE_USE_ASSIMP
+#ifdef My_MYGE_USE_ASSIMP
       ".ply",
-#endif  // SMKZ_MYGE_USE_ASSIMP
+#endif  // My_MYGE_USE_ASSIMP
   };
 }
 
-std::shared_ptr<Mesh> Smkz::MyGE::details::BuildMesh(MeshContext ctx) {
+std::shared_ptr<Mesh> My::MyGE::details::BuildMesh(MeshContext ctx) {
   auto mesh = std::make_shared<Mesh>();
   mesh->SetPositions(std::move(ctx.positions));
   mesh->SetColors(std::move(ctx.colors));
@@ -86,7 +86,7 @@ std::shared_ptr<Mesh> Smkz::MyGE::details::BuildMesh(MeshContext ctx) {
   return mesh;
 }
 
-std::shared_ptr<Mesh> Smkz::MyGE::details::LoadObj(
+std::shared_ptr<Mesh> My::MyGE::details::LoadObj(
     const std::filesystem::path& path) {
   tinyobj::ObjReader reader;
 
@@ -167,8 +167,8 @@ std::shared_ptr<Mesh> Smkz::MyGE::details::LoadObj(
   return BuildMesh(std::move(ctx));
 }
 
-#ifdef SMKZ_MYGE_USE_ASSIMP
-void Smkz::MyGE::details::AssimpLoadNode(MeshContext& ctx, const aiNode* node,
+#ifdef My_MYGE_USE_ASSIMP
+void My::MyGE::details::AssimpLoadNode(MeshContext& ctx, const aiNode* node,
                                            const aiScene* scene) {
   for (unsigned int i = 0; i < node->mNumMeshes; i++) {
     aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
@@ -179,7 +179,7 @@ void Smkz::MyGE::details::AssimpLoadNode(MeshContext& ctx, const aiNode* node,
     AssimpLoadNode(ctx, node->mChildren[i], scene);
 }
 
-void Smkz::MyGE::details::AssimpLoadMesh(MeshContext& ctx, const aiMesh* mesh,
+void My::MyGE::details::AssimpLoadMesh(MeshContext& ctx, const aiMesh* mesh,
                                            const aiScene* scene) {
   SubMeshDescriptor desc{ctx.indices.size(), mesh->mNumFaces * 3};
   desc.baseVertex = ctx.positions.size();
@@ -239,7 +239,7 @@ void Smkz::MyGE::details::AssimpLoadMesh(MeshContext& ctx, const aiMesh* mesh,
   }
 }
 
-std::shared_ptr<Mesh> Smkz::MyGE::details::AssimpLoadMesh(
+std::shared_ptr<Mesh> My::MyGE::details::AssimpLoadMesh(
     const std::filesystem::path& path) {
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(
@@ -254,4 +254,5 @@ std::shared_ptr<Mesh> Smkz::MyGE::details::AssimpLoadMesh(
 
   return BuildMesh(std::move(ctx));
 }
-#endif  // SMKZ_MYGE_USE_ASSIMP
+#endif  // My_MYGE_USE_ASSIMP
+

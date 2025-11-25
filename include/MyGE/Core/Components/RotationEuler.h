@@ -2,8 +2,9 @@
 
 #include <MyGM/euler.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct RotationEuler {
   eulerf value{0.f};
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

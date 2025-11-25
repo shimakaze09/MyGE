@@ -2,19 +2,19 @@
 
 #include "ShaderImporterRegisterImpl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-namespace Smkz::MyGE::details {
+namespace My::MyGE::details {
 template <typename T, std::size_t... Ns>
 void simple_register_variant_alternatives(ReflMngr& mngr,
                                           std::index_sequence<Ns...>) {
-  (Smkz::MyDRefl::details::register_variant_ctor_assign<T, Ns>(mngr), ...);
+  (My::MyDRefl::details::register_variant_ctor_assign<T, Ns>(mngr), ...);
 }
-}  // namespace Smkz::MyGE::details
+}  // namespace My::MyGE::details
 
 template <>
-struct Smkz::MyDRefl::details::TypeAutoRegister<ShaderPropertyVariant> {
+struct My::MyDRefl::details::TypeAutoRegister<ShaderPropertyVariant> {
   static auto run(MyDRefl::ReflMngr& mngr) {
     using T = ShaderPropertyVariant;
     mngr.AddConstructor<T>();
@@ -69,7 +69,7 @@ struct Smkz::MyDRefl::details::TypeAutoRegister<ShaderPropertyVariant> {
                          [](const T& t) {
                            return runtime_get<std::variant_size>(t, t.index());
                          });
-    Smkz::MyGE::details::simple_register_variant_alternatives<T>(
+    My::MyGE::details::simple_register_variant_alternatives<T>(
         mngr, std::make_index_sequence<std::variant_size_v<T>>{});
 
     mngr.AddTypeAttr(Type_of<T>,
@@ -78,6 +78,7 @@ struct Smkz::MyDRefl::details::TypeAutoRegister<ShaderPropertyVariant> {
   }
 };
 
-void Smkz::MyGE::details::ShaderImporterRegister_Shader_2() {
+void My::MyGE::details::ShaderImporterRegister_Shader_2() {
   MyDRefl::Mngr.AddField<&Shader::properties>("properties");
 }
+

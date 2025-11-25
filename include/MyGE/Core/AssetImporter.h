@@ -6,7 +6,7 @@
 
 #include "Serializer.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class AssetImportContext {
  public:
   void AddObject(std::string id, MyDRefl::SharedObject obj) {
@@ -139,7 +139,7 @@ class AssetImporterCreator {
     auto importer_base =
         importer_impl.StaticCast_DerivedToBase(Type_of<AssetImporter>);
     if (!importer_base) return {};
-    auto importer = importer_base.AsShared<AssetImporter>();
+    auto importer = std::shared_ptr<AssetImporter>(importer_impl.GetBuffer(), importer_base.AsPtr<AssetImporter>());
     return importer;
   }
 
@@ -200,4 +200,5 @@ class DefaultAssetImporterCreator final
     return {};
   }
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

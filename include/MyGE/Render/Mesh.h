@@ -7,7 +7,7 @@
 #include "GPURsrc.h"
 #include "SubMeshDescriptor.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 // Non-editable mesh is space-saving (release CPU vertex buffer and GPU upload
 // buffer). If you want to change any data of the mesh, you should call
 // SetToEditable() firstly. After editing, you can call SetToNonEditable() to
@@ -72,4 +72,5 @@ class Mesh : public GPURsrc {
   std::vector<uint8_t> vertexBuffer;
   bool vertexBuffer_dirty{true};
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

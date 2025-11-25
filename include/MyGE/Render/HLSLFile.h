@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class HLSLFile {
  public:
   HLSLFile(std::string text, std::string localDir)
@@ -15,4 +15,5 @@ class HLSLFile {
   std::string text;
   std::string localDir;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

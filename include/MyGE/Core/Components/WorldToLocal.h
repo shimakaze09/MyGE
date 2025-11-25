@@ -2,8 +2,9 @@
 
 #include <MyGM/transform.hpp>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct WorldToLocal {
   transformf value{transformf::eye()};
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

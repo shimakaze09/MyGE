@@ -13,7 +13,7 @@
 
 #include "AssetImporter.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 // ref: https://docs.unity3d.com/ScriptReference/AssetDatabase.html
 class AssetMngr {
  public:
@@ -108,6 +108,7 @@ class AssetMngr {
   AssetMngr();
   ~AssetMngr();
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
 
 #include "details/AssetMngr.inl"
+

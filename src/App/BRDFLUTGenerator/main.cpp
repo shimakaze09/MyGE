@@ -4,8 +4,8 @@
 #include <iostream>
 #include <thread>
 
-using namespace Smkz::MyGE;
-using namespace Smkz;
+using namespace My::MyGE;
+using namespace My;
 using namespace std;
 
 float _RadicalInverse_VdC(unsigned bits) {
@@ -118,3 +118,4 @@ int main() {
 
   return 0;
 }
+

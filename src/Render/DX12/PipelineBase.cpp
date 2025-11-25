@@ -4,7 +4,7 @@
 #include <MyGE/Render/Material.h>
 #include <MyGE/Render/Shader.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 PipelineBase::ShaderCBDesc PipelineBase::UpdateShaderCBs(
     ShaderCBMngrDX12& shaderCBMngr, const Shader& shader,
@@ -313,3 +313,4 @@ void PipelineBase::SetPSODescForRenderState(
     desc.BlendState.RenderTarget[i].RenderTargetWriteMask =
         renderState.colorMask[i];
 }
+

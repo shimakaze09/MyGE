@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class GameTimer {
  public:
   static GameTimer& Instance() noexcept {
@@ -32,4 +32,5 @@ class GameTimer {
 
   bool mStopped;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

@@ -2,7 +2,7 @@
 
 #include <MyDRefl/MyDRefl.hpp>
 
-namespace Smkz::MyGE::details {
+namespace My::MyGE::details {
 void ShaderImporterRegister_Blend();
 void ShaderImporterRegister_BlendOp();
 void ShaderImporterRegister_BlendState();
@@ -21,4 +21,5 @@ void ShaderImporterRegister_Shader_3();
 void ShaderImporterRegister_ShaderProperty();
 void ShaderImporterRegister_StencilOp();
 void ShaderImporterRegister_StencilState();
-}  // namespace Smkz::MyGE::details
+}  // namespace My::MyGE::details
+

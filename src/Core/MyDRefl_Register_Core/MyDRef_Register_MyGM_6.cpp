@@ -3,11 +3,12 @@
 
 #include "MyDRefl_Register_Core_impl.h"
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyDRefl;
+using namespace My::MyGE;
+using namespace My::MyDRefl;
 
-void Smkz::MyGE::details::MyDRefl_Register_MyGM_6() {
+void My::MyGE::details::MyDRefl_Register_MyGM_6() {
   Mngr.RegisterType<scalef2>();
   Mngr.RegisterType<scalef3>();
   Mngr.RegisterType<scalef4>();
 }
+

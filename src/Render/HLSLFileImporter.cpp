@@ -3,7 +3,7 @@
 
 #include <filesystem>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 void HLSLFileImporter::RegisterToMyDRefl() { RegisterToMyDReflHelper(); }
 
@@ -35,3 +35,4 @@ AssetImportContext HLSLFileImporter::ImportAsset() const {
 std::vector<std::string> HLSLFileImporterCreator::SupportedExtentions() const {
   return {".hlsl"};
 }
+

@@ -5,7 +5,7 @@
 
 #include "RenderState.h"
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct ShaderPass {
   std::string vertexName;
   std::string fragmentName;
@@ -28,4 +28,5 @@ struct ShaderPass {
   };
   size_t queue{2000};
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

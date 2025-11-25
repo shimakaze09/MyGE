@@ -6,8 +6,8 @@
 #include <MyGE/Core/Systems/TRSToLocalToParentSystem.h>
 #include <MyGE/Core/Systems/TRSToLocalToWorldSystem.h>
 
-using namespace Smkz::MyGE;
-using namespace Smkz::MyECS;
+using namespace My::MyGE;
+using namespace My::MyECS;
 
 void LocalToParentSystem::ChildLocalDeserializeToWorld(
     World* w, const transformf& parent_l2w, Entity e) {
@@ -46,3 +46,4 @@ void LocalToParentSystem::OnUpdate(Schedule& schedule) {
   schedule.Order(TRSToLocalToWorldSystem::SystemFuncName,
                  LocalToParentSystem::SystemFuncName);
 }
+

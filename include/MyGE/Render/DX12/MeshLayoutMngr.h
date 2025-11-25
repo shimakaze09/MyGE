@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class Mesh;
 
 /*
@@ -47,6 +47,7 @@ class MeshLayoutMngr {
 
   std::unordered_map<size_t, std::vector<D3D12_INPUT_ELEMENT_DESC>> layoutMap;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
 
 #include "details/MeshLayoutMngr.inl"
+

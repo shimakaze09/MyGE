@@ -3,7 +3,7 @@
 #include <_deps/crossguid/guid.hpp>
 #include <string>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 struct ProjectViewer {
   xg::Guid selectedFolder;
   xg::Guid selectedAsset;
@@ -12,4 +12,5 @@ struct ProjectViewer {
   bool isRenaming{false};
   std::string rename;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
+

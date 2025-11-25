@@ -1,6 +1,6 @@
 #include <MyGE/Render/Mesh.h>
 
-using namespace Smkz::MyGE;
+using namespace My::MyGE;
 
 void Mesh::SetPositions(std::vector<pointf3> positions) noexcept {
   if (!IsEditable()) return;
@@ -271,3 +271,4 @@ size_t Mesh::GetVertexBufferVertexStride() {
   if (vertexBuffer_dirty) UpdateVertexBuffer();
   return vertexBuffer.size() / positions.size();
 }
+

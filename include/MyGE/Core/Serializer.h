@@ -9,7 +9,7 @@
 #include <MyECS/MyECS.hpp>
 #include <string>
 
-namespace Smkz::MyGE {
+namespace My::MyGE {
 class Serializer {
  public:
   static Serializer& Instance() {
@@ -92,6 +92,7 @@ class Serializer {
   struct Impl;
   Impl* pImpl;
 };
-}  // namespace Smkz::MyGE
+}  // namespace My::MyGE
 
 #include "details/Serializer.inl"
+
