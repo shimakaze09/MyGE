@@ -30,11 +30,11 @@ struct RotateSystem {
     filter.all = {My::MyECS::AccessTypeID_of<My::MyGE::MeshFilter>};
     schedule.RegisterEntityJob(
         [](My::MyGE::Rotation* rot, My::MyGE::Translation* trans) {
-          rot->value = rot->value *
-                       My::quatf{My::vecf3{0, 1, 0}, My::to_radian(2.f)};
+          rot->value =
+              rot->value * My::quatf{My::vecf3{0, 1, 0}, My::to_radian(2.f)};
           trans->value +=
               0.2f * (My::vecf3{My::rand01<float>(), My::rand01<float>(),
-                                  My::rand01<float>()} -
+                                My::rand01<float>()} -
                       My::vecf3{0.5f});
         },
         "rotate", true, filter);
@@ -95,7 +95,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     WorldApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    if (!theApp.Initialize())
+      return 0;
 
     rst = theApp.Run();
   } catch (My::MyDX12::Util::Exception& e) {
@@ -106,7 +107,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 #ifndef NDEBUG
   Microsoft::WRL::ComPtr<IDXGIDebug> debug;
   DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug));
-  if (debug) debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
+  if (debug)
+    debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
 #endif
 
   return 1;
@@ -116,18 +118,21 @@ WorldApp::WorldApp(HINSTANCE hInstance) : D3DApp(hInstance) {}
 
 WorldApp::~WorldApp() {
   My::MyGE::GPURsrcMngrDX12::Instance().Clear(myCmdQueue.Get());
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 }
 
 bool WorldApp::Initialize() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   My::MyGE::GPURsrcMngrDX12::Instance().Init(myDevice.raw.Get());
 
   My::MyDX12::DescriptorHeapMngr::Instance().Init(myDevice.raw.Get(), 1024,
-                                                    1024, 1024, 1024, 1024);
+                                                  1024, 1024, 1024, 1024);
 
   frameRsrcMngr = std::make_unique<My::MyDX12::FrameResourceMngr>(
       gNumFrameResources, myDevice.raw.Get());
@@ -152,7 +157,7 @@ bool WorldApp::Initialize() {
   world.RunEntityJob(
       [&](My::MyGE::MeshFilter* meshFilter) {
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
-                                                             *meshFilter->mesh);
+                                                           *meshFilter->mesh);
       },
       false);
 
@@ -205,25 +210,29 @@ void WorldApp::Update() {
   world.RunEntityJob(
       [&](My::MyGE::MeshFilter* meshFilter,
           const My::MyGE::MeshRenderer* meshRenderer) {
-        if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
+        if (!meshFilter->mesh || meshRenderer->materials.empty())
+          return;
 
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
-                                                             *meshFilter->mesh);
+                                                           *meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
-          if (!material) continue;
+          if (!material)
+            continue;
           for (const auto& [name, property] : material->properties) {
             if (std::holds_alternative<
                     My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)) {
               My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-                  const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
-                      property.value)));
+                  const_cast<My::MyGE::Texture2D&>(
+                      *std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+                          property.value)));
             } else if (std::holds_alternative<
                            My::MyGE::SharedVar<My::MyGE::TextureCube>>(
                            property.value)) {
               My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-                  const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
-                      property.value)));
+                  const_cast<My::MyGE::TextureCube&>(
+                      *std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                          property.value)));
             }
           }
         }
@@ -236,13 +245,16 @@ void WorldApp::Update() {
       if (std::holds_alternative<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
               property.value)) {
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-            const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)));
+            const_cast<My::MyGE::Texture2D&>(
+                *std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+                    property.value)));
       } else if (std::holds_alternative<
                      My::MyGE::SharedVar<My::MyGE::TextureCube>>(
                      property.value)) {
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-            const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
-                property.value)));
+            const_cast<My::MyGE::TextureCube&>(
+                *std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                    property.value)));
       }
     }
   }
@@ -279,7 +291,9 @@ void WorldApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void WorldApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void WorldApp::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -312,16 +326,15 @@ void WorldApp::OnMouseMove(WPARAM btnState, int x, int y) {
 }
 
 void WorldApp::UpdateCamera() {
-  My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi),
-                     mRadius * cosf(mTheta),
-                     mRadius * sinf(mTheta) * cosf(mPhi)};
+  My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
+                   mRadius * sinf(mTheta) * cosf(mPhi)};
   auto camera = world.entityMngr.WriteComponent<My::MyGE::Camera>(cam);
   camera->fov = 60.f;
   camera->aspect = AspectRatio();
   camera->clippingPlaneMin = 1.0f;
   camera->clippingPlaneMax = 1000.0f;
-  auto view = My::transformf::look_at(eye.as<My::pointf3>(),
-                                        {0.f});  // world to camera
+  auto view =
+      My::transformf::look_at(eye.as<My::pointf3>(), {0.f});  // world to camera
   auto c2w = view.inverse();
   world.entityMngr.WriteComponent<My::MyGE::Translation>(cam)->value = eye;
   world.entityMngr.WriteComponent<My::MyGE::Rotation>(cam)->value =
@@ -334,7 +347,8 @@ void WorldApp::BuildWorld() {
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       RotateSystem>();
-  for (auto ID : systemIDs) world.systemMngr.Activate(ID);
+  for (auto ID : systemIDs)
+    world.systemMngr.Activate(ID);
 
   {  // skybox
     std::vector<My::TypeID> types = {My::TypeID_of<My::MyGE::Skybox>};
@@ -348,22 +362,19 @@ void WorldApp::BuildWorld() {
 
   std::vector<My::TypeID> camTypes = {
       My::TypeID_of<My::MyGE::LocalToWorld>,
-      My::TypeID_of<My::MyGE::WorldToLocal>,
-      My::TypeID_of<My::MyGE::Camera>,
-      My::TypeID_of<My::MyGE::Translation>,
-      My::TypeID_of<My::MyGE::Rotation>};
+      My::TypeID_of<My::MyGE::WorldToLocal>, My::TypeID_of<My::MyGE::Camera>,
+      My::TypeID_of<My::MyGE::Translation>, My::TypeID_of<My::MyGE::Rotation>};
   cam = world.entityMngr.Create(camTypes);
 
   int num = 11;
   auto cubeMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
       L"..\\assets\\models\\cube.obj");
-  std::vector<My::TypeID> cubeTypes = {
-      My::TypeID_of<My::MyGE::LocalToWorld>,
-      My::TypeID_of<My::MyGE::MeshFilter>,
-      My::TypeID_of<My::MyGE::MeshRenderer>,
-      My::TypeID_of<My::MyGE::Translation>,
-      My::TypeID_of<My::MyGE::Rotation>,
-      My::TypeID_of<My::MyGE::Scale>};
+  std::vector<My::TypeID> cubeTypes = {My::TypeID_of<My::MyGE::LocalToWorld>,
+                                       My::TypeID_of<My::MyGE::MeshFilter>,
+                                       My::TypeID_of<My::MyGE::MeshRenderer>,
+                                       My::TypeID_of<My::MyGE::Translation>,
+                                       My::TypeID_of<My::MyGE::Rotation>,
+                                       My::TypeID_of<My::MyGE::Scale>};
   for (int i = 0; i < num; i++) {
     for (int j = 0; j < num; j++) {
       auto cube = world.entityMngr.Create(cubeTypes);
@@ -371,7 +382,8 @@ void WorldApp::BuildWorld() {
       auto s = world.entityMngr.WriteComponent<My::MyGE::Scale>(cube);
       s->value = 0.2f;
       t->value = {0.5f * (i - num / 2), 0.5f * (j - num / 2), 0};
-      world.entityMngr.WriteComponent<My::MyGE::MeshFilter>(cube)->mesh = cubeMesh;
+      world.entityMngr.WriteComponent<My::MyGE::MeshFilter>(cube)->mesh =
+          cubeMesh;
     }
   }
 }
@@ -382,8 +394,7 @@ void WorldApp::LoadTextures() {
   for (const auto& guid : tex2dGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            path));
+        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
   }
 
   auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
@@ -408,11 +419,9 @@ void WorldApp::BuildShaders() {
 }
 
 void WorldApp::BuildMaterials() {
-  auto material =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
-          L"..\\assets\\materials\\iron.mat");
+  auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
+      L"..\\assets\\materials\\iron.mat");
   world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
     meshRenderer->materials.push_back(material);
   });
 }
-

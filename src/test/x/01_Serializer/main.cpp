@@ -34,6 +34,7 @@ struct B {
 
 struct C {
   MyDRefl::SharedObject asset;
+
   friend bool operator==(const C& lhs, const C& rhs) {
     return lhs.asset.GetPtr() == rhs.asset.GetPtr();
   }
@@ -48,6 +49,7 @@ struct D {
   std::optional<C> v_o0;
   std::optional<C> v_o1;
   vecf3 v_vecf3;
+
   friend bool operator==(const D& lhs, const D& rhs) {
     return lhs.v_vec == rhs.v_vec && lhs.v_vec_obj == rhs.v_vec_obj &&
            lhs.v_t == rhs.v_t && lhs.v_v0 == rhs.v_v0 && lhs.v_v1 == rhs.v_v1 &&
@@ -58,6 +60,7 @@ struct D {
 
 struct E {
   SharedVar<DefaultAsset> asset;
+
   friend bool operator==(const E& lhs, const E& rhs) {
     return lhs.asset.get() == rhs.asset.get();
   }
@@ -175,4 +178,3 @@ int main() {
     assert(f2 == f);
   }
 }
-

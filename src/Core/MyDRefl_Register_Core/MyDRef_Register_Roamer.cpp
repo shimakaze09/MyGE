@@ -15,4 +15,3 @@ void My::MyGE::details::MyDRefl_Register_Roamer() {
   Mngr.AddField<&Roamer::reverseLeftRight>("reverseLeftRight");
   Mngr.AddField<&Roamer::reverseFrontBack>("reverseFrontBack");
 }
-

@@ -11,8 +11,7 @@ void TextureImporter::RegisterToMyDRefl() {
 
   MyDRefl::Mngr.RegisterType<TextureImporter::Mode>();
   MyDRefl::Mngr.AddField<TextureImporter::Mode::Texture2D>("Texture2D");
-  MyDRefl::Mngr.AddField<TextureImporter::Mode::TextureCube>(
-      "TextureCube");
+  MyDRefl::Mngr.AddField<TextureImporter::Mode::TextureCube>("TextureCube");
 
   MyDRefl::Mngr.RegisterType<Texture2D>();
   MyDRefl::Mngr.RegisterType<TextureCube>();
@@ -23,7 +22,8 @@ void TextureImporter::RegisterToMyDRefl() {
 AssetImportContext TextureImporter::ImportAsset() const {
   AssetImportContext ctx;
   auto path = GetFullPath();
-  if (path.empty()) return {};
+  if (path.empty())
+    return {};
 
   std::string name = path.stem().string();
 
@@ -53,4 +53,3 @@ AssetImportContext TextureImporter::ImportAsset() const {
 std::vector<std::string> TextureImporterCreator::SupportedExtentions() const {
   return {".png", ".bmp", ".tga", ".jpg", ".hdr"};
 }
-

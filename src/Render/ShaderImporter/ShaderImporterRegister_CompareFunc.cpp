@@ -16,4 +16,3 @@ void My::MyGE::details::ShaderImporterRegister_CompareFunc() {
   MyDRefl::Mngr.AddField<CompareFunc::GREATER_EQUAL>("GREATER_EQUAL");
   MyDRefl::Mngr.AddField<CompareFunc::ALWAYS>("ALWAYS");
 }
-

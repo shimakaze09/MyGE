@@ -14,11 +14,11 @@
 #include <MyDX12/MyDX12.h>
 #include <MyDX12/_deps/DirectXTK12/ResourceUploadBatch.h>
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
-#include <MyFG/MyFG.hpp>
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <windows.h>
 #include <wrl.h>
+#include <MyFG/MyFG.hpp>
 
 #include <algorithm>
 #include <array>
@@ -40,11 +40,13 @@ inline void d3dSetDebugName(IDXGIObject* obj, const char* name) {
     obj->SetPrivateData(WKPDID_D3DDebugObjectName, lstrlenA(name), name);
   }
 }
+
 inline void d3dSetDebugName(ID3D12Device* obj, const char* name) {
   if (obj) {
     obj->SetPrivateData(WKPDID_D3DDebugObjectName, lstrlenA(name), name);
   }
 }
+
 inline void d3dSetDebugName(ID3D12DeviceChild* obj, const char* name) {
   if (obj) {
     obj->SetPrivateData(WKPDID_D3DDebugObjectName, lstrlenA(name), name);

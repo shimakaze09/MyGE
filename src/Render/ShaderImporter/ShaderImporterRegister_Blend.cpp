@@ -25,4 +25,3 @@ void My::MyGE::details::ShaderImporterRegister_Blend() {
   MyDRefl::Mngr.AddField<Blend::SRC1_ALPHA>("SRC1_ALPHA");
   MyDRefl::Mngr.AddField<Blend::INV_SRC1_ALPHA>("INV_SRC1_ALPHA");
 }
-

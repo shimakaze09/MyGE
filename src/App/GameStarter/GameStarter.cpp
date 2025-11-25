@@ -1,11 +1,11 @@
 #include <MyGE/App/DX12App/DX12App.h>
 #include <MyGE/Core/AssetMngr.h>
-#include <MyGE/Core/Serializer.h>
 #include <MyGE/Core/Components/Components.h>
 #include <MyGE/Core/GameTimer.h>
 #include <MyGE/Core/ImGUIMngr.h>
-#include <MyGE/Core/WorldAssetImporter.h>
+#include <MyGE/Core/Serializer.h>
 #include <MyGE/Core/Systems/Systems.h>
+#include <MyGE/Core/WorldAssetImporter.h>
 #include <MyGE/Render/Components/Components.h>
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
 #include <MyGE/Render/DX12/StdPipeline.h>
@@ -109,21 +109,25 @@ LRESULT GameStarter::MsgProc(HWND hwnd, UINT msg, WPARAM wParam,
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-      if (imguiWantCaptureMouse) return 0;
+      if (imguiWantCaptureMouse)
+        return 0;
       OnMouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_LBUTTONUP:
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
-      if (imguiWantCaptureMouse) return 0;
+      if (imguiWantCaptureMouse)
+        return 0;
       OnMouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_MOUSEMOVE:
-      if (imguiWantCaptureMouse) return 0;
+      if (imguiWantCaptureMouse)
+        return 0;
       OnMouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_KEYUP:
-      if (imguiWantCaptureKeyboard) return 0;
+      if (imguiWantCaptureKeyboard)
+        return 0;
       if (wParam == VK_ESCAPE) {
         PostQuitMessage(0);
       }
@@ -144,7 +148,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
   int rst;
   try {
     GameStarter theApp(hInstance);
-    if (!theApp.Init()) return 1;
+    if (!theApp.Init())
+      return 1;
 
     rst = theApp.Run();
   } catch (My::MyDX12::Util::Exception& e) {
@@ -155,7 +160,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 #ifdef _DEBUG
   ComPtr<IDXGIDebug> debug;
   DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug));
-  if (debug) debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
+  if (debug)
+    debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_DETAIL);
 #endif  // _DEBUG
 
   return rst;
@@ -164,18 +170,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 GameStarter::GameStarter(HINSTANCE hInstance) : DX12App(hInstance) {}
 
 GameStarter::~GameStarter() {
-  if (!myDevice.IsNull()) FlushCommandQueue();
+  if (!myDevice.IsNull())
+    FlushCommandQueue();
 
   My::MyGE::ImGUIMngr::Instance().Clear();
 }
 
 bool GameStarter::Init() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   My::MyGE::ImGUIMngr::Instance().Init(MainWnd(), myDevice.Get(),
-                                         NumFrameResources, 1);
+                                       NumFrameResources, 1);
   gameImGuiCtx = My::MyGE::ImGUIMngr::Instance().GetContexts().at(0);
 
   My::MyGE::AssetMngr::Instance().ImportAssetRecursively(L"..\\assets");
@@ -192,8 +201,7 @@ bool GameStarter::Init() {
   initDesc.numFrame = NumFrameResources;
   pipeline = std::make_unique<My::MyGE::StdPipeline>(initDesc);
 
-  My::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
-      myCmdQueue.Get());
+  My::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(myCmdQueue.Get());
 
   // Do the initial resize code.
   OnResize();
@@ -225,7 +233,8 @@ void GameStarter::Update() {
   // 1. Show the big demo window (Most of the sample code is in
   // ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear
   // ImGui!).
-  if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
+  if (show_demo_window)
+    ImGui::ShowDemoWindow(&show_demo_window);
 
   // 2. Show a simple window that we create ourselves. We use a Begin/End pair
   // to created a named window.
@@ -267,7 +276,8 @@ void GameStarter::Update() {
                                 // window will have a closing button that will
                                 // clear the bool when clicked)
     ImGui::Text("Hello from another window!");
-    if (ImGui::Button("Close Me")) show_another_window = false;
+    if (ImGui::Button("Close Me"))
+      show_another_window = false;
     ImGui::End();
   }
 
@@ -288,25 +298,29 @@ void GameStarter::Update() {
   world.RunEntityJob(
       [&](My::MyGE::MeshFilter* meshFilter,
           const My::MyGE::MeshRenderer* meshRenderer) {
-        if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
+        if (!meshFilter->mesh || meshRenderer->materials.empty())
+          return;
 
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
-                                                             *meshFilter->mesh);
+                                                           *meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
-          if (!material) continue;
+          if (!material)
+            continue;
           for (const auto& [name, property] : material->properties) {
             if (std::holds_alternative<
                     My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)) {
               My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-                  const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
-                      property.value)));
+                  const_cast<My::MyGE::Texture2D&>(
+                      *std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+                          property.value)));
             } else if (std::holds_alternative<
                            My::MyGE::SharedVar<My::MyGE::TextureCube>>(
                            property.value)) {
               My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-                  const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
-                      property.value)));
+                  const_cast<My::MyGE::TextureCube&>(
+                      *std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                          property.value)));
             }
           }
         }
@@ -319,13 +333,16 @@ void GameStarter::Update() {
       if (std::holds_alternative<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
               property.value)) {
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-            const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)));
+            const_cast<My::MyGE::Texture2D&>(
+                *std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+                    property.value)));
       } else if (std::holds_alternative<
                      My::MyGE::SharedVar<My::MyGE::TextureCube>>(
                      property.value)) {
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-            const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
-                property.value)));
+            const_cast<My::MyGE::TextureCube&>(
+                *std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                    property.value)));
       }
     }
   }
@@ -333,8 +350,7 @@ void GameStarter::Update() {
   // commit upload, delete ...
   myGCmdList->Close();
   myCmdQueue.Execute(myGCmdList.Get());
-  My::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(
-      myCmdQueue.Get());
+  My::MyGE::GPURsrcMngrDX12::Instance().CommitUploadAndDelete(myCmdQueue.Get());
 
   std::vector<My::MyGE::PipelineBase::CameraData> gameCameras;
   My::MyECS::ArchetypeFilter camFilter{
@@ -385,7 +401,9 @@ void GameStarter::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(MainWnd());
 }
 
-void GameStarter::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void GameStarter::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void GameStarter::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -416,13 +434,12 @@ void GameStarter::OnMouseMove(WPARAM btnState, int x, int y) {
 }
 
 void GameStarter::UpdateCamera() {
-  My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi),
-                     mRadius * cosf(mTheta),
-                     mRadius * sinf(mTheta) * cosf(mPhi)};
+  My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
+                   mRadius * sinf(mTheta) * cosf(mPhi)};
   auto camera = world.entityMngr.WriteComponent<My::MyGE::Camera>(cam);
   camera->aspect = AspectRatio();
-  auto view = My::transformf::look_at(eye.as<My::pointf3>(),
-                                        {0.f});  // world to camera
+  auto view =
+      My::transformf::look_at(eye.as<My::pointf3>(), {0.f});  // world to camera
   auto c2w = view.inverse();
   world.entityMngr.WriteComponent<My::MyGE::Translation>(cam)->value = eye;
   world.entityMngr.WriteComponent<My::MyGE::Rotation>(cam)->value =
@@ -435,7 +452,8 @@ void GameStarter::BuildWorld() {
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem>();
-  for (auto ID : systemIDs) world.systemMngr.Activate(ID);
+  for (auto ID : systemIDs)
+    world.systemMngr.Activate(ID);
 
   world.entityMngr.cmptTraits.Register<
       // core
@@ -490,11 +508,9 @@ void GameStarter::BuildWorld() {
   world.RunEntityJob(
       [&](My::MyECS::Entity e, const My::MyGE::Camera*) {
         if (cam == My::MyECS::Entity::Invalid())
-            cam = e;
+          cam = e;
       },
-      false,
-      {{My::MyECS::AccessTypeID_of<My::MyGE::Camera>}, {}, {}}
-  );
+      false, {{My::MyECS::AccessTypeID_of<My::MyGE::Camera>}, {}, {}});
   OutputDebugStringA(
       My::MyGE::Serializer::Instance().Serialize(&world).c_str());
 
@@ -513,8 +529,7 @@ void GameStarter::LoadTextures() {
   for (const auto& guid : tex2dGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            path));
+        *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(path));
   }
 
   auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
@@ -537,4 +552,3 @@ void GameStarter::BuildShaders() {
     My::MyGE::ShaderMngr::Instance().Register(shader);
   }
 }
-

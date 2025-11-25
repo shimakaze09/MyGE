@@ -10,4 +10,3 @@ void My::MyGE::details::ShaderImporterRegister_Shader() {
   MyDRefl::Mngr.AddField<&Shader::hlslFile>("hlslFile");
   MyDRefl::Mngr.AddField<&Shader::name>("name");
 }
-

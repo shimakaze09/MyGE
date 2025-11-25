@@ -11,4 +11,3 @@ void My::MyGE::details::MyDRefl_Register_Parent() {
   Mngr.RegisterType<Parent>();
   Mngr.AddField<&Parent::value>("value");
 }
-

@@ -48,6 +48,7 @@ using Microsoft::WRL::ComPtr;
 
 struct Editor::Impl {
   Impl(Editor* editor) : pEditor{editor}, curGameWorld{&gameWorld} {}
+
   ~Impl();
 
   Editor* pEditor;
@@ -164,7 +165,8 @@ LRESULT Editor::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   // to your editor application.
   switch (msg) {
     case WM_KEYUP:
-      if (imguiWantCaptureKeyboard) return 0;
+      if (imguiWantCaptureKeyboard)
+        return 0;
       if (wParam == VK_ESCAPE) {
         PostQuitMessage(0);
       }
@@ -184,29 +186,45 @@ Editor::~Editor() {
 }
 
 bool Editor::Init() {
-  if (!InitMainWindow()) return false;
+  if (!InitMainWindow())
+    return false;
 
-  if (!InitDirect3D()) return false;
+  if (!InitDirect3D())
+    return false;
 
   OnResize();
 
-  if (!pImpl->Init()) return false;
+  if (!pImpl->Init())
+    return false;
 
   FlushCommandQueue();
 
   return true;
 }
 
-World* Editor::GetGameWorld() { return &pImpl->gameWorld; }
+World* Editor::GetGameWorld() {
+  return &pImpl->gameWorld;
+}
 
-World* Editor::GetSceneWorld() { return &pImpl->sceneWorld; }
-World* Editor::GetEditorWorld() { return &pImpl->editorWorld; }
+World* Editor::GetSceneWorld() {
+  return &pImpl->sceneWorld;
+}
 
-MyECS::World* Editor::GetCurrentGameWorld() { return pImpl->curGameWorld; }
+World* Editor::GetEditorWorld() {
+  return &pImpl->editorWorld;
+}
 
-void Editor::Update() { pImpl->Update(); }
+MyECS::World* Editor::GetCurrentGameWorld() {
+  return pImpl->curGameWorld;
+}
 
-void Editor::Draw() { pImpl->Draw(); }
+void Editor::Update() {
+  pImpl->Update();
+}
+
+void Editor::Draw() {
+  pImpl->Draw();
+}
 
 Editor::Impl::~Impl() {
   if (!gameRT_SRV.IsNull())
@@ -396,9 +414,11 @@ void Editor::Impl::Update() {
     if (!opt_padding)
       ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("DockSpace Demo", nullptr, window_flags);
-    if (!opt_padding) ImGui::PopStyleVar();
+    if (!opt_padding)
+      ImGui::PopStyleVar();
 
-    if (opt_fullscreen) ImGui::PopStyleVar(2);
+    if (opt_fullscreen)
+      ImGui::PopStyleVar(2);
 
     // DockSpace
     ImGuiIO& io = ImGui::GetIO();
@@ -575,13 +595,15 @@ void Editor::Impl::Update() {
   auto UpdateRenderResource = [&](My::MyECS::World* w) {
     w->RunEntityJob(
         [&](MeshFilter* meshFilter, MeshRenderer* meshRenderer) {
-          if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
+          if (!meshFilter->mesh || meshRenderer->materials.empty())
+            return;
 
           GPURsrcMngrDX12::Instance().RegisterMesh(pEditor->myGCmdList.Get(),
                                                    *meshFilter->mesh);
 
           for (auto& material : meshRenderer->materials) {
-            if (!material) continue;
+            if (!material)
+              continue;
             for (auto& [name, property] : material->properties) {
               if (std::holds_alternative<SharedVar<Texture2D>>(
                       property.value)) {
@@ -621,8 +643,7 @@ void Editor::Impl::Update() {
 
   {
     std::vector<PipelineBase::CameraData> gameCameras;
-    My::MyECS::ArchetypeFilter camFilter{
-        {My::MyECS::AccessTypeID_of<Camera>}};
+    My::MyECS::ArchetypeFilter camFilter{{My::MyECS::AccessTypeID_of<Camera>}};
     curGameWorld->RunEntityJob(
         [&](My::MyECS::Entity e) {
           gameCameras.emplace_back(e, *curGameWorld);
@@ -639,12 +660,9 @@ void Editor::Impl::Update() {
 
   {
     std::vector<PipelineBase::CameraData> sceneCameras;
-    My::MyECS::ArchetypeFilter camFilter{
-        {My::MyECS::AccessTypeID_of<Camera>}};
+    My::MyECS::ArchetypeFilter camFilter{{My::MyECS::AccessTypeID_of<Camera>}};
     sceneWorld.RunEntityJob(
-        [&](My::MyECS::Entity e) {
-          sceneCameras.emplace_back(e, sceneWorld);
-        },
+        [&](My::MyECS::Entity e) { sceneCameras.emplace_back(e, sceneWorld); },
         false, camFilter);
     assert(sceneCameras.empty() ||
            sceneCameras.size() == 1);  // now only support 0/1 camera
@@ -760,7 +778,8 @@ void Editor::Impl::InitWorld(My::MyECS::World& w) {
       // editor
       HierarchySystem, InspectorSystem, ProjectViewerSystem,
       SystemControllerSystem>();
-  for (auto idx : indices) w.systemMngr.Activate(idx);
+  for (auto idx : indices)
+    w.systemMngr.Activate(idx);
 
   w.entityMngr.cmptTraits.Register<
       // transform
@@ -836,8 +855,7 @@ void Editor::Impl::LoadTextures() {
     const auto& path = AssetMngr::Instance().GUIDToAssetPath(guid);
     auto asset = AssetMngr::Instance().LoadMainAsset(path);
     if (asset.GetType().Is<Texture2D>())
-      GPURsrcMngrDX12::Instance().RegisterTexture2D(
-          *asset.AsPtr<Texture2D>());
+      GPURsrcMngrDX12::Instance().RegisterTexture2D(*asset.AsPtr<Texture2D>());
     else if (asset.GetType().Is<TextureCube>())
       GPURsrcMngrDX12::Instance().RegisterTextureCube(
           *asset.AsPtr<TextureCube>());
@@ -929,4 +947,3 @@ void Editor::Impl::BuildShaders() {
 //		AssetMngr::Instance().ReserializeAsset(path);
 //	}
 // }
-

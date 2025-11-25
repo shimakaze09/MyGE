@@ -10,4 +10,3 @@ void My::MyGE::details::ShaderImporterRegister_FillMode() {
   MyDRefl::Mngr.AddField<FillMode::WIREFRAME>("WIREFRAME");
   MyDRefl::Mngr.AddField<FillMode::SOLID>("SOLID");
 }
-

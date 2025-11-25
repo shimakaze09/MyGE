@@ -11,4 +11,3 @@ void My::MyGE::details::ShaderImporterRegister_RootDescriptorType() {
   MyDRefl::Mngr.AddField<RootDescriptorType::UAV>("UAV");
   MyDRefl::Mngr.AddField<RootDescriptorType::CBV>("CBV");
 }
-

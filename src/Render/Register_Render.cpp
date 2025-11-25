@@ -47,4 +47,3 @@ void My::MyGE::MyDRefl_Register_Render() {
   Mngr.RegisterType<Skybox>();
   Mngr.AddField<&Skybox::material>("materials");
 }
-

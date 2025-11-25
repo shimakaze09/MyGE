@@ -16,4 +16,3 @@ void My::MyGE::details::ShaderImporterRegister_StencilOp() {
   MyDRefl::Mngr.AddField<StencilOp::INCR>("INCR");
   MyDRefl::Mngr.AddField<StencilOp::DECR>("DECR");
 }
-

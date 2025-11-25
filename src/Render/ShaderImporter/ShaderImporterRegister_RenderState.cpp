@@ -15,4 +15,3 @@ void My::MyGE::details::ShaderImporterRegister_RenderState() {
   MyDRefl::Mngr.AddField<&RenderState::blendStates>("blendStates");
   MyDRefl::Mngr.AddField<&RenderState::colorMask>("colorMask");
 }
-

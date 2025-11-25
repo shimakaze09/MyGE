@@ -23,12 +23,13 @@ const int gNumFrameResources = 3;
 
 struct AnimateMeshSystem {
   size_t cnt = 0;
+
   static void OnUpdate(My::MyECS::Schedule& schedule) {
     schedule.RegisterEntityJob(
         [](My::MyGE::MeshFilter* meshFilter,
-           My::MyECS::Latest<My::MyECS::Singleton<My::MyGE::WorldTime>>
-               time) {
-          if (!meshFilter->mesh) return;
+           My::MyECS::Latest<My::MyECS::Singleton<My::MyGE::WorldTime>> time) {
+          if (!meshFilter->mesh)
+            return;
           if (time->elapsedTime < 5.f) {
             if (meshFilter->mesh->IsEditable()) {
               auto positions = meshFilter->mesh->GetPositions();
@@ -52,9 +53,9 @@ struct AnimateMeshSystem {
         "AnimateMesh");
     schedule.RegisterEntityJob(
         [](My::MyGE::MeshFilter* meshFilter,
-           My::MyECS::Latest<My::MyECS::Singleton<My::MyGE::WorldTime>>
-               time) {
-          if (!meshFilter->mesh) return;
+           My::MyECS::Latest<My::MyECS::Singleton<My::MyGE::WorldTime>> time) {
+          if (!meshFilter->mesh)
+            return;
           if (time->elapsedTime > 10.f) {
             My::MyGE::GPURsrcMngrDX12::Instance().UnregisterMesh(
                 meshFilter->mesh->GetInstanceID());
@@ -62,14 +63,18 @@ struct AnimateMeshSystem {
           }
         },
         "DeleteMesh");
-    schedule.RegisterJob([](My::MyECS::World* w) {
-      auto time = w->entityMngr.ReadSingleton<My::MyGE::WorldTime>();
-      if (!time) return;
+    schedule.RegisterJob(
+        [](My::MyECS::World* w) {
+          auto time = w->entityMngr.ReadSingleton<My::MyGE::WorldTime>();
+          if (!time)
+            return;
 
-      if (time->elapsedTime < 12.f) return;
+          if (time->elapsedTime < 12.f)
+            return;
 
-      w->systemMngr.Deactivate<AnimateMeshSystem>();
-    }, "StopAnimateMesh");
+          w->systemMngr.Deactivate<AnimateMeshSystem>();
+        },
+        "StopAnimateMesh");
   }
 };
 
@@ -125,7 +130,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine,
 
   try {
     DynamicMeshApp theApp(hInstance);
-    if (!theApp.Initialize()) return 0;
+    if (!theApp.Initialize())
+      return 0;
 
     rst = theApp.Run();
   } catch (My::MyDX12::Util::Exception& e) {
@@ -143,7 +149,8 @@ DynamicMeshApp::DynamicMeshApp(HINSTANCE hInstance) : D3DApp(hInstance) {
 DynamicMeshApp::~DynamicMeshApp() {}
 
 bool DynamicMeshApp::Initialize() {
-  if (!D3DApp::Initialize()) return false;
+  if (!D3DApp::Initialize())
+    return false;
 
   // Reset the command list to prep for initialization commands.
   ThrowIfFailed(myGCmdList->Reset(mDirectCmdListAlloc.Get(), nullptr));
@@ -160,7 +167,7 @@ bool DynamicMeshApp::Initialize() {
   world.RunEntityJob(
       [&](My::MyGE::MeshFilter* meshFilter) {
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
-                                                             *meshFilter->mesh);
+                                                           *meshFilter->mesh);
       },
       false);
 
@@ -213,25 +220,29 @@ void DynamicMeshApp::Update() {
   world.RunEntityJob(
       [&](My::MyGE::MeshFilter* meshFilter,
           const My::MyGE::MeshRenderer* meshRenderer) {
-        if (!meshFilter->mesh || meshRenderer->materials.empty()) return;
+        if (!meshFilter->mesh || meshRenderer->materials.empty())
+          return;
 
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterMesh(myGCmdList.Get(),
-                                                             *meshFilter->mesh);
+                                                           *meshFilter->mesh);
 
         for (const auto& material : meshRenderer->materials) {
-          if (!material) continue;
+          if (!material)
+            continue;
           for (const auto& [name, property] : material->properties) {
             if (std::holds_alternative<
                     My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)) {
               My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-                  const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
-                      property.value)));
+                  const_cast<My::MyGE::Texture2D&>(
+                      *std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+                          property.value)));
             } else if (std::holds_alternative<
                            My::MyGE::SharedVar<My::MyGE::TextureCube>>(
                            property.value)) {
               My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-                  const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
-                      property.value)));
+                  const_cast<My::MyGE::TextureCube&>(
+                      *std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                          property.value)));
             }
           }
         }
@@ -244,13 +255,16 @@ void DynamicMeshApp::Update() {
       if (std::holds_alternative<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
               property.value)) {
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-            const_cast<My::MyGE::Texture2D&>(*std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(property.value)));
+            const_cast<My::MyGE::Texture2D&>(
+                *std::get<My::MyGE::SharedVar<My::MyGE::Texture2D>>(
+                    property.value)));
       } else if (std::holds_alternative<
                      My::MyGE::SharedVar<My::MyGE::TextureCube>>(
                      property.value)) {
         My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-            const_cast<My::MyGE::TextureCube&>(*std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
-                property.value)));
+            const_cast<My::MyGE::TextureCube&>(
+                *std::get<My::MyGE::SharedVar<My::MyGE::TextureCube>>(
+                    property.value)));
       }
     }
   }
@@ -287,7 +301,9 @@ void DynamicMeshApp::OnMouseDown(WPARAM btnState, int x, int y) {
   SetCapture(mhMainWnd);
 }
 
-void DynamicMeshApp::OnMouseUp(WPARAM btnState, int x, int y) { ReleaseCapture(); }
+void DynamicMeshApp::OnMouseUp(WPARAM btnState, int x, int y) {
+  ReleaseCapture();
+}
 
 void DynamicMeshApp::OnMouseMove(WPARAM btnState, int x, int y) {
   if ((btnState & MK_LBUTTON) != 0) {
@@ -320,16 +336,15 @@ void DynamicMeshApp::OnMouseMove(WPARAM btnState, int x, int y) {
 }
 
 void DynamicMeshApp::UpdateCamera() {
-  My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi),
-                     mRadius * cosf(mTheta),
-                     mRadius * sinf(mTheta) * cosf(mPhi)};
+  My::vecf3 eye = {mRadius * sinf(mTheta) * sinf(mPhi), mRadius * cosf(mTheta),
+                   mRadius * sinf(mTheta) * cosf(mPhi)};
   auto camera = world.entityMngr.WriteComponent<My::MyGE::Camera>(cam);
   camera->fov = 60.f;
   camera->aspect = AspectRatio();
   camera->clippingPlaneMin = 1.0f;
   camera->clippingPlaneMax = 1000.0f;
-  auto view = My::transformf::look_at(eye.as<My::pointf3>(),
-                                        {0.f});  // world to camera
+  auto view =
+      My::transformf::look_at(eye.as<My::pointf3>(), {0.f});  // world to camera
   auto c2w = view.inverse();
   world.entityMngr.WriteComponent<My::MyGE::Translation>(cam)->value = eye;
   world.entityMngr.WriteComponent<My::MyGE::Rotation>(cam)->value =
@@ -342,7 +357,8 @@ void DynamicMeshApp::BuildWorld() {
       My::MyGE::RotationEulerSystem, My::MyGE::TRSToLocalToParentSystem,
       My::MyGE::TRSToLocalToWorldSystem, My::MyGE::WorldToLocalSystem,
       My::MyGE::WorldTimeSystem, AnimateMeshSystem>();
-  for (auto ID : systemIDs) world.systemMngr.Activate(ID);
+  for (auto ID : systemIDs)
+    world.systemMngr.Activate(ID);
 
   {  // skybox
     std::vector<My::TypeID> types = {My::TypeID_of<My::MyGE::Skybox>};
@@ -355,13 +371,11 @@ void DynamicMeshApp::BuildWorld() {
   }
 
   {
-    std::vector<My::TypeID> camTypes = {
-        My::TypeID_of<My::MyGE::LocalToWorld>,
-        My::TypeID_of<My::MyGE::WorldToLocal>,
-        My::TypeID_of<My::MyGE::Camera>,
-        My::TypeID_of<My::MyGE::Translation>,
-        My::TypeID_of<My::MyGE::Rotation>
-    };
+    std::vector<My::TypeID> camTypes = {My::TypeID_of<My::MyGE::LocalToWorld>,
+                                        My::TypeID_of<My::MyGE::WorldToLocal>,
+                                        My::TypeID_of<My::MyGE::Camera>,
+                                        My::TypeID_of<My::MyGE::Translation>,
+                                        My::TypeID_of<My::MyGE::Rotation>};
     cam = world.entityMngr.Create(camTypes);
   }
   {
@@ -371,14 +385,12 @@ void DynamicMeshApp::BuildWorld() {
 
   auto quadMesh = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Mesh>(
       "../assets/models/quad.obj");
-  std::vector<My::TypeID> cubeTypes = {
-      My::TypeID_of<My::MyGE::LocalToWorld>,
-      My::TypeID_of<My::MyGE::MeshFilter>,
-      My::TypeID_of<My::MyGE::MeshRenderer>,
-      My::TypeID_of<My::MyGE::Translation>,
-      My::TypeID_of<My::MyGE::Rotation>,
-      My::TypeID_of<My::MyGE::Scale>
-  };
+  std::vector<My::TypeID> cubeTypes = {My::TypeID_of<My::MyGE::LocalToWorld>,
+                                       My::TypeID_of<My::MyGE::MeshFilter>,
+                                       My::TypeID_of<My::MyGE::MeshRenderer>,
+                                       My::TypeID_of<My::MyGE::Translation>,
+                                       My::TypeID_of<My::MyGE::Rotation>,
+                                       My::TypeID_of<My::MyGE::Scale>};
   auto dynamicCube = world.entityMngr.Create(cubeTypes);
   dynamicMesh = std::make_shared<My::MyGE::Mesh>();
   dynamicMesh->SetPositions(quadMesh->GetPositions());
@@ -388,7 +400,8 @@ void DynamicMeshApp::BuildWorld() {
   dynamicMesh->SetSubMeshCount(quadMesh->GetSubMeshes().size());
   for (size_t i = 0; i < quadMesh->GetSubMeshes().size(); i++)
     dynamicMesh->SetSubMesh(i, quadMesh->GetSubMeshes().at(i));
-  world.entityMngr.WriteComponent<My::MyGE::MeshFilter>(dynamicCube)->mesh = dynamicMesh;
+  world.entityMngr.WriteComponent<My::MyGE::MeshFilter>(dynamicCube)->mesh =
+      dynamicMesh;
 }
 
 void DynamicMeshApp::LoadTextures() {
@@ -397,8 +410,9 @@ void DynamicMeshApp::LoadTextures() {
   for (const auto& guid : tex2dGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(
-        const_cast<My::MyGE::Texture2D&>(*My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
-            path)));
+        const_cast<My::MyGE::Texture2D&>(
+            *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Texture2D>(
+                path)));
   }
 
   auto texcubeGUIDs = My::MyGE::AssetMngr::Instance().FindAssets(
@@ -406,8 +420,9 @@ void DynamicMeshApp::LoadTextures() {
   for (const auto& guid : texcubeGUIDs) {
     const auto& path = My::MyGE::AssetMngr::Instance().GUIDToAssetPath(guid);
     My::MyGE::GPURsrcMngrDX12::Instance().RegisterTextureCube(
-        const_cast<My::MyGE::TextureCube&>(*My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(
-            path)));
+        const_cast<My::MyGE::TextureCube&>(
+            *My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::TextureCube>(
+                path)));
   }
 }
 
@@ -423,13 +438,9 @@ void DynamicMeshApp::BuildShaders() {
 }
 
 void DynamicMeshApp::BuildMaterials() {
-  auto material =
-      My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
-          L"..\\assets\\materials\\iron.mat");
+  auto material = My::MyGE::AssetMngr::Instance().LoadAsset<My::MyGE::Material>(
+      L"..\\assets\\materials\\iron.mat");
   world.RunEntityJob([=](My::MyGE::MeshRenderer* meshRenderer) {
     meshRenderer->materials.push_back(material);
   });
 }
-
-
-

@@ -11,15 +11,16 @@ bool AssetMngr::CreateAsset(std::shared_ptr<T> ptr,
 template <typename T>
 std::shared_ptr<T> AssetMngr::GUIDToAsset(const xg::Guid& guid) {
   auto asset = GUIDToAsset(guid, Type_of<T>);
-  if (!asset.GetType()) return {};
+  if (!asset.GetType())
+    return {};
   return std::shared_ptr<T>(asset.GetBuffer(), asset.AsPtr<T>());
 }
 
 template <typename T>
 std::shared_ptr<T> AssetMngr::LoadAsset(const std::filesystem::path& path) {
   auto asset = LoadAsset(path, Type_of<T>);
-  if (!asset.GetType()) return {};
+  if (!asset.GetType())
+    return {};
   return std::shared_ptr<T>(asset.GetBuffer(), asset.AsPtr<T>());
 }
 }  // namespace My::MyGE
-

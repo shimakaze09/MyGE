@@ -11,4 +11,3 @@ void My::MyGE::details::MyDRefl_Register_WorldToLocal() {
   Mngr.RegisterType<WorldToLocal>();
   Mngr.AddField<&WorldToLocal::value>("value");
 }
-

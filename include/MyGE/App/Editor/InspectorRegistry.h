@@ -45,6 +45,7 @@ class InspectorRegistry {
       xg::Guid guid;
       std::string_view name;
     };
+
     static constexpr const char Asset[] = "__AssetHandle";
     static constexpr const char Entity[] = "__Entity";
   };
@@ -70,6 +71,7 @@ class InspectorRegistry {
 
   void InspectComponent(const MyECS::World*, MyECS::CmptPtr);
   void Inspect(const MyECS::World*, TypeID, void* obj);
+
   template <typename T>
     requires std::negation_v<std::is_void<std::decay_t<T>>>
   void Inspect(T* obj) {
@@ -90,4 +92,3 @@ class InspectorRegistry {
 }  // namespace My::MyGE
 
 #include "details/InspectorRegistry.inl"
-

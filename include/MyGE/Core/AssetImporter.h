@@ -12,13 +12,16 @@ class AssetImportContext {
   void AddObject(std::string id, MyDRefl::SharedObject obj) {
     assets.insert_or_assign(std::move(id), obj);
   }
+
   void SetMainObjectID(std::string id) { mainObjID = std::move(id); }
+
   const std::map<std::string, MyDRefl::SharedObject>& GetAssets()
       const noexcept {
     return assets;
   }
 
   const std::string& GetMainObjectID() const noexcept { return mainObjID; }
+
   MyDRefl::SharedObject GetMainObject() const noexcept {
     auto target = assets.find(mainObjID);
     if (target == assets.end())
@@ -56,10 +59,13 @@ class AssetImportContext {
 class AssetImporter {
  public:
   AssetImporter() = default;
+
   AssetImporter(xg::Guid guid) : guid{guid} {}
+
   virtual ~AssetImporter() = default;
 
   const xg::Guid& GetGuid() const noexcept { return guid; }
+
   std::filesystem::path GetFullPath() const;
 
   // [Tempalte]
@@ -138,8 +144,10 @@ class AssetImporterCreator {
     auto importer_impl = Serializer::Instance().Deserialize(json);
     auto importer_base =
         importer_impl.StaticCast_DerivedToBase(Type_of<AssetImporter>);
-    if (!importer_base) return {};
-    auto importer = std::shared_ptr<AssetImporter>(importer_impl.GetBuffer(), importer_base.AsPtr<AssetImporter>());
+    if (!importer_base)
+      return {};
+    auto importer = std::shared_ptr<AssetImporter>(
+        importer_impl.GetBuffer(), importer_base.AsPtr<AssetImporter>());
     return importer;
   }
 
@@ -168,6 +176,7 @@ class TAssetImporterCreator : public AssetImporterCreator {
   virtual std::shared_ptr<AssetImporter> do_CreateAssetImporter(xg::Guid guid) {
     return std::make_shared<Importer>(guid);
   }
+
   virtual std::shared_ptr<AssetImporter> do_DeserializeAssetImporter(
       std::string_view json) {
     return AssetImporterCreator::DeserializeAssetImporter(json);
@@ -176,7 +185,8 @@ class TAssetImporterCreator : public AssetImporterCreator {
  private:
   void OnceRegisterAssetImporterToMyDRefl() {
     static bool init = false;
-    if (init) return;
+    if (init)
+      return;
     Importer::RegisterToMyDRefl();
     init = true;
   }
@@ -201,4 +211,3 @@ class DefaultAssetImporterCreator final
   }
 };
 }  // namespace My::MyGE
-

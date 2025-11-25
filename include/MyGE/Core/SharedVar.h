@@ -32,18 +32,22 @@ class UniqueVar {
   ////////////////
 
   constexpr UniqueVar() noexcept = default;
+
   constexpr UniqueVar(std::nullptr_t) noexcept {}
+
   explicit UniqueVar(pointer p) noexcept : ptr{p} {}
 
   template <typename D = Deleter,
             std::enable_if_t<std::is_constructible_v<D, const D&>, int> = 0>
   UniqueVar(pointer p, const Deleter& d) noexcept : ptr{p, d} {}
+
   template <
       typename D = Deleter,
       std::enable_if_t<std::conjunction_v<std::negation<std::is_reference<D>>,
                                           std::is_constructible<D, D>>,
                        int> = 0>
   UniqueVar(pointer p, Deleter&& d) noexcept : ptr{p, std::move(d)} {}
+
   template <
       typename D = Deleter,
       std::enable_if_t<std::conjunction_v<std::is_reference<D>,
@@ -53,10 +57,12 @@ class UniqueVar {
   UniqueVar(pointer p, std::remove_reference_t<Deleter>&& d) = delete;
 
   UniqueVar(UniqueVar&& obj) noexcept : ptr{std::move(obj.ptr)} {}
+
   UniqueVar(unique_pointer_type&& ptr) noexcept : ptr{std::move(ptr)} {}
 
   template <typename U, typename E>
   UniqueVar(UniqueVar<U, E>&& obj) noexcept : ptr{std::move(obj.ptr)} {}
+
   template <typename U, typename E>
   UniqueVar(std::unique_ptr<U, E>&& ptr) noexcept : ptr{std::move(ptr)} {}
 
@@ -122,31 +128,37 @@ class UniqueVar {
   //////////////
 
   pointer release() noexcept { return ptr.release(); }
+
   pointer_to_const release() const noexcept { return ptr.release(); }
 
   template <typename U = T, std::enable_if_t<!std::is_array_v<U>, int> = 0>
   void reset(pointer p = pointer{}) noexcept {
     ptr.reset(p);
   }
+
   template <typename U = T, std::enable_if_t<std::is_array_v<U>, int> = 0>
   void reset(U p) noexcept {
     ptr.reset(p);
   }
+
   template <typename U = T, std::enable_if_t<std::is_array_v<U>, int> = 0>
   void reset(std::nullptr_t p = nullptr) noexcept {
     ptr.reset(p);
   }
 
   void swap(UniqueVar& rhs) noexcept { ptr.swap(rhs.ptr); }
+
   void swap(unique_pointer_type& rhs) noexcept { ptr.swap(rhs); }
 
   // Observers
   //////////////
 
   pointer get() noexcept { return ptr.get(); }
+
   pointer_to_const get() const noexcept { return ptr.get(); }
 
   Deleter& get_deleter() noexcept { return ptr.get_deleter(); }
+
   const Deleter& get_deleter() const noexcept { return ptr.get_deleter(); }
 
   explicit operator bool() const noexcept { return static_cast<bool>(ptr); }
@@ -158,6 +170,7 @@ class UniqueVar {
   U& operator*() & noexcept {
     return *ptr;
   }
+
   template <
       typename U = T,
       std::enable_if_t<!std::disjunction_v<std::is_array<U>, std::is_void<U>>,
@@ -165,6 +178,7 @@ class UniqueVar {
   U operator*() && noexcept {
     return std::move(*ptr);
   }
+
   template <
       typename U = T,
       std::enable_if_t<!std::disjunction_v<std::is_array<U>, std::is_void<U>>,
@@ -178,6 +192,7 @@ class UniqueVar {
   pointer operator->() noexcept {
     return ptr.operator->();
   }
+
   template <typename U = T, typename Elem = element_type,
             std::enable_if_t<std::is_array_v<U>, int> = 0>
   pointer_to_const operator->() const noexcept {
@@ -189,6 +204,7 @@ class UniqueVar {
   Elem& operator[](std::ptrdiff_t idx) noexcept {
     return ptr[idx];
   }
+
   template <typename U = T, typename Elem = element_type,
             std::enable_if_t<std::is_array_v<U>, int> = 0>
   const Elem& operator[](std::ptrdiff_t idx) const noexcept {
@@ -218,46 +234,62 @@ class SharedVar {
   ////////////////
 
   constexpr SharedVar() noexcept = default;
+
   constexpr SharedVar(std::nullptr_t) noexcept {}
+
   template <typename U>
   explicit SharedVar(U* ptr) : ptr{ptr} {}
+
   template <typename U, typename Deleter>
   SharedVar(U* ptr, Deleter d) : ptr{ptr, std::move(d)} {}
+
   template <typename Deleter>
   SharedVar(std::nullptr_t ptr, Deleter d) : ptr{ptr, std::move(d)} {}
+
   template <typename U, typename Deleter, typename Alloc>
   SharedVar(U* ptr, Deleter d, Alloc alloc)
       : ptr{ptr, std::move(d), std::move(alloc)} {}
+
   template <typename Deleter, typename Alloc>
   SharedVar(std::nullptr_t ptr, Deleter d, Alloc alloc)
       : ptr{ptr, std::move(d), std::move(alloc)} {}
 
   template <typename U>
   explicit SharedVar(const std::weak_ptr<U>& ptr) : ptr{ptr} {}
+
   template <typename U>
   explicit SharedVar(WeakVar<U>& obj) : ptr{obj.ptr} {}
 
   template <typename Y, typename Deleter>
   SharedVar(std::unique_ptr<Y, Deleter>&& r) : ptr{std::move(r)} {}
+
   template <typename Y, typename Deleter>
   SharedVar(UniqueVar<Y, Deleter>&& obj) : ptr{std::move(obj.ptr)} {}
 
   SharedVar(const shared_pointer_type& ptr) noexcept : ptr{ptr} {}
+
   SharedVar(shared_pointer_type&& ptr) noexcept : ptr{std::move(ptr)} {}
+
   template <typename U>
   SharedVar(const std::shared_ptr<U>& ptr) noexcept : ptr{ptr} {}
+
   template <typename U>
   SharedVar(std::shared_ptr<U>&& ptr) noexcept : ptr{std::move(ptr)} {}
+
   template <typename U>
   SharedVar(const std::shared_ptr<U>& r, std::remove_extent_t<T>* ptr) noexcept
       : ptr{r, ptr} {}
 
   SharedVar(const SharedVar& obj) noexcept : ptr{obj.ptr} {}
+
   SharedVar(SharedVar&& obj) noexcept : ptr{std::move(obj.ptr)} {}
+
   template <typename U>
   SharedVar(SharedVar<U>& obj) noexcept : ptr{obj.ptr} {}
+
   template <typename U>
   SharedVar(SharedVar<U>&& obj) noexcept : ptr{std::move(obj.ptr)} {}
+
   template <typename U>
   SharedVar(SharedVar<U>& r, std::remove_extent_t<T>* ptr) noexcept
       : ptr{r.ptr, ptr} {}
@@ -341,9 +373,11 @@ class SharedVar {
   /////////
 
   shared_pointer_type& cast_to_shared_ptr() & noexcept { return ptr; }
+
   shared_pointer_type cast_to_shared_ptr() && noexcept {
     return std::move(ptr);
   }
+
   std::shared_ptr<const T> cast_to_shared_ptr() const& noexcept {
     return std::static_pointer_cast<const T>(ptr);
   }
@@ -351,15 +385,19 @@ class SharedVar {
   MyDRefl::SharedObject cast_to_shared_obj() noexcept {
     return {Type_of<T>, ptr};
   }
+
   MyDRefl::SharedObject cast_to_shared_obj() const noexcept {
     return {Type_of<const T>, ptr};
   }
 
   operator shared_pointer_type&() & noexcept { return ptr; }
+
   operator shared_pointer_type() && noexcept { return std::move(ptr); }
+
   operator std::shared_ptr<const T>() const& noexcept { return ptr; }
 
   operator MyDRefl::SharedObject() noexcept { return {Type_of<T>, ptr}; }
+
   operator MyDRefl::SharedObject() const noexcept {
     return {Type_of<const T>, ptr};
   }
@@ -368,26 +406,31 @@ class SharedVar {
   //////////////
 
   void reset() noexcept { ptr.reset(); }
+
   template <typename U>
   void reset(U* ptrU) {
     ptr.reset(ptrU);
   }
+
   template <typename U, typename Deleter>
   void reset(U* ptrU, Deleter d) {
     ptr.reset(ptrU, std::move(d));
   }
+
   template <typename U, typename Deleter, typename Alloc>
   void reset(U* ptrU, Deleter d, Alloc alloc) {
     ptr.reset(ptrU, std::move(d), std::move(alloc));
   }
 
   void swap(SharedVar& rhs) noexcept { return ptr.swap(rhs.ptr); }
+
   void swap(shared_pointer_type& rhs) noexcept { return ptr.swap(rhs); }
 
   // Observers
   //////////////
 
   T* get() noexcept { return ptr.get(); }
+
   const T* get() const noexcept { return ptr.get(); }
 
   long use_count() const noexcept { return ptr.use_count(); }
@@ -399,6 +442,7 @@ class SharedVar {
   U& operator*() noexcept {
     return ptr.operator*();
   }
+
   template <
       typename U = T,
       std::enable_if_t<!std::disjunction_v<std::is_array<U>, std::is_void<U>>,
@@ -411,6 +455,7 @@ class SharedVar {
   U* operator->() noexcept {
     return ptr.operator->();
   }
+
   template <typename U = T, std::enable_if_t<!std::is_array_v<U>, int> = 0>
   const U* operator->() const noexcept {
     return ptr.operator->();
@@ -421,6 +466,7 @@ class SharedVar {
   Elem& operator[](std::ptrdiff_t idx) noexcept {
     return ptr[idx];
   }
+
   template <typename U = T, typename Elem = std::remove_extent_t<T>,
             std::enable_if_t<std::is_array_v<U>, int> = 0>
   const Elem& operator[](std::ptrdiff_t idx) const noexcept {
@@ -433,14 +479,17 @@ class SharedVar {
   bool owner_before(const SharedVar<U>& rhs) const noexcept {
     return ptr.owner_before(rhs.ptr);
   }
+
   template <typename U>
   bool owner_before(const std::shared_ptr<U>& rhs) const noexcept {
     return ptr.owner_before(rhs);
   }
+
   template <typename U>
   bool owner_before(const WeakVar<U>& rhs) const noexcept {
     return ptr.owner_before(rhs.ptr);
   }
+
   template <typename U>
   bool owner_before(const std::weak_ptr<U>& rhs) const noexcept {
     return ptr.owner_before(rhs);
@@ -450,14 +499,17 @@ class SharedVar {
   bool owner_after(const SharedVar<U>& rhs) const noexcept {
     return rhs.ptr.owner_before(ptr);
   }
+
   template <typename U>
   bool owner_after(const std::shared_ptr<U>& rhs) const noexcept {
     return rhs.owner_before(ptr);
   }
+
   template <typename U>
   bool owner_after(const WeakVar<U>& rhs) const noexcept {
     return rhs.ptr.owner_before(ptr);
   }
+
   template <typename U>
   bool owner_after(const std::weak_ptr<U>& rhs) const noexcept {
     return rhs.owner_before(ptr);
@@ -488,21 +540,28 @@ class WeakVar {
   constexpr WeakVar() noexcept = default;
 
   WeakVar(WeakVar& obj) noexcept : ptr{obj.ptr} {}
+
   WeakVar(WeakVar&& obj) noexcept : ptr{std::move(obj.ptr)} {}
+
   template <typename U>
   WeakVar(WeakVar<U>& obj) noexcept : ptr{obj.ptr} {}
+
   template <typename U>
   WeakVar(WeakVar<U>&& obj) noexcept : ptr{std::move(obj.ptr)} {}
 
   WeakVar(const weak_pointer_type& ptr) noexcept : ptr{ptr} {}
+
   WeakVar(weak_pointer_type&& ptr) noexcept : ptr{std::move(ptr)} {}
+
   template <typename U>
   WeakVar(const std::weak_ptr<U>& ptr) noexcept : ptr{ptr} {}
+
   template <typename U>
   WeakVar(std::weak_ptr<U>&& ptr) noexcept : ptr{std::move(ptr)} {}
 
   template <typename U>
   WeakVar(SharedVar<U>& obj) noexcept : ptr{obj.ptr} {}
+
   template <typename U>
   WeakVar(const std::shared_ptr<U>& ptr) noexcept : ptr{ptr} {}
 
@@ -569,13 +628,17 @@ class WeakVar {
   /////////
 
   weak_pointer_type& cast_to_weak_ptr() & noexcept { return ptr; }
+
   weak_pointer_type cast_to_weak_ptr() && noexcept { return std::move(ptr); }
+
   std::weak_ptr<const T> cast_to_weak_ptr() const& noexcept {
     return std::static_pointer_cast<const T>(ptr);
   }
 
   operator weak_pointer_type&() & noexcept { return ptr; }
+
   operator weak_pointer_type() && noexcept { return std::move(ptr); }
+
   operator std::weak_ptr<const T>() const& noexcept { return ptr; }
 
   // Modifiers
@@ -584,6 +647,7 @@ class WeakVar {
   void reset() noexcept { ptr.reset(); }
 
   void swap(WeakVar& rhs) noexcept { return ptr.swap(rhs.ptr); }
+
   void swap(weak_pointer_type& rhs) noexcept { return ptr.swap(rhs); }
 
   // Observers
@@ -594,8 +658,11 @@ class WeakVar {
   bool expired() const noexcept { return ptr.expired(); }
 
   SharedVar_type lock() noexcept { return {ptr.lock()}; }
+
   const SharedVar_type lock() const noexcept { return {ptr.lock()}; }
+
   shared_pointer_type lock_to_shared_ptr() noexcept { return ptr.lock(); }
+
   std::shared_ptr<const T> lock_to_shared_ptr() const noexcept {
     return std::static_pointer_cast<const T>(ptr.lock());
   }
@@ -604,14 +671,17 @@ class WeakVar {
   bool owner_before(const SharedVar<U>& rhs) const noexcept {
     return ptr.owner_before(rhs.ptr);
   }
+
   template <typename U>
   bool owner_before(const std::shared_ptr<U>& rhs) const noexcept {
     return ptr.owner_before(rhs);
   }
+
   template <typename U>
   bool owner_before(const WeakVar<U>& rhs) const noexcept {
     return ptr.owner_before(rhs.ptr);
   }
+
   template <typename U>
   bool owner_before(const std::weak_ptr<U>& rhs) const noexcept {
     return ptr.owner_before(rhs);
@@ -621,14 +691,17 @@ class WeakVar {
   bool owner_after(const SharedVar<U>& rhs) const noexcept {
     return rhs.ptr.owner_before(ptr);
   }
+
   template <typename U>
   bool owner_after(const std::shared_ptr<U>& rhs) const noexcept {
     return rhs.owner_before(ptr);
   }
+
   template <typename U>
   bool owner_after(const WeakVar<U>& rhs) const noexcept {
     return rhs.ptr.owner_before(ptr);
   }
+
   template <typename U>
   bool owner_after(const std::weak_ptr<U>& rhs) const noexcept {
     return rhs.owner_before(ptr);
@@ -740,8 +813,7 @@ WeakVar(std::shared_ptr<T>) -> WeakVar<T>;
 
 template <typename T>
 struct std::hash<My::MyGE::SharedVar<T>> {
-  constexpr std::size_t operator()(
-      const My::MyGE::SharedVar<T>& obj) noexcept {
+  constexpr std::size_t operator()(const My::MyGE::SharedVar<T>& obj) noexcept {
     return std::hash<typename std::shared_ptr<T>::element_type*>()(obj.get());
   }
 };
@@ -872,8 +944,7 @@ bool operator==(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
 }
 
 template <typename T>
-bool operator==(std::nullptr_t,
-                const My::MyGE::SharedVar<T>& right) noexcept {
+bool operator==(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
   return nullptr == right.get();
 }
 
@@ -883,8 +954,7 @@ bool operator!=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
 }
 
 template <typename T>
-bool operator!=(std::nullptr_t,
-                const My::MyGE::SharedVar<T>& right) noexcept {
+bool operator!=(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
   return nullptr != right.get();
 }
 
@@ -896,8 +966,8 @@ bool operator<(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
 
 template <typename T>
 bool operator<(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(
-             nullptr) < right.get();
+  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(nullptr) <
+         right.get();
 }
 
 template <typename T>
@@ -907,10 +977,9 @@ bool operator>=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
 }
 
 template <typename T>
-bool operator>=(std::nullptr_t,
-                const My::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(
-             nullptr) >= right.get();
+bool operator>=(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(nullptr) >=
+         right.get();
 }
 
 template <typename T>
@@ -921,8 +990,8 @@ bool operator>(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
 
 template <typename T>
 bool operator>(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(
-             nullptr) > right.get();
+  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(nullptr) >
+         right.get();
 }
 
 template <typename T>
@@ -932,10 +1001,9 @@ bool operator<=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
 }
 
 template <typename T>
-bool operator<=(std::nullptr_t,
-                const My::MyGE::SharedVar<T>& right) noexcept {
-  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(
-             nullptr) <= right.get();
+bool operator<=(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
+  return static_cast<typename My::MyGE::SharedVar<T>::element_type*>(nullptr) <=
+         right.get();
 }
 
 template <typename Ty1, typename D1, typename Ty2, typename D2>
@@ -1071,8 +1139,7 @@ bool operator!=(std::nullptr_t,
 }
 
 template <typename T, typename D>
-bool operator<(const My::MyGE::UniqueVar<T, D>& left,
-               std::nullptr_t) noexcept {
+bool operator<(const My::MyGE::UniqueVar<T, D>& left, std::nullptr_t) noexcept {
   return left.get() <
          static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr);
 }
@@ -1090,8 +1157,7 @@ bool operator>=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
 }
 
 template <typename T, typename D>
-bool operator>=(std::nullptr_t,
-                const My::MyGE::SharedVar<T>& right) noexcept {
+bool operator>=(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
   return static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr) >=
          right.get();
 }
@@ -1115,8 +1181,7 @@ bool operator<=(const My::MyGE::SharedVar<T>& left, std::nullptr_t) noexcept {
 }
 
 template <typename T, typename D>
-bool operator<=(std::nullptr_t,
-                const My::MyGE::SharedVar<T>& right) noexcept {
+bool operator<=(std::nullptr_t, const My::MyGE::SharedVar<T>& right) noexcept {
   return static_cast<typename My::MyGE::UniqueVar<T, D>::pointer>(nullptr) <=
          right.get();
 }
@@ -1126,8 +1191,7 @@ bool operator<=(std::nullptr_t,
 
 template <class Elem, typename Traits, typename T>
 std::basic_ostream<Elem, Traits>& operator<<(
-    std::basic_ostream<Elem, Traits>& out,
-    const My::MyGE::SharedVar<T>& obj) {
+    std::basic_ostream<Elem, Traits>& out, const My::MyGE::SharedVar<T>& obj) {
   return out << obj.get();
 }
 
@@ -1152,8 +1216,7 @@ void swap(shared_ptr<T>& left, My::MyGE::SharedVar<T>& right) noexcept {
 }
 
 template <typename T>
-void swap(My::MyGE::WeakVar<T>& left,
-          My::MyGE::WeakVar<T>& right) noexcept {
+void swap(My::MyGE::WeakVar<T>& left, My::MyGE::WeakVar<T>& right) noexcept {
   left.swap(right);
 }
 
@@ -1253,19 +1316,15 @@ struct My::MyDRefl::details::TypeAutoRegister<My::MyGE::SharedVar<T>> {
                   My::MyGE::SharedVar<T>&(My::MyDRefl::SharedObject)>::
             get(&My::MyGE::SharedVar<T>::operator=)>(
         My::MyDRefl::NameIDRegistry::Meta::operator_assignment);
-    mngr.AddConstructor<My::MyGE::SharedVar<T>,
-                        My::MyDRefl::SharedObject>();
+    mngr.AddConstructor<My::MyGE::SharedVar<T>, My::MyDRefl::SharedObject>();
     mngr.AddMethod<
-        MemFuncOf<My::MyGE::SharedVar<T>, My::MyDRefl::SharedObject()>::
+        MemFuncOf<My::MyGE::SharedVar<T>, My::MyDRefl::SharedObject()>::get(
+            &My::MyGE::SharedVar<T>::cast_to_shared_obj)>("cast_to_shared_obj");
+    mngr.AddMethod<
+        MemFuncOf<My::MyGE::SharedVar<T>, My::MyDRefl::SharedObject() const>::
             get(&My::MyGE::SharedVar<T>::cast_to_shared_obj)>(
         "cast_to_shared_obj");
-    mngr.AddMethod<MemFuncOf<My::MyGE::SharedVar<T>,
-                             My::MyDRefl::SharedObject() const>::
-                       get(
-                           &My::MyGE::SharedVar<T>::cast_to_shared_obj)>(
-        "cast_to_shared_obj");
-    My::MyDRefl::details::TypeAutoRegister_Default<
-        My::MyGE::SharedVar<T>>::run(mngr);
+    My::MyDRefl::details::TypeAutoRegister_Default<My::MyGE::SharedVar<T>>::run(
+        mngr);
   }
 };
-

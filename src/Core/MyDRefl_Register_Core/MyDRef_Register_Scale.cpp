@@ -11,4 +11,3 @@ void My::MyGE::details::MyDRefl_Register_Scale() {
   Mngr.RegisterType<Scale>();
   Mngr.AddField<&Scale::value>("value");
 }
-

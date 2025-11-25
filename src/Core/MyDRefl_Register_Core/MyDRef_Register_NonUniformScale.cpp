@@ -11,4 +11,3 @@ void My::MyGE::details::MyDRefl_Register_NonUniformScale() {
   Mngr.RegisterType<NonUniformScale>();
   Mngr.AddField<&NonUniformScale::value>("value");
 }
-

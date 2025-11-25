@@ -13,4 +13,3 @@ void My::MyGE::details::ShaderImporterRegister_BlendOp() {
   MyDRefl::Mngr.AddField<BlendOp::MIN>("MIN");
   MyDRefl::Mngr.AddField<BlendOp::MAX>("MAX");
 }
-

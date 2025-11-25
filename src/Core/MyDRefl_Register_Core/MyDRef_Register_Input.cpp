@@ -30,4 +30,3 @@ void My::MyGE::details::MyDRefl_Register_Input() {
   Mngr.AddField<&Input::MouseDownDuration>("MouseDownDuration");
   Mngr.AddField<&Input::KeysDownDuration>("KeysDownDuration");
 }
-

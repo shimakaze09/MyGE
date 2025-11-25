@@ -16,4 +16,3 @@ void My::MyGE::details::ShaderImporterRegister_StencilState() {
   MyDRefl::Mngr.AddField<&StencilState::passOp>("passOp");
   MyDRefl::Mngr.AddField<&StencilState::func>("func");
 }
-

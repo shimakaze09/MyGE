@@ -62,4 +62,3 @@ template <>
 constexpr auto My::type_name<My::MyGE::RootParameter>() noexcept {
   return TSTR("My::MyGE::RootParameter");
 }
-

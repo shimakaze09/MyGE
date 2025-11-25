@@ -12,4 +12,3 @@ void My::MyGE::details::MyDRefl_Register_WorldTime() {
   Mngr.AddField<&WorldTime::deltaTime>("deltaTime");
   Mngr.AddField<&WorldTime::elapsedTime>("elapsedTime");
 }
-

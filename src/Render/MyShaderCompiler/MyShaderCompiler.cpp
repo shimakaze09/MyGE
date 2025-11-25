@@ -90,22 +90,27 @@ struct MyShaderCompiler::Impl {
 
       // root parameters
       std::vector<RootParameter> rootParams =
-          std::any_cast<std::vector<RootParameter>>(visitRoot_signature(ctx->root_signature()));
-      if (!success || rootParams.empty()) return ERROR;
+          std::any_cast<std::vector<RootParameter>>(
+              visitRoot_signature(ctx->root_signature()));
+      if (!success || rootParams.empty())
+        return ERROR;
       shader.rootParameters = std::move(rootParams);
 
       // properties
       if (ctx->property_block()) {
         std::map<std::string, ShaderProperty, std::less<>> properties =
-            std::any_cast<std::map<std::string, ShaderProperty, std::less<>>>(visitProperty_block(ctx->property_block()));
-        if (!success) return ERROR;
+            std::any_cast<std::map<std::string, ShaderProperty, std::less<>>>(
+                visitProperty_block(ctx->property_block()));
+        if (!success)
+          return ERROR;
         shader.properties = std::move(properties);
       }
 
       // passes
       for (auto passCtx : ctx->pass()) {
         ShaderPass pass = std::any_cast<ShaderPass>(visitPass(passCtx));
-        if (!success) return ERROR;
+        if (!success)
+          return ERROR;
         shader.passes.push_back(std::move(pass));
       }
 
@@ -169,8 +174,10 @@ struct MyShaderCompiler::Impl {
       std::map<std::string, ShaderProperty, std::less<>> rst;
       for (auto propertyCtx : ctx->property()) {
         std::pair<std::string, ShaderProperty> property =
-            std::any_cast<std::pair<std::string, ShaderProperty>>(visitProperty(propertyCtx));
-        if (!success) return ERROR;
+            std::any_cast<std::pair<std::string, ShaderProperty>>(
+                visitProperty(propertyCtx));
+        if (!success)
+          return ERROR;
         rst.insert(property);
       }
       return rst;
@@ -187,7 +194,8 @@ struct MyShaderCompiler::Impl {
     virtual antlrcpp::Any visitVal_int(
         details::MyShaderParser::Val_intContext* ctx) override {
       int rst = std::stoi(ctx->IntegerLiteral()->getText(), nullptr, 0);
-      if (ctx->Sign() && ctx->Sign()->getText() == "-") rst = -rst;
+      if (ctx->Sign() && ctx->Sign()->getText() == "-")
+        rst = -rst;
       return rst;
     }
 
@@ -199,14 +207,16 @@ struct MyShaderCompiler::Impl {
     virtual antlrcpp::Any visitVal_float(
         details::MyShaderParser::Val_floatContext* ctx) override {
       float rst = std::stof(ctx->IntegerLiteral()->getText());
-      if (ctx->Sign() && ctx->Sign()->getText() == "-") rst = -rst;
+      if (ctx->Sign() && ctx->Sign()->getText() == "-")
+        rst = -rst;
       return rst;
     }
 
     virtual antlrcpp::Any visitVal_double(
         details::MyShaderParser::Val_doubleContext* ctx) override {
       double rst = std::stod(ctx->IntegerLiteral()->getText());
-      if (ctx->Sign() && ctx->Sign()->getText() == "-") rst = -rst;
+      if (ctx->Sign() && ctx->Sign()->getText() == "-")
+        rst = -rst;
       return rst;
     }
 
@@ -747,10 +757,14 @@ struct MyShaderCompiler::Impl {
       if (auto integerCtx = ctx->color_mask_value()->IntegerLiteral())
         mask = 0b1111 & static_cast<uint8_t>(std::stoull(mask_s, nullptr, 0));
       else {
-        if (mask_s.find('R') != std::string::npos) mask |= 0b1;
-        if (mask_s.find('G') != std::string::npos) mask |= 0b10;
-        if (mask_s.find('B') != std::string::npos) mask |= 0b100;
-        if (mask_s.find('A') != std::string::npos) mask |= 0b1000;
+        if (mask_s.find('R') != std::string::npos)
+          mask |= 0b1;
+        if (mask_s.find('G') != std::string::npos)
+          mask |= 0b10;
+        if (mask_s.find('B') != std::string::npos)
+          mask |= 0b100;
+        if (mask_s.find('A') != std::string::npos)
+          mask |= 0b1000;
       }
       curPass->renderState.colorMask[index] = mask;
 
@@ -881,11 +895,12 @@ struct MyShaderCompiler::Impl {
 
 MyShaderCompiler::MyShaderCompiler() : pImpl{new Impl} {}
 
-MyShaderCompiler::~MyShaderCompiler() { delete pImpl; }
+MyShaderCompiler::~MyShaderCompiler() {
+  delete pImpl;
+}
 
 std::tuple<bool, Shader> MyShaderCompiler::Compile(std::string_view myshader) {
   Shader shader;
   Impl::MyShaderCompilerInstance compiler;
   return compiler.Compile(myshader);
 }
-

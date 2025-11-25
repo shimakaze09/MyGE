@@ -15,4 +15,3 @@ void My::MyGE::details::ShaderImporterRegister_BlendState() {
   MyDRefl::Mngr.AddField<&BlendState::destAlpha>("destAlpha");
   MyDRefl::Mngr.AddField<&BlendState::opAlpha>("opAlpha");
 }
-

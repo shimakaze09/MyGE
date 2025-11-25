@@ -11,4 +11,3 @@ void My::MyGE::details::MyDRefl_Register_MyECS() {
   Mngr.AddField<&MyECS::Entity::index>("index");
   Mngr.AddField<&MyECS::Entity::version>("version");
 }
-

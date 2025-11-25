@@ -22,7 +22,8 @@ void MaterialImporter::RegisterToMyDRefl() {
 AssetImportContext MaterialImporter::ImportAsset() const {
   AssetImportContext ctx;
   auto path = GetFullPath();
-  if (path.empty()) return {};
+  if (path.empty())
+    return {};
 
   std::string name = path.stem().string();
 
@@ -37,12 +38,14 @@ AssetImportContext MaterialImporter::ImportAsset() const {
   str.assign(std::istreambuf_iterator<char>(ifs),
              std::istreambuf_iterator<char>());
 
-  auto material = std::static_pointer_cast<Material>(Serializer::Instance().Deserialize(str).GetBuffer());
+  auto material = std::static_pointer_cast<Material>(
+      Serializer::Instance().Deserialize(str).GetBuffer());
 
   if (material->shader) {
     for (const auto& [n, prop] : material->shader->properties) {
       auto target = material->properties.find(n);
-      if (target != material->properties.end()) continue;
+      if (target != material->properties.end())
+        continue;
 
       material->properties.emplace_hint(target, n, prop);
     }
@@ -57,4 +60,3 @@ AssetImportContext MaterialImporter::ImportAsset() const {
 std::vector<std::string> MaterialImporterCreator::SupportedExtentions() const {
   return {".mat"};
 }
-

@@ -11,4 +11,3 @@ void My::MyGE::details::MyDRefl_Register_RotationEuler() {
   Mngr.RegisterType<RotationEuler>();
   Mngr.AddField<&RotationEuler::value>("value");
 }
-

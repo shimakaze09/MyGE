@@ -11,4 +11,3 @@ void My::MyGE::details::ShaderImporterRegister_CullMode() {
   MyDRefl::Mngr.AddField<CullMode::FRONT>("FRONT");
   MyDRefl::Mngr.AddField<CullMode::BACK>("BACK");
 }
-
