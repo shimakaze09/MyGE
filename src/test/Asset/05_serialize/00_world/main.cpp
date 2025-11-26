@@ -63,7 +63,7 @@ struct A {
 
 template <>
 struct My::USRefl::TypeInfo<UserType1> : TypeInfoBase<UserType1> {
-#ifdef UBPA_USREFL_NOT_USE_NAMEOF
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
   static constexpr char name[10] = "UserType1";
 #endif
   static constexpr AttrList attrs = {};
@@ -74,7 +74,7 @@ struct My::USRefl::TypeInfo<UserType1> : TypeInfoBase<UserType1> {
 
 template <>
 struct My::USRefl::TypeInfo<A> : TypeInfoBase<A> {
-#ifdef UBPA_USREFL_NOT_USE_NAMEOF
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
   static constexpr char name[2] = "A";
 #endif
   static constexpr AttrList attrs = {};
@@ -206,4 +206,3 @@ int main() {
   std::apply([](auto...) {}, p);
   return 0;
 }
-

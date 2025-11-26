@@ -8,22 +8,30 @@ using namespace My::MyGE;
 WorldAsset::WorldAsset(const MyECS::World* world)
     : data{Serializer::Instance().Serialize(world)} {}
 
+WorldAsset::WorldAsset(const MyECS::World* world,
+                       std::span<MyECS::Entity> entities)
+    : data{Serializer::Instance().Serialize(world, entities)} {}
+
 bool WorldAsset::ToWorld(MyECS::World* world) {
   return Serializer::Instance().DeserializeToWorld(world, data);
 }
 
-void WorldAssetImporter::RegisterToMyDRefl() { RegisterToMyDReflHelper(); }
+void WorldAssetImporter::RegisterToMyDRefl() {
+  RegisterToMyDReflHelper();
+}
 
 std::string WorldAssetImporter::ReserializeAsset() const {
   auto w = AssetMngr::Instance().GUIDToAsset<WorldAsset>(GetGuid());
-  if (!w.get()) return {};
+  if (!w.get())
+    return {};
   return w->GetData();
 }
 
 AssetImportContext WorldAssetImporter::ImportAsset() const {
   AssetImportContext ctx;
   auto path = GetFullPath();
-  if (path.empty()) return {};
+  if (path.empty())
+    return {};
 
   std::string name = path.stem().string();
 
@@ -52,4 +60,3 @@ std::vector<std::string> WorldAssetImporterCreator::SupportedExtentions()
     const {
   return {".world"};
 }
-

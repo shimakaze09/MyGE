@@ -11,7 +11,7 @@ struct Type {
 
 template <>
 struct My::USRefl::TypeInfo<Type> : TypeInfoBase<Type> {
-#ifdef UBPA_USREFL_NOT_USE_NAMEOF
+#ifdef MY_MYSREFL_NOT_USE_NAMEOF
   static constexpr char name[5] = "Type";
 #endif
   static constexpr AttrList attrs = {};
@@ -42,4 +42,3 @@ int main() {
 
   return 0;
 }
-

@@ -4,15 +4,17 @@
 #include <MyGE/App/Editor/Systems/HierarchySystem.h>
 #include <MyGE/Core/AssetMngr.h>
 #include <MyGE/Core/Components/Children.h>
+#include <MyGE/Core/Components/Input.h>
 #include <MyGE/Core/Components/Name.h>
 #include <MyGE/Core/Components/Parent.h>
 #include <MyGE/Core/WorldAssetImporter.h>
+
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/misc/cpp/imgui_stdlib.h>
 
 using namespace My::MyGE;
 
-namespace My::MyGE::detail {
+namespace My::MyGE::details {
 bool HierarchyMovable(const MyECS::World* w, MyECS::Entity dst,
                       MyECS::Entity src) {
   if (dst == src)
@@ -24,7 +26,7 @@ bool HierarchyMovable(const MyECS::World* w, MyECS::Entity dst,
 }
 
 void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e,
-                          Inspector* inspector) {
+                          Inspector* inspector, const Input* input) {
   static constexpr ImGuiTreeNodeFlags nodeBaseFlags =
       ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
       ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -34,7 +36,8 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e,
   bool isLeaf = !children || children->value.empty();
 
   ImGuiTreeNodeFlags nodeFlags = nodeBaseFlags;
-  if (hierarchy->select == e) nodeFlags |= ImGuiTreeNodeFlags_Selected;
+  if (hierarchy->selecties.contains(e))
+    nodeFlags |= ImGuiTreeNodeFlags_Selected;
   if (isLeaf)
     nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
@@ -80,18 +83,27 @@ void HierarchyPrintEntity(Hierarchy* hierarchy, MyECS::Entity e,
     ImGui::EndDragDropTarget();
   }
 
-  if (ImGui::IsItemHovered() && ImGui::IsItemDeactivated()) {
-    hierarchy->select = e;
+  if (ImGui::IsItemClicked()) {
+    if (input && input->KeyCtrl) {
+      auto target = hierarchy->selecties.find(e);
+      if (target == hierarchy->selecties.end())
+        hierarchy->selecties.insert(target, e);
+      else
+        hierarchy->selecties.erase(target);
+    } else
+      hierarchy->selecties = {e};
+
     if (inspector && !inspector->lock) {
       inspector->mode = Inspector::Mode::Entity;
       inspector->entity = e;
     }
   }
-  if (ImGui::IsItemHovered()) hierarchy->hover = e;
+  if (ImGui::IsItemHovered())
+    hierarchy->hover = e;
 
   if (nodeOpen && !isLeaf) {
     for (const auto& child : children->value)
-      HierarchyPrintEntity(hierarchy, child, inspector);
+      HierarchyPrintEntity(hierarchy, child, inspector, input);
     ImGui::TreePop();
   }
 }
@@ -113,15 +125,17 @@ void HierarchyDeleteEntity(MyECS::World* w, MyECS::Entity e) {
     auto children = w->entityMngr.WriteComponent<Children>(e_p);
     children->value.erase(e);
   }
-  detail::HierarchyDeleteEntityRecursively(w, e);
+  details::HierarchyDeleteEntityRecursively(w, e);
 }
-}  // namespace My::MyGE::detail
+}  // namespace My::MyGE::details
 
 void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
   schedule.GetWorld()->AddCommand(
       [w = schedule.GetWorld()]() {
         auto hierarchy = w->entityMngr.WriteSingleton<Hierarchy>();
-        if (!hierarchy) return;
+        auto input = w->entityMngr.ReadSingleton<Input>();
+        if (!hierarchy)
+          return;
 
         if (ImGui::Begin("Hierarchy")) {
           if (ImGui::IsWindowHovered() &&
@@ -144,13 +158,17 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
               }
 
               if (ImGui::MenuItem("Delete")) {
-                detail::HierarchyDeleteEntity(hierarchy->world,
-                                              hierarchy->hover);
+                hierarchy->selecties.insert(hierarchy->hover);
 
-                hierarchy->hover = MyECS::Entity::Invalid();
-                if (!hierarchy->world->entityMngr.Exist(hierarchy->select))
-                  hierarchy->select = MyECS::Entity::Invalid();
+                for (const auto& e : hierarchy->selecties) {
+                  if (hierarchy->world->entityMngr.Exist(e))
+                    details::HierarchyDeleteEntityRecursively(hierarchy->world,
+                                                              e);
+                }
               }
+
+              if (ImGui::MenuItem("Save Entities"))
+                hierarchy->is_saving_entities = true;
             } else {
               if (ImGui::MenuItem("Create Empty Entity"))
                 hierarchy->world->entityMngr.Create();
@@ -166,7 +184,8 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
           } else
             hierarchy->hover = MyECS::Entity::Invalid();
 
-          if (hierarchy->is_saving_world) ImGui::OpenPopup("Input Saved Path");
+          if (hierarchy->is_saving_world || hierarchy->is_saving_entities)
+            ImGui::OpenPopup("Input Saved Path");
 
           if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
@@ -210,11 +229,22 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
             ImGui::InputText("path", &hierarchy->saved_path);
             if (ImGui::Button("OK", ImVec2(120, 0))) {
               std::filesystem::path path{hierarchy->saved_path};
-              if (path.extension() != LR"(.world)") path += LR"(.world)";
-              AssetMngr::Instance().CreateAsset(
-                  std::make_shared<WorldAsset>(hierarchy->world), path);
+              if (path.extension() != LR"(.world)")
+                path += LR"(.world)";
+              if (hierarchy->is_saving_world) {
+                AssetMngr::Instance().CreateAsset(
+                    std::make_shared<WorldAsset>(hierarchy->world), path);
+                hierarchy->is_saving_world = false;
+              } else if (hierarchy->is_saving_entities) {
+                std::vector<UECS::Entity> entities{hierarchy->selecties.begin(),
+                                                   hierarchy->selecties.end()};
+                AssetMngr::Instance().CreateAsset(
+                    std::make_shared<WorldAsset>(hierarchy->world, entities),
+                    path);
+                hierarchy->is_saving_entities = false;
+              } else
+                assert(false);
               hierarchy->saved_path.clear();
-              hierarchy->is_saving_world = false;
               ImGui::CloseCurrentPopup();
             }
             if (ImGui::Button("Cancel", ImVec2(120, 0))) {
@@ -230,7 +260,7 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
           filter.none = {TypeID_of<Parent>};
           hierarchy->world->RunEntityJob(
               [=](MyECS::Entity e) {
-                detail::HierarchyPrintEntity(hierarchy, e, inspector);
+                details::HierarchyPrintEntity(hierarchy, e, inspector);
               },
               false, filter);
         }
@@ -238,4 +268,3 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
       },
       0);
 }
-

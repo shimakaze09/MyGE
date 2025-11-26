@@ -41,7 +41,8 @@ bool IsAncestorDirectory(const std::filesystem::path& x,
 }
 
 void NameShrink(std::string& name, size_t maxlength) {
-  if (name.size() <= maxlength) return;
+  if (name.size() <= maxlength)
+    return;
   name.resize(maxlength);
   name[maxlength - 2] = '.';
   name[maxlength - 1] = '.';
@@ -59,7 +60,8 @@ void ProjectViewerSystemPrintDirectoryTree(
   ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow |
                                  ImGuiTreeNodeFlags_OpenOnDoubleClick |
                                  ImGuiTreeNodeFlags_SpanAvailWidth;
-  if (viewer->selectedFolder == guid) nodeFlags |= ImGuiTreeNodeFlags_Selected;
+  if (viewer->selectedFolder == guid)
+    nodeFlags |= ImGuiTreeNodeFlags_Selected;
   if (isDeepestDirectory)
     nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
@@ -69,17 +71,20 @@ void ProjectViewerSystemPrintDirectoryTree(
   bool nodeOpen = ImGui::TreeNodeEx((void*)string_hash(parent.string()),
                                     nodeFlags, "%s", name.string().c_str());
 
-  if (ImGui::IsItemClicked()) viewer->selectedFolder = guid;
+  if (ImGui::IsItemClicked())
+    viewer->selectedFolder = guid;
 
   if (nodeOpen && !isDeepestDirectory) {
     for (const auto& directory_entry :
          std::filesystem::directory_iterator(parent)) {
-      if (!directory_entry.is_directory()) continue;
+      if (!directory_entry.is_directory())
+        continue;
       const auto& child_fullpath = directory_entry.path();
       const auto child_relpath =
           AssetMngr::Instance().GetRelativePath(child_fullpath);
       auto child_guid = AssetMngr::Instance().AssetPathToGUID(child_relpath);
-      if (!child_guid.isValid()) continue;
+      if (!child_guid.isValid())
+        continue;
       ProjectViewerSystemPrintDirectoryTree(viewer, child_fullpath);
     }
     ImGui::TreePop();
@@ -180,7 +185,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
        std::filesystem::directory_iterator(selectedFolderFullPath)) {
     auto guid = AssetMngr::Instance().AssetPathToGUID(
         AssetMngr::Instance().GetRelativePath(entry.path()));
-    if (!guid.isValid()) continue;
+    if (!guid.isValid())
+      continue;
 
     if (std::filesystem::is_directory(entry.path()))
       childQueue.push_front(guid);
@@ -269,7 +275,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
           viewer->isRenaming = false;
           if (!viewer->rename.empty()) {
             std::filesystem::path newpath =
-                path.parent_path().wstring() + LR"(\)" +
+                (path.has_parent_path() ? path.parent_path().wstring() + LR"(\)"
+                                        : LR"()") +
                 std::filesystem::path(viewer->rename).wstring() + ext.wstring();
             if (!std::filesystem::exists(
                     AssetMngr::Instance().GetFullPath(newpath)) &&
@@ -302,7 +309,8 @@ void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
         auto viewer = w->entityMngr.WriteSingleton<ProjectViewer>();
         auto inspector = w->entityMngr.WriteSingleton<Inspector>();
 
-        if (!viewer) return;
+        if (!viewer)
+          return;
 
         viewer->hoveredAsset = xg::Guid{};
 
@@ -353,6 +361,22 @@ void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
                   std::make_shared<Material>(),
                   AssetMngr::Instance().GetRelativePath(newPath));
             }
+            if (ImGui::MenuItem("Create Folder")) {
+              const auto& folderPath = AssetMngr::Instance().GetFullPath(
+                  AssetMngr::Instance().GUIDToAssetPath(
+                      viewer->selectedFolder));
+              auto wstr = folderPath.wstring();
+              std::filesystem::path newPath;
+              size_t i = 0;
+              do {
+                newPath =
+                    wstr + LR"(\new folder ()" + std::to_wstring(i) + LR"())";
+                i++;
+              } while (std::filesystem::exists(newPath));
+              std::filesystem::create_directory(newPath);
+              AssetMngr::Instance().LoadMainAsset(
+                  AssetMngr::Instance().GetRelativePath(newPath));
+            }
             ImGui::EndPopup();
           }
         }
@@ -360,4 +384,3 @@ void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
       },
       0);
 }
-

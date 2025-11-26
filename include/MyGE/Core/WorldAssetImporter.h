@@ -2,17 +2,15 @@
 
 #include "../Core/AssetImporter.h"
 
-namespace My::MyECS {
-class World;
-}
-
 namespace My::MyGE {
 class WorldAsset {
  public:
   // use Serializer
   WorldAsset(const MyECS::World* world);
+  WorldAsset(const MyECS::World* world, std::span<MyECS::Entity> entities);
 
   WorldAsset(std::string data) noexcept : data{std::move(data)} {}
+
   const std::string& GetData() const noexcept { return data; }
 
   // use Serializer
@@ -40,4 +38,3 @@ class WorldAssetImporterCreator final
   virtual std::vector<std::string> SupportedExtentions() const override;
 };
 }  // namespace My::MyGE
-
