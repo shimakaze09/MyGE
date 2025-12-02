@@ -213,7 +213,7 @@ void HierarchySystem::OnUpdate(MyECS::Schedule& schedule) {
                        payload->Data;
               MyDRefl::SharedObject asset =
                   asset_handle.name.empty()
-                      ? AssetMngr::Instance().GUIDToAsset(asset_handle.guid)
+                      ? AssetMngr::Instance().GUIDToMainAsset(asset_handle.guid)
                       : AssetMngr::Instance().GUIDToAsset(asset_handle.guid,
                                                           asset_handle.name);
               if (asset.GetType().Is<WorldAsset>()) {

@@ -41,7 +41,6 @@ AssetImportContext MeshImporter::ImportAsset() const {
   auto path = GetFullPath();
   if (path.empty()) return {};
 
-  std::string name = path.stem().string();
   auto ext = path.extension();
   std::shared_ptr<Mesh> mesh;
   if (ext == LR"(.obj)") mesh = details::LoadObj(path);
@@ -50,8 +49,8 @@ AssetImportContext MeshImporter::ImportAsset() const {
     mesh = details::AssimpLoadMesh(path);
 #endif  // My_MYGE_USE_ASSIMP
 
-  ctx.AddObject(name, MyDRefl::SharedObject{Type_of<Mesh>, mesh});
-  ctx.SetMainObjectID(name);
+  ctx.AddObject("main", MyDRefl::SharedObject{Type_of<Mesh>, mesh});
+  ctx.SetMainObjectID("main");
 
   return ctx;
 }
@@ -255,4 +254,3 @@ std::shared_ptr<Mesh> My::MyGE::details::AssimpLoadMesh(
   return BuildMesh(std::move(ctx));
 }
 #endif  // My_MYGE_USE_ASSIMP
-

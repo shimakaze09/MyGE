@@ -88,6 +88,8 @@ class AssetImporter {
   }
 
   // default: use Serilizer to serialize the main asset
+  // you can save some files in this function
+  // if result is empty, we won't override the file and we just reload it
   virtual std::string ReserializeAsset() const;
 
   // default: use Serilizer to deserialize file at path (<=> guid)

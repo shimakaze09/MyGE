@@ -65,7 +65,8 @@ class AssetMngr {
 
   // if not loaded, return nullptr
 
-  MyDRefl::SharedObject GUIDToAsset(const xg::Guid&);
+  std::vector<MyDRefl::SharedObject> GUIDToAllAssets(const xg::Guid&);
+  MyDRefl::SharedObject GUIDToMainAsset(const xg::Guid&);
   MyDRefl::SharedObject GUIDToAsset(const xg::Guid&, Type type);
   MyDRefl::SharedObject GUIDToAsset(const xg::Guid&, std::string_view name);
   template <typename T>
@@ -111,4 +112,3 @@ class AssetMngr {
 }  // namespace My::MyGE
 
 #include "details/AssetMngr.inl"
-

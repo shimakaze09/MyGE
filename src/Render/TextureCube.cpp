@@ -8,7 +8,9 @@
 using namespace My::MyGE;
 using namespace My;
 
-TextureCube::TextureCube(const std::array<Image, 6>& images) { Init(images); }
+TextureCube::TextureCube(const std::array<Image, 6>& images) {
+  Init(images);
+}
 
 TextureCube::TextureCube(const Image& equirectangularMap) {
   Init(equirectangularMap);
@@ -17,11 +19,15 @@ TextureCube::TextureCube(const Image& equirectangularMap) {
 void TextureCube::Init(const std::array<Image, 6>& images) {
   Clear();
   mode = SourceMode::SixSidedImages;
-  for (size_t i = 0; i < 6; i++) this->images[i] = images[i];
+  for (size_t i = 0; i < 6; i++)
+    this->images[i] = images[i];
 }
 
 void TextureCube::Init(const Image& equirectangularMap) {
   Clear();
+
+  this->equirectangularMap = equirectangularMap;
+
   mode = SourceMode::EquirectangularMap;
 #ifdef _DEBUG
   size_t s = equirectangularMap.GetHeight() <= 512
@@ -32,35 +38,43 @@ void TextureCube::Init(const Image& equirectangularMap) {
 #endif
   size_t c = equirectangularMap.GetChannel();
 
+  // you face to the box
+  // left is -x, right is +x
+  // -----------------------------
+  //    +y
+  // -x +z +x -z
+  //    -y
+
   vecf3 origin[6] = {
-      {1, -1, -1},   // left   +x
-      {-1, -1, 1},   // right  -x
-      {-1, -1, 1},   // top    +y
-      {-1, 1, -1},   // bottom -y
-      {-1, -1, -1},  // back   +z
-      {1, -1, 1},    // front  -z
+      {1, -1, 1},    // +x
+      {-1, -1, -1},  // -x
+      {-1, 1, 1},    // +y
+      {-1, -1, -1},  // -y
+      {-1, -1, 1},   // +z
+      {1, -1, -1},   // -z
   };
 
   vecf3 right[6] = {
-      {0, 0, 2},   // left   +x
-      {0, 0, -2},  // right  -x
-      {2, 0, 0},   // top    +y
-      {2, 0, 0},   // bottom -y
-      {2, 0, 0},   // back   +z
-      {-2, 0, 0},  // front  -z
+      {0, 0, -2},  // +x
+      {0, 0, 2},   // -x
+      {2, 0, 0},   // +y
+      {2, 0, 0},   // -y
+      {2, 0, 0},   // +z
+      {-2, 0, 0},  // -z
   };
 
   vecf3 up[6] = {
-      {0, 2, 0},   // left   +x
-      {0, 2, 0},   // right  -x
-      {0, 0, -2},  // top    +y
-      {0, 0, 2},   // bottom -y
-      {0, 2, 0},   // back   +z
-      {0, 2, 0},   // front  -z
+      {0, 2, 0},   // +x
+      {0, 2, 0},   // -x
+      {0, 0, -2},  // +y
+      {0, 0, 2},   // -y
+      {0, 2, 0},   // +z
+      {0, 2, 0},   // -z
   };
 
   std::array<Image, 6> imgs;
-  for (size_t i = 0; i < 6; i++) imgs[i] = Image(s, s, c);
+  for (size_t i = 0; i < 6; i++)
+    imgs[i] = Image(s, s, c);
 
   const size_t N = std::thread::hardware_concurrency();
   auto work = [&](size_t id) {
@@ -76,7 +90,8 @@ void TextureCube::Init(const Image& equirectangularMap) {
           uv[0] = 0.5f - uv[0] * invAtan[0];
           uv[1] = 0.5f + uv[1] * invAtan[1];
           auto color = equirectangularMap.SampleLinear(uv);
-          for (size_t k = 0; k < c; k++) img.At(x, y, k) = color[k];
+          for (size_t k = 0; k < c; k++)
+            img.At(x, y, k) = color[k];
         }
       }
     }
@@ -86,13 +101,14 @@ void TextureCube::Init(const Image& equirectangularMap) {
   for (size_t i = 0; i < std::thread::hardware_concurrency(); i++)
     workers.emplace_back(work, i);
 
-  for (auto& worker : workers) worker.join();
+  for (auto& worker : workers)
+    worker.join();
 
   images = std::move(imgs);
 }
 
 void TextureCube::Clear() {
-  for (auto& img : images) img.Clear();
+  for (auto& img : images)
+    img.Clear();
   equirectangularMap.Clear();
 }
-

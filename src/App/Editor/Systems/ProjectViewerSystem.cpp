@@ -6,6 +6,8 @@
 #include <MyGE/Render/DX12/GPURsrcMngrDX12.h>
 #include <MyGE/Render/Material.h>
 #include <MyGE/Render/Texture2D.h>
+#include <MyGE/Render/TextureCube.h>
+
 #include <_deps/imgui/imgui.h>
 #include <_deps/imgui/misc/cpp/imgui_stdlib.h>
 
@@ -155,8 +157,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
       LR"(_internal\FolderViewer\world.png)");
   auto model = AssetMngr::Instance().LoadAsset<Texture2D>(
       LR"(_internal\FolderViewer\model.png)");
-  // auto texcube =
-  // AssetMngr::Instance().LoadAsset<Texture2D>(LR"(_internal\FolderViewer\texcube.png)");
+  auto texcube = AssetMngr::Instance().LoadAsset<Texture2D>(
+      LR"(_internal\FolderViewer\texcube.png)");
 
   auto fileID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*file);
   auto folderID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*folder);
@@ -169,8 +171,8 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
   auto hlslID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*hlsl);
   auto worldID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*world);
   auto modelID = GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*model);
-  // auto texcubeID =
-  // GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*texcube);
+  auto texcubeID =
+      GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(*texcube);
 
   ImGuiStyle& style = ImGui::GetStyle();
   ImVec2 button_sz(64, 64);
@@ -211,15 +213,19 @@ void ProjectViewerSystemPrintFolder(Inspector* inspector,
       if (!isDir) {
         if (ext == ".png" || ext == ".jpg" || ext == ".bmp" || ext == ".hdr" ||
             ext == ".tga") {
-          auto tex2d = AssetMngr::Instance().LoadAsset<Texture2D>(path);
-          if (tex2d.get()) {
-            My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(*tex2d);
-            id = GPURsrcMngrDX12::Instance()
-                     .GetTexture2DSrvGpuHandle(*tex2d)
-                     .ptr;
-          } else
+          auto tex = AssetMngr::Instance().LoadMainAsset(path);
+          if (tex.GetType().Is<Texture2D>()) {
+            auto& tex2d = tex.As<Texture2D>();
+            My::MyGE::GPURsrcMngrDX12::Instance().RegisterTexture2D(tex2d);
+            id =
+                GPURsrcMngrDX12::Instance().GetTexture2DSrvGpuHandle(tex2d).ptr;
+          } else if (tex.GetType().Is<TextureCube>())
+            id = texcubeID.ptr;
+          else
             id = fileID.ptr;
-        } else if (ext == ".mat")
+        } else if (ext == ".texcube")
+          id = texcubeID.ptr;
+        else if (ext == ".mat")
           id = materialID.ptr;
         else if (ext == ".shader")
           id = shaderID.ptr;
@@ -375,6 +381,22 @@ void ProjectViewerSystem::OnUpdate(MyECS::Schedule& schedule) {
               } while (std::filesystem::exists(newPath));
               std::filesystem::create_directory(newPath);
               AssetMngr::Instance().LoadMainAsset(
+                  AssetMngr::Instance().GetRelativePath(newPath));
+            }
+            if (ImGui::MenuItem("Create TextureCube")) {
+              const auto& folderPath = AssetMngr::Instance().GetFullPath(
+                  AssetMngr::Instance().GUIDToAssetPath(
+                      viewer->selectedFolder));
+              auto wstr = folderPath.wstring();
+              std::filesystem::path newPath;
+              size_t i = 0;
+              do {
+                newPath = wstr + LR"(\new texcube ()" + std::to_wstring(i) +
+                          LR"().texcube)";
+                i++;
+              } while (std::filesystem::exists(newPath));
+              AssetMngr::Instance().CreateAsset(
+                  std::make_shared<TextureCube>(Image(1, 1, 3)),
                   AssetMngr::Instance().GetRelativePath(newPath));
             }
             ImGui::EndPopup();

@@ -25,8 +25,6 @@ AssetImportContext MaterialImporter::ImportAsset() const {
   if (path.empty())
     return {};
 
-  std::string name = path.stem().string();
-
   std::ifstream ifs(path);
   assert(ifs.is_open());
   std::string str;
@@ -41,18 +39,8 @@ AssetImportContext MaterialImporter::ImportAsset() const {
   auto material = std::static_pointer_cast<Material>(
       Serializer::Instance().Deserialize(str).GetBuffer());
 
-  if (material->shader) {
-    for (const auto& [n, prop] : material->shader->properties) {
-      auto target = material->properties.find(n);
-      if (target != material->properties.end())
-        continue;
-
-      material->properties.emplace_hint(target, n, prop);
-    }
-  }
-
-  ctx.AddObject(name, MyDRefl::SharedObject{Type_of<Material>, material});
-  ctx.SetMainObjectID(name);
+  ctx.AddObject("main", MyDRefl::SharedObject{Type_of<Material>, material});
+  ctx.SetMainObjectID("main");
 
   return ctx;
 }

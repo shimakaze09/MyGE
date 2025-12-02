@@ -17,7 +17,8 @@ class MyAssetImporter final : public TAssetImporter<MyAssetImporter> {
   virtual AssetImportContext ImportAsset() const override {
     AssetImportContext ctx;
     auto path = GetFullPath();
-    if (path.empty()) return {};
+    if (path.empty())
+      return {};
     std::string name = path.stem().string();
     auto myasset = std::make_shared<MyAsset>();
     myasset->data = initdata;
@@ -31,9 +32,8 @@ class MyAssetImporter final : public TAssetImporter<MyAssetImporter> {
   }
 
   virtual std::string ReserializeAsset() const override {
-    auto asset = AssetMngr::Instance().GUIDToAsset(GetGuid());
-    return Serializer::Instance().Serialize(asset.GetType().GetID().GetValue(),
-                                            asset.GetPtr());
+    auto asset = AssetMngr::Instance().GUIDToMainAsset(GetGuid());
+    return Serializer::Instance().Serialize(asset);
   }
 
   static void RegisterToMyDRefl() {
@@ -70,12 +70,13 @@ int main() {
   }
   {
     auto asset = AssetMngr::Instance().LoadMainAsset(LR"(hello.txt)");
-    assert(AssetMngr::Instance().NameofAsset(asset) == "hello");
+    assert(AssetMngr::Instance().NameofAsset(asset.GetPtr()) == "hello");
     assert(asset.GetType().Is<DefaultAsset>());
     assert(asset.GetPtr());
-    assert(AssetMngr::Instance().GetAssetPath(asset) == LR"(hello.txt)");
-    auto guid_asset = AssetMngr::Instance().GetAssetGUID(asset);
-    assert(AssetMngr::Instance().GUIDToAsset(guid_asset).GetPtr() ==
+    assert(AssetMngr::Instance().GetAssetPath(asset.GetPtr()) ==
+           LR"(hello.txt)");
+    auto guid_asset = AssetMngr::Instance().GetAssetGUID(asset.GetPtr());
+    assert(AssetMngr::Instance().GUIDToMainAsset(guid_asset).GetPtr() ==
            asset.GetPtr());
     assert(AssetMngr::Instance().GUIDToAssetPath(guid_asset) ==
            LR"(hello.txt)");
@@ -83,26 +84,25 @@ int main() {
   {
     auto asset =
         AssetMngr::Instance().LoadMainAsset(LR"(folder\file_in_folder.txt)");
-    assert(AssetMngr::Instance().NameofAsset(asset) == "file_in_folder");
+    assert(AssetMngr::Instance().NameofAsset(asset.GetPtr()) ==
+           "file_in_folder");
     assert(asset.GetType().Is<DefaultAsset>());
     assert(asset.GetPtr());
-    assert(AssetMngr::Instance().GetAssetPath(asset) ==
+    assert(AssetMngr::Instance().GetAssetPath(asset.GetPtr()) ==
            LR"(folder\file_in_folder.txt)");
 
     auto folder = AssetMngr::Instance().LoadMainAsset(LR"(folder)");
-    assert(AssetMngr::Instance().NameofAsset(folder) == "folder");
+    assert(AssetMngr::Instance().NameofAsset(folder.GetPtr()) == "folder");
     assert(folder.GetType().Is<DefaultAsset>());
     assert(folder.GetPtr());
-    auto folder_path = AssetMngr::Instance().GetAssetPath(folder);
+    auto folder_path = AssetMngr::Instance().GetAssetPath(folder.GetPtr());
     assert(folder_path == LR"(folder)");
   }
   {
     auto guid = AssetMngr::Instance().ImportAsset(LR"(.no_stem)");
     assert(!guid.isValid());
   }
-  {
-    AssetMngr::Instance().ImportAssetRecursively(LR"(recursive_0)");
-  }
+  { AssetMngr::Instance().ImportAssetRecursively(LR"(recursive_0)"); }
   AssetMngr::Instance().RegisterAssetImporterCreator(
       std::make_shared<MyAssetImporterCreator>());
   {
@@ -136,4 +136,3 @@ int main() {
 
   AssetMngr::Instance().Clear();
 }
-

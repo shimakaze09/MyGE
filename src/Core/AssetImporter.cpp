@@ -9,8 +9,9 @@ std::filesystem::path AssetImporter::GetFullPath() const {
 }
 
 std::string AssetImporter::ReserializeAsset() const {
-  auto asset = AssetMngr::Instance().GUIDToAsset(guid);
-  if (!asset.GetType() || !asset.GetPtr()) return {};
+  auto asset = AssetMngr::Instance().GUIDToMainAsset(guid);
+  if (!asset.GetType() || !asset.GetPtr())
+    return {};
   return Serializer::Instance().Serialize(asset);
 }
 
@@ -18,8 +19,8 @@ AssetImportContext AssetImporter::ImportAsset() const {
   AssetImportContext ctx;
 
   auto path = GetFullPath();
-  if (path.empty()) return {};
-  std::string name = path.stem().string();
+  if (path.empty())
+    return {};
 
   std::string str;
   {  // read file to str
@@ -34,14 +35,15 @@ AssetImportContext AssetImporter::ImportAsset() const {
                std::istreambuf_iterator<char>());
   }
 
-  ctx.AddObject(name, Serializer::Instance().Deserialize(str));
-  ctx.SetMainObjectID(name);
+  ctx.AddObject("main", Serializer::Instance().Deserialize(str));
+  ctx.SetMainObjectID("main");
 
   return ctx;
 }
 
 void AssetImporter::RegisterToMyDRefl() {
-  if (MyDRefl::Mngr.typeinfos.contains(Type_of<AssetImporter>)) return;
+  if (MyDRefl::Mngr.typeinfos.contains(Type_of<AssetImporter>))
+    return;
 
   MyDRefl::Mngr.RegisterType<AssetImporter>();
   MyDRefl::Mngr.AddField<&AssetImporter::guid>(Serializer::Key::Guid);
@@ -56,11 +58,11 @@ AssetImportContext DefaultAssetImporter::ImportAsset() const {
   AssetImportContext ctx;
 
   auto path = GetFullPath();
-  if (path.empty()) return {};
+  if (path.empty())
+    return {};
   std::string name = path.stem().string();
   ctx.AddObject(name, MyDRefl::SharedObject{Type_of<DefaultAsset>,
                                             std::make_shared<DefaultAsset>()});
   ctx.SetMainObjectID(name);
   return ctx;
 }
-

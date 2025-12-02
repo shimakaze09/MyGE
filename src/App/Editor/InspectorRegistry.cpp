@@ -17,7 +17,10 @@ struct InspectorRegistry::Impl {
 };
 
 InspectorRegistry::InspectorRegistry() : pImpl{new Impl} {}
-InspectorRegistry::~InspectorRegistry() { delete pImpl; }
+
+InspectorRegistry::~InspectorRegistry() {
+  delete pImpl;
+}
 
 void InspectorRegistry::Register(
     TypeID type, std::function<void(void*, InspectContext)> cmptInspectFunc) {
@@ -76,15 +79,24 @@ void InspectorRegistry::Inspect(const MyECS::World* w, TypeID typeID,
     }
     auto assets = AssetMngr::Instance().LoadAllAssets(path);
     for (const auto& asset : assets) {
-      ImGui::PushID(asset.GetPtr());
-      if (ImGui::CollapsingHeader(asset.GetType().GetName().data())) {
-        InspectorRegistry::InspectContext ctx{w, pImpl->inspector};
-        for (const auto& [n, var] : asset.GetVars())
-          InspectRecursively(n, var.GetType().GetID(), var.GetPtr(), ctx);
-        if (ImGui::Button("apply"))
-          AssetMngr::Instance().ReserializeAsset(path);
+      InspectorRegistry::InspectContext ctx{w, pImpl->inspector};
+      if (ctx.inspector.IsRegistered(asset.GetType().GetID().GetValue())) {
+        ctx.inspector.Visit(asset.GetType().GetID().GetValue(), asset.GetPtr(),
+                            ctx);
+        return;
+      } else {
+        std::string header =
+            std::string{AssetMngr::Instance().NameofAsset(asset.GetPtr())} +
+            " (" + std::string{asset.GetType().GetName()} + ")";
+        if (ImGui::CollapsingHeader(header.data())) {
+          ImGui::PushID(asset.GetPtr());
+          for (const auto& [n, var] : asset.GetVars())
+            InspectRecursively(n, var.GetType().GetID(), var.GetPtr(), ctx);
+          if (ImGui::Button("apply"))
+            AssetMngr::Instance().ReserializeAsset(path);
+          ImGui::PopID();
+        }
       }
-      ImGui::PopID();
     }
   } else {
     auto type = MyDRefl::Mngr.tregistry.Typeof(typeID);
@@ -102,7 +114,8 @@ void InspectorRegistry::InspectRecursively(std::string_view name, TypeID typeID,
   }
 
   auto type = MyDRefl::Mngr.tregistry.Typeof(typeID);
-  if (!type.Valid()) return;
+  if (!type.Valid())
+    return;
 
   MyDRefl::ObjectView objv{type, obj};
   InspectRecursively(name, objv, ctx);
@@ -117,7 +130,8 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
   }
 
   auto type = objv.GetType();
-  if (!type.Valid()) return;
+  if (!type.Valid())
+    return;
 
   if (type.IsConst()) {
     objv = objv.RemoveConst();
@@ -200,10 +214,9 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
         // button
         if (sobj.GetPtr()) {
           const auto& path = AssetMngr::Instance().GetAssetPath(sobj.GetPtr());
-          if (!path.empty()) {
-            auto name = path.stem().string();
-            ImGui::Button(name.c_str());
-          } else
+          if (!path.empty())
+            ImGui::Button(path.string().c_str());
+          else
             ImGui::Button("UNKNOW");
         } else
           ImGui::Button("nullptr");
@@ -220,10 +233,9 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
         // button
         if (sobj.GetPtr()) {
           const auto& path = AssetMngr::Instance().GetAssetPath(sobj.GetPtr());
-          if (!path.empty()) {
-            auto name = path.stem().string();
-            ImGui::Button(name.c_str());
-          } else
+          if (!path.empty())
+            ImGui::Button(path.string().c_str());
+          else
             ImGui::Button("UNKNOW");
         } else
           ImGui::Button("nullptr");
@@ -241,8 +253,8 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
           break;
         case My::MyDRefl::ContainerType::Array:
         case My::MyDRefl::ContainerType::RawArray: {  // valf1, valf2, valf3,
-                                                        // valf4, ...
-                                                        // TODO
+                                                      // valf4, ...
+                                                      // TODO
         }
           [[fallthrough]];
         case My::MyDRefl::ContainerType::Span:
@@ -373,7 +385,8 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
             objv.Invoke<void>(NameIDRegistry::Meta::operator_assignment,
                               TempArgsView{var}, MethodFlag::Variable);
 
-          if (isSelected) ImGui::SetItemDefaultFocus();
+          if (isSelected)
+            ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
       }
@@ -413,7 +426,7 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
           SharedObject asset;
           if (assethandle.name.empty()) {
             // main
-            asset = AssetMngr::Instance().GUIDToAsset(assethandle.guid);
+            asset = AssetMngr::Instance().GUIDToMainAsset(assethandle.guid);
           } else
             asset = AssetMngr::Instance().GUIDToAsset(assethandle.guid,
                                                       assethandle.name);
@@ -435,10 +448,9 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
         // button
         if (sobj.GetPtr()) {
           const auto& path = AssetMngr::Instance().GetAssetPath(sobj.GetPtr());
-          if (!path.empty()) {
-            auto name = path.stem().string();
-            ImGui::Button(name.c_str());
-          } else
+          if (!path.empty())
+            ImGui::Button(path.string().c_str());
+          else
             ImGui::Button("UNKNOW");
         } else
           ImGui::Button("nullptr");
@@ -454,7 +466,7 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
           SharedObject asset;
           if (assethandle.name.empty()) {
             // main
-            asset = AssetMngr::Instance().GUIDToAsset(assethandle.guid);
+            asset = AssetMngr::Instance().GUIDToMainAsset(assethandle.guid);
           } else
             asset = AssetMngr::Instance().GUIDToAsset(assethandle.guid,
                                                       assethandle.name);
@@ -478,7 +490,7 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
           break;
         case My::MyDRefl::ContainerType::Array:
         case My::MyDRefl::ContainerType::RawArray: {  // valf1, valf2, valf3,
-                                                        // valf4, ...
+                                                      // valf4, ...
           auto N = static_cast<int>(objv.size());
           if (N >= 1 && N <= 4) {
             auto type = objv[0].RemoveReference().GetType();
@@ -554,7 +566,8 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
               int s = static_cast<int>(objv.size());
               int origs = s;
               ImGui::InputInt("size", &s, 1);
-              if (s != origs && s >= 0) objv.resize(static_cast<size_t>(s));
+              if (s != origs && s >= 0)
+                objv.resize(static_cast<size_t>(s));
             }
 
             std::size_t i = 0;
@@ -604,4 +617,3 @@ void InspectorRegistry::InspectRecursively(std::string_view name,
     }
   }
 }
-

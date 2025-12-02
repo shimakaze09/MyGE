@@ -8,11 +8,15 @@ class TextureImporter final : public TAssetImporter<TextureImporter> {
   using TAssetImporter<TextureImporter>::TAssetImporter;
 
   virtual AssetImportContext ImportAsset() const override;
-  static void RegisterToMyDRefl();
+  virtual std::string ReserializeAsset() const;
 
   enum class Mode { Texture2D, TextureCube };
 
   Mode mode{Mode::Texture2D};
+
+ private:
+  friend class TAssetImporterCreator<TextureImporter>;
+  static void RegisterToMyDRefl();
 };
 
 class TextureImporterCreator final
@@ -21,4 +25,3 @@ class TextureImporterCreator final
   virtual std::vector<std::string> SupportedExtentions() const override;
 };
 }  // namespace My::MyGE
-

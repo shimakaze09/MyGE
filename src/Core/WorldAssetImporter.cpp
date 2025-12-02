@@ -48,10 +48,10 @@ AssetImportContext WorldAssetImporter::ImportAsset() const {
 
   WorldAsset wa(std::move(str));
 
-  ctx.AddObject(
-      name, MyDRefl::SharedObject{Type_of<WorldAsset>,
-                                  std::make_shared<WorldAsset>(std::move(wa))});
-  ctx.SetMainObjectID(name);
+  ctx.AddObject("main", MyDRefl::SharedObject{
+                            Type_of<WorldAsset>,
+                            std::make_shared<WorldAsset>(std::move(wa))});
+  ctx.SetMainObjectID("main");
 
   return ctx;
 }
